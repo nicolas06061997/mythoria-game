@@ -2,7 +2,7 @@
 
 Jeu mobile de stratégie fantastique 3D (PWA, Chrome Android), publié par GitHub Pages depuis `main` :
 https://nicolas06061997.github.io/mythoria-game/
-(Ancienne adresse : https://nicolas06061997.github.io/La-Fine-Crasse/mythoria/ — dossier `mythoria/` du dépôt La-Fine-Crasse, d'où vient l'historique.)
+(L'ancienne adresse https://nicolas06061997.github.io/La-Fine-Crasse/mythoria/ redirige ici depuis le 14/11 ; l'historique vient du dossier `mythoria/` de La-Fine-Crasse.)
 
 L'utilisateur parle français et n'est pas développeur : réponses courtes, en français, étape par étape.
 Cahier des charges du 13/11/2026 ; plan en 7 phases : `docs/ROADMAP.md` ; reste à faire : `docs/A-FAIRE.md`.

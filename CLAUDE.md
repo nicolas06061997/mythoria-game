@@ -16,6 +16,10 @@ Cahier des charges du 13/11/2026 ; plan en 7 phases : `docs/ROADMAP.md` ; reste 
 - `python3 -m http.server 8000` puis `http://localhost:8000/`. Pas de build. three.js r160 dans `vendor/` (import map dans index.html).
 - Tests : `npm test` (node --test). Navigateur sans écran : chromium avec `--use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader`, `serviceWorkers:'block'` ; `?speed=4` accélère ; `window.__battle` (`send({p:0,t:'summon'|'merge'|'deploy'|'spell',...})`), `window.__hero` (Mode Héros).
 
+## Installation et mises à jour (comme les autres jeux)
+- `src/client/install.js` : bouton vert `#inst` (« Installer le jeu », `beforeinstallprompt` = 1 appui dans Chrome, sinon explications selon le navigateur, bouton « Ouvrir dans Chrome » sur Android), `appinstalled`.
+- Mises à jour : `version.json` vérifié toutes les 3 min et au retour sur l'appli ; nouvelle version → rechargement automatique (jamais pendant un combat : `body.in-battle`), une seule fois par version (`sessionStorage` `myt_upd`), sinon bandeau de secours `#upd`.
+
 ## Concept et code
 - Concept « Les Failles » (pas un clone de Clash Royale) : île flottante, 1 Sanctuaire par camp, Cœur de Mythe au centre (seuls les héros au sol le capturent), Cercle d'Invocation 5 socles (invoquer 2 éther, fusionner ★3, glisser sur l'île), 1 sortilège par deck (jauge d'Éveil). Détails et limites : `docs/ARCHITECTURE.md`.
 - Règles partagées (futur serveur) `src/shared/` : `content.js` (26 héros, 4 sorts, 6 factions/mondes, UNLOCKS), `sim.js` (déterministe ; modes duel/campaign/survival, mods, bonus, botMana), `ai.js` (5 niveaux : think, mistake, mana…), `economy.js` (niveaux, coffres, boutique, missions, apparences), `kingdom.js`, `campaign.js` (30 étapes, 6 boss, événements, tournoi, vagues).

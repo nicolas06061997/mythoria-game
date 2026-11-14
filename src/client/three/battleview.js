@@ -10,6 +10,9 @@ import { FX } from './fx.js';
 import { createComposer, blobShadow } from './look.js';
 
 export const TEAM = ['#3da9ff', '#ff4f5e'];
+// Arènes « peintes » : une illustration sert de décor, la 3D (héros, effets) est posée dessus avec une caméra
+// calculée pour coller exactement à l'image (sol, Sanctuaires, Cœur). Paramètres trouvés par ajustement.
+const ARENA_ART = { aurore: { src: 'assets/arenas/aurore.webp', W: 1176, H: 1920, fov: 40.4914, th: 0.8884, D: 44.3774, zt: 2.5842, off: -213.3714, k: 0.8555, imgH: 2190, benchY: 2050, benchZ: 17.705, benchX: [-6.211, -3.079, 0, 3.079, 6.158] } };
 const BENCH_Z = RY + 3.1, BENCH_X = [-4.6, -2.3, 0, 2.3, 4.6];
 
 // Forteresse des Sanctuaires (remplace le simple temple)
@@ -44,6 +47,7 @@ export class BattleView {
     this.cv = canvas; this.ov = overlay; this.octx = overlay.getContext('2d');
     this.key = worldKey; this.me = me;
     this.q = quality();
+    this.art = ARENA_ART[worldKey] || null; this.zk = this.art ? this.art.k : 1; this.bz = this.art ? this.art.benchZ : BENCH_Z; this.bx = this.art ? this.art.benchX : BENCH_X;
     this.r = createRenderer(canvas);
     this.scene = new THREE.Scene();
     this.cam = new THREE.PerspectiveCamera(42, 1, 0.5, 400);
@@ -54,15 +58,21 @@ export class BattleView {
     this.nums = [];
   }
 
-  toWorld(x, y) { return { x: x - CX, z: y - CY }; }
-  toSim(X, Z) { return { x: X + CX, y: Z + CY }; }
+  toWorld(x, y) { return { x: x - CX, z: (y - CY) * this.zk }; }
+  toSim(X, Z) { return { x: X + CX, y: Z / this.zk + CY }; }
 
   async init(heroIds, onProgress) {
+    this.before = new Set(this.scene.children);
     const [world] = await Promise.all([
       buildWorld(this.scene, this.key, { light: this.q.low ? 'low' : 'high', shadow: this.q.shadowSize }),
       preload(heroIds, onProgress),
     ]);
     this.world = world;
+    if (this.art) { // décor peint : on garde seulement les lumières du monde 3D
+      for (const o of this.scene.children) if (!this.before.has(o)) for (const c of o.children) if (!c.isLight) c.visible = false;
+      const sh = new THREE.Mesh(new THREE.CircleGeometry(9, 48), new THREE.ShadowMaterial({ opacity: 0.32 })); sh.rotation.x = -Math.PI / 2; sh.position.y = 0.01; sh.receiveShadow = true; this.scene.add(sh);
+      this.r.toneMapping = THREE.NoToneMapping;
+    }
     this.r.toneMappingExposure = world.theme.exposure;
     // Sanctuaires
     this.sanct = [];
@@ -71,29 +81,31 @@ export class BattleView {
       g.position.set(w.x, 0, w.z); g.rotation.y = p === this.me ? Math.PI : 0;
       // forteresse : remparts crénelés, 4 tours à toits colorés, donjon (temple) au centre, porte vers le Cœur
       const mine = p === this.me, stoneC = this.key === 'aurore' ? '#9a98a8' : world.theme.rock;
-      g.add(fortress(mine ? '#3a7be0' : '#c8323e', mine ? '#8fe0ff' : '#c48aff', stoneC, mine ? 0.66 : 1));
-      try { const t = await prop('Temple_SecondAge_Level3', { scale: 1 }); const b = new THREE.Box3().setFromObject(t); const k = 2.2 / Math.max(b.max.x - b.min.x, b.max.z - b.min.z); t.scale.multiplyScalar(k); t.scale.y *= mine ? 0.75 : 1; g.add(t); } catch (e) {}
+      if (!this.art) g.add(fortress(mine ? '#3a7be0' : '#c8323e', mine ? '#8fe0ff' : '#c48aff', stoneC, mine ? 0.66 : 1));
+      if (!this.art) try { const t = await prop('Temple_SecondAge_Level3', { scale: 1 }); const b = new THREE.Box3().setFromObject(t); const k = 2.2 / Math.max(b.max.x - b.min.x, b.max.z - b.min.z); t.scale.multiplyScalar(k); t.scale.y *= mine ? 0.75 : 1; g.add(t); } catch (e) {}
       const col = TEAM[p === this.me ? 0 : 1];
       const cr = sanctuaryCrystal(col); cr.group.position.y = p === this.me ? 3.0 : 4.0; if (p === this.me) cr.group.scale.setScalar(0.8); g.add(cr.group);
       const base = new THREE.Mesh(new THREE.RingGeometry(1.9, 2.2, 48), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.6, depthWrite: false, side: THREE.DoubleSide }));
       base.rotation.x = -Math.PI / 2; base.position.y = 0.04; g.add(base);
+      if (this.art) { cr.group.visible = false; base.visible = false; }
       this.scene.add(g);
       this.sanct.push({ g, cr, smokeT: 0 });
     }
     // Cœur de Mythe
     this.heart = heartOfMyth(); this.scene.add(this.heart.group);
+    if (this.art) this.heart.group.traverse(o => { if (o.isMesh && !o.material.transparent) o.visible = false; });
     // Cercle d'invocation (le banc du joueur, en 3D devant l'île)
-    const ledge = new THREE.Group(); ledge.position.set(0, -0.35, BENCH_Z);
+    const ledge = new THREE.Group(); ledge.position.set(0, -0.35, this.bz);
     const rockMat = new THREE.MeshStandardMaterial({ color: world.theme.rock, flatShading: true });
     const top = new THREE.Mesh(new THREE.BoxGeometry(12.6, 0.5, 2.6), new THREE.MeshStandardMaterial({ color: this.key === 'aurore' ? '#8f8a9e' : world.theme.ground2, flatShading: true })); top.receiveShadow = true; ledge.add(top);
     const under = new THREE.Mesh(new THREE.ConeGeometry(2.0, 3, 6), rockMat); under.scale.set(3.3, 1, 0.8); under.rotation.x = Math.PI; under.position.y = -1.7; ledge.add(under);
-    this.scene.add(ledge);
+    this.scene.add(ledge); if (this.art) ledge.visible = false;
     this.slotHits = [];
     for (let i = 0; i < BENCH; i++) {
-      const g = new THREE.Group(); g.position.set(BENCH_X[i], 0, BENCH_Z);
-      const ped = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.95, 0.35, 8), new THREE.MeshStandardMaterial({ color: '#d8d0c0', flatShading: true })); ped.position.y = 0.05; ped.receiveShadow = true; ped.castShadow = true; g.add(ped);
+      const g = new THREE.Group(); g.position.set(this.bx[i], 0, this.bz);
+      const ped = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.95, 0.35, 8), new THREE.MeshStandardMaterial({ color: '#d8d0c0', flatShading: true })); ped.position.y = 0.05; ped.receiveShadow = true; ped.castShadow = true; g.add(ped); if (this.art) { ped.visible = false; }
       const rune = new THREE.Mesh(new THREE.RingGeometry(0.55, 0.72, 6), new THREE.MeshBasicMaterial({ color: '#8fd8ff', transparent: true, opacity: 0.5, side: THREE.DoubleSide, depthWrite: false }));
-      rune.rotation.x = -Math.PI / 2; rune.position.y = 0.24; g.add(rune);
+      rune.rotation.x = -Math.PI / 2; rune.position.y = this.art ? 0.03 : 0.24; g.add(rune);
       const hit = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.1, 2.6, 8), new THREE.MeshBasicMaterial({ visible: false })); hit.position.y = 1.2; hit.userData.slot = i; g.add(hit);
       this.slotHits.push(hit);
       this.scene.add(g);
@@ -102,7 +114,7 @@ export class BattleView {
     // Zone de déploiement (moitié de l'île du joueur)
     const sh = new THREE.Shape(); sh.absellipse(0, 0, RX - 0.3, RY - 0.3, Math.PI, 2 * Math.PI, false, 0);
     this.zone = new THREE.Mesh(new THREE.ShapeGeometry(sh, 40), new THREE.MeshBasicMaterial({ color: TEAM[0], transparent: true, opacity: 0.2, depthWrite: false, side: THREE.DoubleSide }));
-    this.zone.rotation.x = -Math.PI / 2; this.zone.scale.y = (RY - 1.1) / (RY - 0.3); this.zone.position.set(0, 0.07, 0.8); this.zone.visible = false;
+    this.zone.rotation.x = -Math.PI / 2; this.zone.scale.y = (RY - 1.1) / (RY - 0.3); this.zone.position.set(0, 0.07, 0.8 * this.zk); this.zone.scale.y *= this.zk; this.zone.visible = false;
     this.scene.add(this.zone);
     this.aim = new THREE.Mesh(new THREE.RingGeometry(0.92, 1, 48), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.85, depthWrite: false, side: THREE.DoubleSide }));
     this.aim.rotation.x = -Math.PI / 2; this.aim.position.y = 0.09; this.aim.visible = false; this.scene.add(this.aim);
@@ -114,7 +126,9 @@ export class BattleView {
       acts.forEach((a, i) => { if (a) { a.holder.position.set((i % 6) * 2 - 5, 0, -2 - Math.floor(i / 6) * 2); warm.add(a.holder); } });
       this.warm = { warm, acts };
     } catch (e) {}
-    this.post = createComposer(this.r, this.scene, this.cam, { bloom: this.q.bloom, strength: 0.45, threshold: 1.15, radius: 0.45, samples: this.q.msaa });
+    if (this.art) await this.buildArt();
+    this.post = createComposer(this.r, this.scene, this.cam, { bloom: this.q.bloom, strength: 0.45, threshold: 1.15, radius: 0.45, samples: this.q.msaa, under: this.bg || null });
+    if (this.art) { const u = this.post.grade.uniforms; u.sat.value = 1.0; u.con.value = 1.0; u.vig.value = 0.12; }
     this.perf = new PerfWatch(this.r, () => this.resize(), this.cv.parentElement);
     this.resize();
     if (this.warm) {
@@ -122,6 +136,32 @@ export class BattleView {
       // on les garde cachés jusqu'à la fin du combat : leurs « programmes » restent prêts sur la carte graphique
       this.warm.warm.visible = false; this.keep = this.warm; this.warm = null;
     }
+  }
+
+  // Décor peint : image + fond dégradé, dans une petite scène dessinée avant la 3D
+  async buildArt() {
+    const A = this.art, img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = A.src; }).catch(() => null);
+    if (!img) { this.art = null; this.zk = 1; return; }
+    // fondu en haut de l'image, et couleur du ciel pour remplir au-dessus
+    const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; const g = c.getContext('2d'); g.drawImage(img, 0, 0);
+    const top = g.getImageData(0, 4, img.width, 1).data; let r = 0, gg = 0, b = 0; for (let i = 0; i < top.length; i += 4) { r += top[i]; gg += top[i + 1]; b += top[i + 2]; } const n = top.length / 4;
+    const skyCol = new THREE.Color(`rgb(${Math.round(r / n)},${Math.round(gg / n)},${Math.round(b / n)})`);
+    g.globalCompositeOperation = 'destination-out'; const fade = g.createLinearGradient(0, 0, 0, 120); fade.addColorStop(0, 'rgba(0,0,0,1)'); fade.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = fade; g.fillRect(0, 0, img.width, 120);
+    const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+    const scene = new THREE.Scene(); scene.background = skyCol;
+    const plane = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, toneMapped: false }));
+    scene.add(plane);
+    this.bg = { scene, camera: new THREE.OrthographicCamera(0, 1, 0, -1, -1, 1), plane };
+  }
+  // Caméra calée sur l'image : l'image prend toute la largeur, le banc reste à la même hauteur qu'avant
+  paintedCamera(w, h) {
+    const A = this.art, s = w / A.W, y0 = h - 140 - A.benchY * s;
+    this.cam.fov = A.fov; this.cam.aspect = A.W / A.H;
+    this.cam.setViewOffset(A.W, A.H, 0, A.off - y0 / s, A.W, h / s); this.cam.updateProjectionMatrix();
+    const target = new THREE.Vector3(0, 0, A.zt);
+    this.cam.position.set(0, Math.sin(A.th) * A.D, A.zt + Math.cos(A.th) * A.D); this.cam.lookAt(target);
+    this.camBase = this.cam.position.clone(); this.camTarget = target;
+    if (this.bg) { const B = this.bg; B.camera.left = 0; B.camera.right = w; B.camera.top = 0; B.camera.bottom = -h; B.camera.updateProjectionMatrix(); B.plane.scale.set(w, A.imgH * s, 1); B.plane.position.set(w / 2, -(y0 + A.imgH * s / 2), 0); }
   }
 
   resize() {
@@ -133,13 +173,13 @@ export class BattleView {
     this.cam.aspect = w / h;
     this.cam.fov = w / h < 0.6 ? 46 : 40;
     this.cam.updateProjectionMatrix();
-    this.fitCamera();
+    if (this.art) this.paintedCamera(w, h); else this.fitCamera();
     this.fx.setScale(h);
   }
   // Recule la caméra jusqu'à voir toute l'île et le cercle d'invocation.
   fitCamera() {
     const target = new THREE.Vector3(0, 0, 3.0), dir = new THREE.Vector3(0, 0.95, 1.0).normalize();
-    const pts = [[-RX + 0.9, 0, 2], [RX - 0.9, 0, 2], [0, 5.5, -RY + 2.7], [-5.6, 0, BENCH_Z + 1], [5.6, 0, BENCH_Z + 1], [0, 0, BENCH_Z + 1.2]].map(p => new THREE.Vector3(...p));
+    const pts = [[-RX + 0.9, 0, 2], [RX - 0.9, 0, 2], [0, 5.5, -RY + 2.7], [-5.6, 0, this.bz + 1], [5.6, 0, this.bz + 1], [0, 0, this.bz + 1.2]].map(p => new THREE.Vector3(...p));
     let lo = 10, hi = 120;
     for (let it = 0; it < 22; it++) {
       const mid = (lo + hi) / 2;
@@ -164,7 +204,7 @@ export class BattleView {
     return p ? this.toSim(p.x, p.z) : null;
   }
   screenOf(x, y, h = 0) { const w = this.toWorld(x, y); const v = new THREE.Vector3(w.x, h, w.z).project(this.cam); return { x: (v.x + 1) / 2 * this.ow, y: (1 - v.y) / 2 * this.oh }; }
-  benchScreen(i) { const v = new THREE.Vector3(BENCH_X[i], 0, BENCH_Z).project(this.cam); return { x: (v.x + 1) / 2 * this.ow, y: (1 - v.y) / 2 * this.oh }; }
+  benchScreen(i) { const v = new THREE.Vector3(this.bx[i], 0, this.bz).project(this.cam); return { x: (v.x + 1) / 2 * this.ow, y: (1 - v.y) / 2 * this.oh }; }
 
   async setGhost(g) {
     if (!g) { if (this.ghost) { this.scene.remove(this.ghost.a.holder); this.ghost.a.dispose(); this.ghost = null; } this.zone.visible = false; this.aim.visible = false; return; }
@@ -226,8 +266,8 @@ export class BattleView {
           break; }
         case 'bossDown': this.fx.explosion(w.x, w.z, 3, 'fire'); this.fx.pillar(w.x, w.z, 1.4, '#ffd166', 1.4, 10); this.shake = 0.8; break;
         case 'wave': this.fx.flash(0, 3, -8, 10, '#ff5a3a', 0.6); break;
-        case 'summon': if (e.p === this.me) { const b = BENCH_X[e.slot]; const col = RARITIES[HERO[e.id].rar].color; this.fx.pillar(b, BENCH_Z, 0.8, col, 0.8, 5); this.fx.emit(b, 0.4, BENCH_Z, { n: 24, color: [col, '#ffffff'], size: 0.45, life: 0.8, speed: 2, up: 1 }); } break;
-        case 'benchFuse': if (e.p === this.me) { const b = BENCH_X[e.slot]; this.fx.pillar(b, BENCH_Z, 1, '#ffd166', 0.9, 6); this.fx.emit(b, 0.6, BENCH_Z, { n: 36, color: ['#fff3c0', '#ffd166'], size: 0.45, life: 0.9, speed: 2.5, up: 1 }); } break;
+        case 'summon': if (e.p === this.me) { const b = this.bx[e.slot]; const col = RARITIES[HERO[e.id].rar].color; this.fx.pillar(b, this.bz, 0.8, col, 0.8, 5); this.fx.emit(b, 0.4, this.bz, { n: 24, color: [col, '#ffffff'], size: 0.45, life: 0.8, speed: 2, up: 1 }); } break;
+        case 'benchFuse': if (e.p === this.me) { const b = this.bx[e.slot]; this.fx.pillar(b, this.bz, 1, '#ffd166', 0.9, 6); this.fx.emit(b, 0.6, this.bz, { n: 36, color: ['#fff3c0', '#ffd166'], size: 0.45, life: 0.9, speed: 2.5, up: 1 }); } break;
       }
     }
   }

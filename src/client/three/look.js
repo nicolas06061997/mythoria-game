@@ -73,12 +73,13 @@ const GradeShader = {
 };
 
 // Chaîne d'image : rendu → bloom → tons → étalonnage. bloom=false sur les petits téléphones.
-export function createComposer(renderer, scene, camera, { bloom = true, strength = 0.6, threshold = 0.78, radius = 0.55, samples = 4 } = {}) {
+export function createComposer(renderer, scene, camera, { bloom = true, strength = 0.6, threshold = 0.78, radius = 0.55, samples = 4, under = null } = {}) {
   const size = renderer.getSize(new THREE.Vector2()), pr = renderer.getPixelRatio();
   // cible de rendu avec lissage des contours (MSAA) : sans ça, l'image passe en « escaliers »
   const rt = new THREE.WebGLRenderTarget(Math.max(1, size.x * pr), Math.max(1, size.y * pr), { type: THREE.HalfFloatType, samples: renderer.capabilities.isWebGL2 ? samples : 0 });
   const comp = new EffectComposer(renderer, rt);
-  comp.addPass(new RenderPass(scene, camera));
+  if (under) comp.addPass(new RenderPass(under.scene, under.camera)); // décor peint dessiné d'abord
+  const main = new RenderPass(scene, camera); if (under) { main.clear = false; main.clearDepth = true; } comp.addPass(main);
   let bp = null;
   if (bloom) { bp = new UnrealBloomPass(new THREE.Vector2(size.x / 2, size.y / 2), strength, radius, threshold); comp.addPass(bp); }
   comp.addPass(new OutputPass());

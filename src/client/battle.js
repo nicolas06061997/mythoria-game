@@ -17,6 +17,9 @@ export class Battle {
     const seed = (Math.random() * 1e9) | 0;
     this.s = createBattle({ seed, decks: [opts.deck, opts.oppDeck], spells: [opts.spell, opts.oppSpell], levels: [opts.levels || {}, opts.oppLevels || {}], names: [opts.myName, 'IA ' + AI_LEVELS[opts.botLevel].name], mode: opts.simMode || 'duel', boss: opts.boss, waves: opts.waves, mods: opts.mods, bonus: opts.bonus, botMana: opts.simMode === 'survival' ? 0 : AI_LEVELS[opts.botLevel].mana });
     this.bot = opts.simMode === 'survival' ? null : createBot(1, opts.botLevel, seed ^ 0x5bd1e995);
+    // ?autoplay : une IA joue à ta place (tests automatiques)
+    if (new URLSearchParams(location.search).has('autoplay')) this.bot0 = createBot(0, 4, seed ^ 0x1234567);
+    this.perf = { n: 0, sum: 0, max: 0, slow: 0 };
     this.me = 0; this.pending = []; this.drag = null; this.aiming = false; this.sel = -1;
     this.acc = 0; this.started = false; this.ended = false;
     this.build();
@@ -175,12 +178,13 @@ export class Battle {
     if (this.dead) return;
     this.raf = requestAnimationFrame(t => this.loop(t));
     const dt = this.last ? Math.min(0.1, (now - this.last) / 1000) : 0;
-    this.last = now;
+    this.last = now; const c0 = performance.now();
     if (this.started && !this.s.over) {
       this.acc += dt * SPEED;
       while (this.acc >= DT) {
         const cmds = this.pending.splice(0);
         const bc = this.bot && botThink(this.bot, this.s, DT); if (bc) cmds.push(bc);
+        const b0 = this.bot0 && botThink(this.bot0, this.s, DT); if (b0) cmds.push(b0);
         step(this.s, cmds);
         this.view.ingest(this.s.ev, this.s);
         this.sounds(this.s.ev);
@@ -190,6 +194,8 @@ export class Battle {
     }
     this.view.sync(this.s, this.started ? this.acc / DT : 1, dt);
     this.hud();
+    const ms = performance.now() - c0, pf = this.perf; pf.n++; pf.sum += ms; if (ms > pf.max) pf.max = ms; if (ms > 33) pf.slow++;
+    if (this.bot0) { const np = this.view.r.info.programs.length; if (np > (pf.np || 0)) (pf.spikes = pf.spikes || []).push(Math.round(ms) + 'ms ' + this.view.r.info.programs.slice(pf.np || 0).map(q => q.name + ':' + (q.cacheKey || '').slice(0, 60)).join(' | ')); pf.np = np; }
   }
 
   sounds(ev) {

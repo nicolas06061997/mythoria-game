@@ -195,7 +195,7 @@ export class KingdomView {
   resize() {
     const w = this.cv.clientWidth || 1, h = this.cv.clientHeight || 1;
     this.r.setSize(w, h, false); this.cam.aspect = w / h; this.cam.fov = w / h < 0.8 ? 48 : 38; this.cam.updateProjectionMatrix(); if (this.post) this.post.setSize(w, h);
-    this.dist = w / h < 0.8 ? 36 : 31;
+    this.dist = w / h < 0.8 ? 27 : 23;
   }
   // étiquettes (nom, niveau, minuteur, production) placées au-dessus des bâtiments
   setLabels(fn) { this.labelFn = fn; }

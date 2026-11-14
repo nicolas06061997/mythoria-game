@@ -224,7 +224,8 @@ export function freeTree(root) {
     if (o.isSkinnedMesh && o.skeleton) o.skeleton.dispose();
     if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { if (m.map && m.map.userData.own) m.map.dispose(); });
     if (o.geometry && !o.geometry.userData.shared) o.geometry.dispose();
-    if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => { if (!m.userData.shared && !m.userData.isOutlineMat) m.dispose(); });
+    // les matériaux ne sont pas « disposés » : ils ne prennent pas de mémoire graphique, et les garder évite
+    // que la carte graphique recompile leurs shaders à chaque nouveau héros (petites saccades en combat).
   });
 }
 

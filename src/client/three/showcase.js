@@ -19,7 +19,7 @@ export class Showcase {
     this.cam = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
     this.t = 0; this.rotY = 0.5; this.spin = 0.25; this.dead = false;
     const T = THEMES[world] || THEMES.aurore;
-    this.sky = skyDome(mode === 'home' ? T : { skyTop: '#2a1a5a', skyBot: '#0d0820' }); this.sky.scale.setScalar(0.25); this.scene.add(this.sky);
+    this.sky = skyDome(mode === 'home' ? { skyTop: T.skyTop, skyBot: '#' + new THREE.Color(T.skyBot).lerp(new THREE.Color(T.skyTop), 0.38).getHexString() } : { skyTop: '#2a1a5a', skyBot: '#0d0820' }); this.sky.scale.setScalar(0.25); this.scene.add(this.sky);
     this.post = createComposer(this.r, this.scene, this.cam, { bloom: quality().bloom, strength: 0.45, threshold: 1.1, radius: 0.5, samples: quality().msaa });
     this.scene.add(new THREE.HemisphereLight(T.hemiSky, T.hemiGround, 1.3));
     const sun = new THREE.DirectionalLight(T.sun, 2.4); sun.position.set(-3, 6, 4); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024);
@@ -34,7 +34,9 @@ export class Showcase {
     this.ring.rotation.x = -Math.PI / 2; this.ring.position.y = 0.02; this.base.add(this.ring);
     if (mode === 'home') {
       const add = async (n, x, z, s) => { try { const o = await prop(n, { scale: s }); o.position.set(x, 0, z); this.base.add(o); } catch (e) {} };
-      add(T.props[0][0], -1.1, -0.9, 0.55); add(T.props[Math.min(2, T.props.length - 1)][0], 1.15, -0.7, 0.6);
+      // décor derrière le héros seulement (il ne passe plus devant)
+      add(T.props[0][0], -1.25, -1.05, 0.42); add(T.props[Math.min(2, T.props.length - 1)][0], 1.3, -0.95, 0.45);
+      this.altar(T);
       this.backdrop(T, world);
     }
     this.glow = glowSprite(0xffffff, 3); this.glow.position.y = 0.9; this.glow.material.opacity = 0.25; this.scene.add(this.glow);
@@ -43,6 +45,44 @@ export class Showcase {
     this.bindDrag();
     this.loop = this.loop.bind(this); this.last = 0; this.raf = requestAnimationFrame(this.loop);
     this.ro = new ResizeObserver(() => this.resize()); this.ro.observe(canvas);
+  }
+  // Autel magique sous le héros : cercle de runes lumineuses, cristaux qui tournent, colonne de lumière, cascade
+  altar(T) {
+    const g = this.base, gold = new THREE.MeshStandardMaterial({ color: '#e0b040', metalness: 0.6, roughness: 0.35, flatShading: true });
+    const trim = new THREE.Mesh(new THREE.TorusGeometry(1.55, 0.05, 6, 48), gold); trim.rotation.x = Math.PI / 2; trim.position.y = 0.0; g.add(trim);
+    // runes dessinées
+    const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d');
+    x.translate(256, 256); x.strokeStyle = '#fff'; x.fillStyle = '#fff'; x.lineWidth = 6;
+    for (const r of [236, 200, 120]) { x.beginPath(); x.arc(0, 0, r, 0, 7); x.stroke(); }
+    x.font = 'bold 30px serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+    const glyph = 'ᚠᚢᚦᚨᚱᚲᚷᚹᚺᚾᛁᛃᛇᛈᛉᛊᛏᛒᛖᛗ';
+    for (let i = 0; i < 20; i++) { x.save(); x.rotate(i / 20 * Math.PI * 2); x.fillText(glyph[i], 0, -218); x.restore(); }
+    for (let i = 0; i < 6; i++) { x.save(); x.rotate(i / 6 * Math.PI * 2); x.beginPath(); x.moveTo(0, -200); x.lineTo(0, -120); x.stroke(); x.restore(); }
+    x.beginPath(); for (let i = 0; i <= 6; i++) { const a = i / 6 * Math.PI * 2 * 2; x.lineTo(Math.sin(a) * 200, -Math.cos(a) * 200); } x.stroke();
+    const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+    const runeCol = new THREE.Color(T.partCol || '#ffd88a');
+    const rune = new THREE.Mesh(new THREE.CircleGeometry(1.45, 48), new THREE.MeshBasicMaterial({ map: tex, color: runeCol, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false }));
+    rune.rotation.x = -Math.PI / 2; rune.position.y = 0.025; g.add(rune);
+    this.ring.visible = false;
+    // colonne de lumière
+    const beamM = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, uniforms: { c: { value: runeCol }, t: { value: 0 } },
+      vertexShader: 'varying vec2 vu; void main(){ vu = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+      fragmentShader: 'uniform vec3 c; uniform float t; varying vec2 vu; void main(){ float a = (1.0 - vu.y) * (0.35 + 0.15 * sin(t * 2.0 + vu.y * 8.0)); gl_FragColor = vec4(c * a, a); }' });
+    const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.3, 3.2, 32, 1, true), beamM); beam.position.y = 1.6; g.add(beam);
+    // cristaux en orbite
+    const crys = [];
+    for (let i = 0; i < 4; i++) { const m = new THREE.Mesh(new THREE.OctahedronGeometry(0.11, 0), new THREE.MeshStandardMaterial({ color: runeCol, emissive: runeCol, emissiveIntensity: 1.6, flatShading: true })); m.scale.y = 1.8; g.add(m); crys.push(m); }
+    // cascade qui tombe du bord de l'île
+    const fallM = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, side: THREE.DoubleSide, uniforms: { t: { value: 0 } },
+      vertexShader: 'varying vec2 vu; void main(){ vu = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+      fragmentShader: 'uniform float t; varying vec2 vu; void main(){ float s = 0.55 + 0.45 * sin(vu.y * 40.0 + t * 9.0 + sin(vu.x * 20.0) * 2.0); float a = s * smoothstep(0.0, 0.25, vu.y) * (1.0 - abs(vu.x - 0.5) * 2.0); gl_FragColor = vec4(vec3(0.75, 0.9, 1.0) * (0.7 + s * 0.4), a * 0.85); }' });
+    const fall = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 2.6), fallM); fall.position.set(0.9, -1.55, 1.25); fall.rotation.y = -0.6; g.add(fall);
+    const mist = glowSprite(0xdff4ff, 1.4); mist.position.set(0.9, -2.8, 1.3); mist.material.opacity = 0.5; g.add(mist);
+    this.altarUp = (dt, t) => {
+      rune.rotation.z += dt * 0.25; rune.material.opacity = 0.7 + Math.sin(t * 2) * 0.15;
+      beamM.uniforms.t.value = t; fallM.uniforms.t.value = t;
+      crys.forEach((m, i) => { const a = t * 0.8 + i * Math.PI / 2; m.position.set(Math.cos(a) * 1.25, 0.9 + Math.sin(t * 1.6 + i) * 0.25, Math.sin(a) * 1.25); m.rotation.y = t * 2; });
+    };
   }
   // Fond de l'accueil : îlots flottants, nuages, lueurs et un dragon au loin (couleurs du monde)
   backdrop(T, world) {
@@ -65,6 +105,7 @@ export class Showcase {
     for (let i = 0; i < n; i++) { pp[i * 3] = (Math.random() - 0.5) * 14; pp[i * 3 + 1] = Math.random() * 6 - 1.5; pp[i * 3 + 2] = -1 - Math.random() * 9; }
     pg.setAttribute('position', new THREE.BufferAttribute(pp, 3));
     g.add(new THREE.Points(pg, new THREE.PointsMaterial({ size: 0.12, map: glowTexture(), color: T.partCol, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })));
+    const sunG = glowSprite(new THREE.Color(T.skyBot).lerp(new THREE.Color('#ffffff'), 0.5), 9); sunG.position.set(-4.5, 4.2, -16); sunG.material.opacity = 0.85; g.add(sunG);
     const DC = { aurore: ['#e8b04a', '#fff0b8'], sylve: ['#4caf6a', '#d8ffb0'], arcane: ['#8a5ad8', '#e0d0ff'], braise: ['#c4263c', '#ffcf70'], givre: ['#6fb8e8', '#eaf8ff'], ombre: ['#2a1e3a', '#c08aff'] }[world] || ['#e8b04a', '#fff0b8'];
     dragons(g, this.ups, [{ c: DC[0], b: DC[1], horns: true, s: 0.5, r: 7, h: 3.2, sp: 0.18, dir: 1, cz: -11 }]);
     flock(g, this.ups, { n: 7, color: world === 'ombre' ? '#120c1a' : '#3a3040', r: 6, h: 2.6, sp: 0.35, size: 0.12, cz: -8 });
@@ -112,7 +153,8 @@ export class Showcase {
     this.raf = requestAnimationFrame(this.loop);
     const dt = this.last ? Math.min(0.05, (now - this.last) / 1000) : 0; this.last = now; this.t += dt;
     this.rotY += this.spin * dt;
-    this.base.rotation.y = this.rotY;
+    if (this.actor) this.actor.holder.rotation.y = this.rotY;
+    if (this.altarUp) this.altarUp(dt, this.t);
     this.base.position.y = Math.sin(this.t * 1.2) * 0.05;
     this.ring.rotation.z += dt * 0.5;
     if (this.actor) this.actor.update(dt);
@@ -142,6 +184,20 @@ function portraitRig() {
   const cam = new THREE.PerspectiveCamera(30, 240 / 300, 0.1, 50);
   pr = { cv, r, scene, cam };
   return pr;
+}
+// Portraits gardés sur le téléphone (une fois par version) : l'onglet Héros s'ouvre tout de suite.
+export async function warmPortraits(ids, version, onProgress) {
+  let cache = null, name = 'myt-portraits-' + version;
+  try { cache = await caches.open(name); (await caches.keys()).filter(k => k.startsWith('myt-portraits-') && k !== name).forEach(k => caches.delete(k)); } catch (e) {}
+  let n = 0;
+  for (const id of ids) {
+    try {
+      const key = 'portrait/' + id, hit = cache && await cache.match(key);
+      if (hit) PORTRAITS.set(id, URL.createObjectURL(await hit.blob()));
+      else { const url = await portrait(id); if (cache && url) { const blob = await (await fetch(url)).blob(); await cache.put(key, new Response(blob, { headers: { 'Content-Type': 'image/png' } })); } }
+    } catch (e) {}
+    onProgress && onProgress(++n / ids.length);
+  }
 }
 export function portrait(id) {
   if (PORTRAITS.has(id)) return Promise.resolve(PORTRAITS.get(id));

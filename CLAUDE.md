@@ -28,6 +28,9 @@ Cahier des charges du 13/11/2026 ; plan en 7 phases : `docs/ROADMAP.md` ; reste 
 - Écran de chargement : `#splash` dans `index.html` (image `assets/loading/bg.webp` + dragons animés `fly.webp` = 12 images en colonne, étincelles, astuces, barre `window.__loader.set(%, texte)`), styles « Écran de chargement animé » dans `styles.css`. `main.js` précharge tous les héros + décor du monde puis lance `startApp` (min. 3,6 s, max. 30 s). Images fabriquées avec `poster.html?v=2&layer=bg|fly` (vrais modèles 3D, rendu par Playwright).
 - Barres de vie des Sanctuaires : `.tplate` dans `battle.js` (`plates()`, suit la tour via `view.screenOf` : au-dessus de la tour ennemie, au pied de la tienne ; barre jaune « retard », clignote sous 30 %). En haut : seulement le chrono.
 - Déblocage par rareté (`UNLOCKS`) : monde 1 = communs + 3 rares de départ, puis rares, épiques, légendaires (mondes 4-5), mythiques (monde 6). `owned()` = héros débloqués.
+- Histoires des modes : `ui/story.js` (`story(id, ensuite)`, 1re fois seulement, `localStorage myt_seen`, narrateur Vael ; ids arene/royaume/campagne/survie/heros/evenement/tournoi ; `storyBtn` pour relire).
+- Fluidité : `battleview` préchauffe les shaders de tous les héros du combat (★1 et ★3, gardés cachés) ; `freeTree` et les effets ne « disposent » plus les matériaux (sinon recompilation = saccade). Portraits gardés en Cache Storage (`warmPortraits`, au chargement). Test auto : `?speed=8&autoplay` (une IA joue pour toi, `window.__app.play/playHero`, `__battle.perf`).
+- Accueil (`showcase.js` home) : autel magique `altar()` (runes, colonne de lumière, cristaux, cascade), le héros tourne seul.
 - Combat : toucher un héros du Cercle (sélection, `select()`), puis toucher l'île = déploiement ; toucher un héros identique = fusion ; le glisser-déposer marche toujours.
 
 ## Concept et code

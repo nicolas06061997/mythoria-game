@@ -7,6 +7,7 @@ import { icon } from './icons.js';
 import { sfx } from '../audio.js';
 
 let C, view = null, tick = null;
+import { story, storyBtn } from './story.js';
 export function initKingdom(ctx) { C = ctx; }
 export function leaveKingdom() { if (view) { view.dispose(); view = null; } clearInterval(tick); }
 
@@ -27,6 +28,7 @@ function effectText(id, lvl) {
 }
 
 export function kingdomScreen() {
+  setTimeout(() => story('royaume'), 500);
   const P = C.P(); finishJob(P);
   const K = P.kingdom;
   const cv = h('canvas', { class: 'k-3d' }), labels = h('div', { class: 'k-labels' });
@@ -52,7 +54,7 @@ export function kingdomScreen() {
     h('div', { class: 'k-stage' }, cv, labels,
       h('div', { class: 'k-res' }, h('span', {}, icon('coin'), P.gold), h('span', {}, '🪨 ', P.stone), h('span', {}, icon('crystal'), P.crystals)),
       collectBtn,
-      h('small', { class: 'k-help' }, 'Touche un bâtiment · glisse pour tourner')),
+      h('small', { class: 'k-help' }, 'Touche un bâtiment · glisse pour tourner'), storyBtn('royaume', '📖')),
     K.job ? h('div', { class: 'panel k-job' }, h('b', {}, '🔨 ' + BUILDINGS[K.job.id].name + ' → niveau ' + K.job.to), h('small', { class: 'jt' }, ''),
       h('button', { class: 'btn small ghost', onclick: () => { const e = speedup(P); if (e) return toast(e, 'bad'); sfx('fuse'); C.render(); } }, 'Terminer : ', icon('gem'), speedupGems((K.job.end - Date.now()) / 1000))) : null,
     h('div', { class: 'panel' }, h('h3', {}, 'Bâtiments'),

@@ -6,6 +6,8 @@ import { preload, prop } from './three/assets.js';
 import { THEMES } from './three/world.js';
 import { HEROES, worldFor } from '../shared/content.js';
 import { loadProfile } from './store.js';
+import { warmPortraits } from './three/showcase.js';
+import { PLAYABLE } from '../shared/content.js';
 
 const APPV = document.documentElement.dataset.version || 'dev';
 const L = window.__loader || { set() {}, stop() {} };
@@ -21,7 +23,9 @@ async function load() {
   L.set(84, 'Construction du monde…');
   let key = 'aurore'; try { key = worldFor(loadProfile().trophies || 0).key; } catch (e) {}
   const T = THEMES[key] || THEMES.aurore, names = ['Temple_SecondAge_Level3', ...T.props.map(p => p[0])];
-  let n = 0; await Promise.all(names.map(nm => prop(nm).catch(() => {}).then(() => L.set(84 + (++n / names.length) * 10))));
+  let n = 0; await Promise.all(names.map(nm => prop(nm).catch(() => {}).then(() => L.set(84 + (++n / names.length) * 4))));
+  L.set(88, 'Portraits des héros…');
+  await warmPortraits(PLAYABLE.map(c => c.id), APPV, k => L.set(88 + k * 7));
 }
 
 initInstall();          // bouton « Installer le jeu » (comme les autres jeux)

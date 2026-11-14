@@ -177,7 +177,7 @@ export class FX {
     const g = this.points.geometry;
     g.attributes.position.needsUpdate = true; g.attributes.color.needsUpdate = true; g.attributes.size.needsUpdate = true; g.attributes.alpha.needsUpdate = true;
     for (const it of this.items) { it.t += dt; it.up(Math.min(1, it.t / it.dur)); }
-    for (const it of this.items) if (it.t >= it.dur) { this.scene.remove(it.m); it.m.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) o.material.dispose(); }); }
+    for (const it of this.items) if (it.t >= it.dur) { this.scene.remove(it.m); it.m.traverse(o => { if (o.geometry) o.geometry.dispose(); }); /* matériaux gardés : sinon la carte graphique doit recompiler l'effet à chaque fois (saccade) */ }
     this.items = this.items.filter(it => it.t < it.dur);
   }
   dispose() { this.scene.remove(this.points); for (const it of this.items) this.scene.remove(it.m); for (const [, o] of this.proj) this.scene.remove(o); }

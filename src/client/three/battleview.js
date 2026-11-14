@@ -76,9 +76,22 @@ export class BattleView {
     this.scene.add(this.zone);
     this.aim = new THREE.Mesh(new THREE.RingGeometry(0.92, 1, 48), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.85, depthWrite: false, side: THREE.DoubleSide }));
     this.aim.rotation.x = -Math.PI / 2; this.aim.position.y = 0.09; this.aim.visible = false; this.scene.add(this.aim);
+    // Préchauffe la carte graphique : prépare une fois les matériaux de chaque héros du combat,
+    // sinon le jeu « saccade » la première fois qu'un nouveau héros apparaît.
+    try {
+      const warm = new THREE.Group(); this.scene.add(warm);
+      const ids = [...new Set(heroIds)], acts = await Promise.all([...ids.map(id => makeHero(id, { star: 1, lite: this.q.lite }).catch(() => null)), ...ids.map(id => makeHero(id, { star: 3, lite: this.q.lite }).catch(() => null))]);
+      acts.forEach((a, i) => { if (a) { a.holder.position.set((i % 6) * 2 - 5, 0, -2 - Math.floor(i / 6) * 2); warm.add(a.holder); } });
+      this.warm = { warm, acts };
+    } catch (e) {}
     this.post = createComposer(this.r, this.scene, this.cam, { bloom: this.q.bloom, strength: 0.45, threshold: 1.15, radius: 0.45, samples: this.q.msaa });
     this.perf = new PerfWatch(this.r, () => this.resize(), this.cv.parentElement);
     this.resize();
+    if (this.warm) {
+      try { this.r.compile(this.scene, this.cam); this.post.render(); } catch (e) {}
+      // on les garde cachés jusqu'à la fin du combat : leurs « programmes » restent prêts sur la carte graphique
+      this.warm.warm.visible = false; this.keep = this.warm; this.warm = null;
+    }
   }
 
   resize() {
@@ -347,6 +360,7 @@ export class BattleView {
     if (this.perf) this.perf.dispose();
     this.fx.dispose(); this.world && this.world.dispose();
     for (const [, v] of this.views) if (v.actor) v.actor.dispose();
+    if (this.keep) for (const a of this.keep.acts) if (a) a.dispose();
     this.r.dispose(); this.r.forceContextLoss && this.r.forceContextLoss();
   }
 }

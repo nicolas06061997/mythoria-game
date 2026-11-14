@@ -126,9 +126,10 @@ export function buildArena(group, T, key, EX, EZ, { low = false, noPit = false }
   const mFlag = new THREE.InstancedMesh(flagG, new THREE.MeshStandardMaterial({ side: THREE.DoubleSide, flatShading: true }), Math.max(1, fans.length)); mFlag.count = fans.length;
   fans.forEach((s, i) => mFlag.setColorAt(i, cc.set(i % 3 ? SEATS[i % SEATS.length] : '#ffffff'))); if (mFlag.instanceColor) mFlag.instanceColor.needsUpdate = true; group.add(mFlag);
   const m4 = new THREE.Matrix4(), m5 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), one = new THREE.Vector3(1.22, 1.22, 1.22), sh = new THREE.Vector3();
-  let cheer = 0;
+  let cheer = 0, frame = 0;
   ups.push((dt, t) => {
     cheer = Math.max(0, cheer - dt * 0.6);
+    if ((frame++ & 1) && cheer < 0.05) return; // public calme : mis à jour une image sur deux (plus léger)
     let hi = 0, fi = 0;
     for (let i = 0; i < N; i++) {
       const s = spots[i], w = Math.sin(t * (3.5 + cheer * 6) * s.sp + s.ph), jump = Math.max(0, w) * (0.03 + cheer * 0.32);

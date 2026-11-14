@@ -376,7 +376,7 @@ body.in-battle #inst { display: none; }
 .fps { position: absolute; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top, 0px) + 86px); left: 8px; right: auto; transform: none; z-index: 30; pointer-events: none; font: 700 11px/1 system-ui, sans-serif; color: #9f9; background: rgba(0,0,0,.55); padding: 3px 7px; border-radius: 6px; }
 /* le bouton « Installer » ne cache plus rien : on peut faire défiler sous lui, il disparaît quand un panneau est ouvert */
 body:has(#inst.on) .screen { padding-bottom: 76px; }
-body:has(.sheet-back) #inst, body:has(.wsheet) #inst { display: none; }
+body:has(.sheet-back) #inst, body:has(.wsheet) #inst, body:has(.story) #inst { display: none; }
 .k-help { bottom: 52px; left: 12px; right: auto; max-width: 60%; }
 
 /* ---------- Menus plus vivants : fond aux couleurs du monde, étoiles, brume qui bouge ---------- */
@@ -460,3 +460,21 @@ body::after { /* brume colorée qui dérive */
 .tplate.low .tp-bar { animation: tplow .8s ease-in-out infinite; } @keyframes tplow { 50% { box-shadow: 0 0 12px 2px rgba(255, 60, 70, .9); border-color: #ff8a94; } }
 .tplate.hit .tp-bar { animation: tphit .3s; } @keyframes tphit { 25% { transform: translateX(-2px); } 75% { transform: translateX(2px); } }
 .tplate.low.hit .tp-bar { animation: tphit .3s, tplow .8s ease-in-out infinite; }
+
+/* ---------- Histoires (explications des modes) ---------- */
+.story { position: fixed; inset: 0; z-index: 96; display: flex; align-items: flex-end; justify-content: center; padding: 0 10px calc(14px + var(--safe-b)); background: radial-gradient(120% 70% at 50% 30%, rgba(60, 30, 120, .55), rgba(4, 2, 12, .85)); animation: fadein .3s; transition: opacity .3s; }
+.story.off { opacity: 0; }
+.st-card { position: relative; width: 100%; max-width: 520px; padding: 54px 18px 16px; border-radius: 22px; background: linear-gradient(rgba(255, 240, 210, .06), transparent 40%), linear-gradient(#2c1d5e, #160f36); border: 1.5px solid rgba(255, 211, 106, .55); box-shadow: 0 0 0 4px rgba(20, 10, 40, .6), 0 18px 50px rgba(0, 0, 0, .6), inset 0 1px 0 rgba(255, 230, 170, .2); }
+.st-card::before, .st-card::after { content: '✦'; position: absolute; top: 10px; color: #ffd36a; font-size: 14px; opacity: .8; } .st-card::before { left: 14px; } .st-card::after { right: 14px; }
+.st-top { position: absolute; left: 16px; right: 16px; top: -46px; display: flex; align-items: flex-end; gap: 12px; }
+.st-av { flex: none; width: 92px; height: 92px; border-radius: 50%; overflow: hidden; background: radial-gradient(circle at 50% 35%, #8a6ad8, #2a1a5a); border: 3px solid #ffd36a; box-shadow: 0 0 22px rgba(170, 120, 255, .6); }
+.st-img { width: 100%; height: 115%; object-fit: cover; object-position: center top; }
+.st-top small { display: block; color: #cbb8ff; font-weight: 800; font-size: 11.5px; margin-bottom: 2px; }
+.st-top h3 { margin: 0 0 6px; font-family: var(--title); color: var(--gold); font-size: 20px; text-shadow: 0 2px 6px #000; }
+.st-body { min-height: 150px; } .st-body.in { animation: rise .35s ease-out both; }
+.st-t { margin: 6px 0 10px; font-size: 15px; line-height: 1.45; color: #f3ecff; }
+.st-steps { margin: 0 0 10px; padding-left: 22px; font-size: 14px; line-height: 1.4; color: #e2d8ff; } .st-steps li { margin-bottom: 5px; } .st-steps li::marker { color: #ffd36a; font-weight: 900; }
+.st-goal { padding: 9px 12px; border-radius: 12px; background: rgba(255, 207, 92, .12); border: 1px dashed rgba(255, 207, 92, .6); font-weight: 800; font-size: 13.5px; color: #fff3cf; }
+.st-dots { display: flex; justify-content: center; gap: 6px; margin: 12px 0 10px; } .st-dots i { width: 8px; height: 8px; border-radius: 50%; background: rgba(255, 255, 255, .25); } .st-dots i.on { background: #ffd36a; box-shadow: 0 0 8px #ffd36a; }
+.st-btns { display: flex; gap: 10px; } .st-btns .btn.ghost { flex: 0 0 auto; padding: 0 16px; } .st-btns .btn.gold { flex: 1; }
+.st-again { position: absolute; right: 10px; top: 52px; z-index: 3; padding: 6px 10px; border-radius: 99px; background: rgba(12, 6, 26, .7); border: 1px solid rgba(255, 211, 106, .5); color: #fff3cf; font-weight: 800; font-size: 13px; }

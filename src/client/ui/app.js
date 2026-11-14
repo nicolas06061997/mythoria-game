@@ -4,6 +4,7 @@ import { AI_LEVELS } from '../../shared/ai.js';
 import { loadProfile, saveProfile, resetProfile, owned, ownedSpells, worldOf, botLevelFor, botDeck, botSpell, botLevels, applyResult, xpNeed, heroLevel, canUpgrade, CHESTS } from '../store.js';
 import { initProgress, chestRow, missionsButton, loginPopup, shopScreen, heroProgress, chestIcon } from './progress.js';
 import { initKingdom, kingdomScreen, leaveKingdom } from './kingdom.js';
+import { story } from './story.js';
 import { initModes, openCampaign, playSurvival, playEvent, playTourney, currentEvent, eventWinsLeft } from './modes.js';
 import { Battle, spellIcon } from '../battle.js';
 import { HeroMode } from '../heromode.js';
@@ -150,12 +151,12 @@ function openModes() {
   const T = P.tourney || { round: 0 };
   const s = sheet(h('div', { class: 'modes' },
     h('h3', {}, 'Choisis ton combat'),
-    mode('sword', 'Arène', 'Contre l’IA ' + AI_LEVELS[lvl].name + ' dans « ' + w.name + ' » · trophées, or et coffres', () => { s.close(); play('arena', lvl, w); }),
-    mode('map', 'Campagne', 'L’histoire de Mythoria, 30 étapes et 6 boss · étape ' + Math.min(30, P.campaign.done + 1) + '/30', () => { s.close(); openCampaign(); }),
-    mode('shield', 'Survie · Défense du Royaume', 'Résiste aux vagues de monstres et de boss · record : vague ' + (P.records.survival || 0), () => { s.close(); playSurvival(); }),
-    mode('star', 'Événement : ' + ev.name, ev.desc + ' · ' + eventWinsLeft(P) + ' récompenses restantes aujourd’hui', () => { s.close(); playEvent(); }),
-    mode('heroes', 'Mode Héros', 'Dirige toi-même un héros (joystick) contre des vagues de monstres · record : vague ' + (P.records.hero || 0), () => { s.close(); pickHero(); }),
-    mode('trophy', 'Tournoi (contre l’IA)', '3 manches de plus en plus dures · manche ' + (T.round + 1) + '/3 · tournois gagnés : ' + (P.records.tournament || 0), () => { s.close(); playTourney(); }),
+    mode('sword', 'Arène', 'Contre l’IA ' + AI_LEVELS[lvl].name + ' dans « ' + w.name + ' » · trophées, or et coffres', () => { s.close(); story('arene', () => play('arena', lvl, w)); }),
+    mode('map', 'Campagne', 'L’histoire de Mythoria, 30 étapes et 6 boss · étape ' + Math.min(30, P.campaign.done + 1) + '/30', () => { s.close(); story('campagne', openCampaign); }),
+    mode('shield', 'Survie · Défense du Royaume', 'Résiste aux vagues de monstres et de boss · record : vague ' + (P.records.survival || 0), () => { s.close(); story('survie', playSurvival); }),
+    mode('star', 'Événement : ' + ev.name, ev.desc + ' · ' + eventWinsLeft(P) + ' récompenses restantes aujourd’hui', () => { s.close(); story('evenement', playEvent); }),
+    mode('heroes', 'Mode Héros', 'Dirige toi-même un héros (joystick) contre des vagues de monstres · record : vague ' + (P.records.hero || 0), () => { s.close(); story('heros', pickHero); }),
+    mode('trophy', 'Tournoi (contre l’IA)', '3 manches de plus en plus dures · manche ' + (T.round + 1) + '/3 · tournois gagnés : ' + (P.records.tournament || 0), () => { s.close(); story('tournoi', playTourney); }),
     h('div', { class: 'mode' },
       h('div', { class: 'mode-ic' }, icon('summon')),
       h('div', { class: 'mode-txt' }, h('b', {}, 'Entraînement'), h('small', {}, 'Choisis le niveau de l’IA. Sans trophées.'),
@@ -171,6 +172,7 @@ function mode(ic, title, desc, onPlay) {
     onPlay ? h('button', { class: 'btn gold', onclick: onPlay }, 'Jouer') : h('span', { class: 'lock' }, icon('lock')));
 }
 
+window.__app = { play: (...a) => play(...a), playHero: id => playHero(id), P: () => P, WORLDS };
 function play(modeId, level, world, extra = {}) {
   if (stage) { stage.dispose(); stage = null; }
   leaveKingdom();

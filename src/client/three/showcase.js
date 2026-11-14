@@ -19,7 +19,8 @@ export class Showcase {
     this.cam = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
     this.t = 0; this.rotY = 0.5; this.spin = 0.25; this.dead = false;
     const T = THEMES[world] || THEMES.aurore;
-    this.sky = skyDome(mode === 'home' ? { skyTop: T.skyTop, skyBot: '#' + new THREE.Color(T.skyBot).lerp(new THREE.Color(T.skyTop), 0.38).getHexString() } : { skyTop: '#2a1a5a', skyBot: '#0d0820' }); this.sky.scale.setScalar(0.25); this.scene.add(this.sky);
+    const HS = { aurore: ['#1f5fd8', '#6fb0f0'], sylve: ['#14584a', '#5fb894'], arcane: ['#1e1068', '#6a48d0'], braise: ['#3a0a08', '#c8501e'], givre: ['#1f5aa8', '#90c8ee'], ombre: ['#0c0620', '#42226e'] }[world] || ['#1f5fd8', '#6fb0f0'];
+    this.sky = skyDome(mode === 'home' ? { skyTop: HS[0], skyBot: HS[1] } : { skyTop: '#2a1a5a', skyBot: '#0d0820' }); this.sky.scale.setScalar(0.25); this.scene.add(this.sky);
     this.post = createComposer(this.r, this.scene, this.cam, { bloom: quality().bloom, strength: 0.45, threshold: 1.1, radius: 0.5, samples: quality().msaa });
     this.scene.add(new THREE.HemisphereLight(T.hemiSky, T.hemiGround, 1.3));
     const sun = new THREE.DirectionalLight(T.sun, 2.4); sun.position.set(-3, 6, 4); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024);
@@ -67,7 +68,7 @@ export class Showcase {
     // colonne de lumière
     const beamM = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, uniforms: { c: { value: runeCol }, t: { value: 0 } },
       vertexShader: 'varying vec2 vu; void main(){ vu = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
-      fragmentShader: 'uniform vec3 c; uniform float t; varying vec2 vu; void main(){ float a = (1.0 - vu.y) * (0.35 + 0.15 * sin(t * 2.0 + vu.y * 8.0)); gl_FragColor = vec4(c * a, a); }' });
+      fragmentShader: 'uniform vec3 c; uniform float t; varying vec2 vu; void main(){ float a = (1.0 - vu.y) * (1.0 - vu.y) * (0.16 + 0.07 * sin(t * 2.0 + vu.y * 8.0)); gl_FragColor = vec4(c * a, a); }' });
     const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.3, 3.2, 32, 1, true), beamM); beam.position.y = 1.6; g.add(beam);
     // cristaux en orbite
     const crys = [];
@@ -90,8 +91,8 @@ export class Showcase {
     const g = new THREE.Group(); this.scene.add(g);
     const clouds = [];
     for (let i = 0; i < 14; i++) {
-      const c = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: new THREE.Color(T.fog).lerp(new THREE.Color('#ffffff'), 0.4), transparent: true, opacity: 0.6, depthWrite: false }));
-      c.position.set((Math.random() - 0.5) * 22, -2.4 - Math.random() * 2.5, -4 - Math.random() * 12); c.scale.set(5 + Math.random() * 6, 2 + Math.random() * 1.5, 1); g.add(c); clouds.push({ c, sp: 0.15 + Math.random() * 0.2 });
+      const c = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: new THREE.Color(T.fog).lerp(new THREE.Color('#ffffff'), 0.4), transparent: true, opacity: 0.3, depthWrite: false }));
+      c.position.set((Math.random() - 0.5) * 22, -5 - Math.random() * 2.5, -4 - Math.random() * 12); c.scale.set(5 + Math.random() * 6, 2 + Math.random() * 1.5, 1); g.add(c); clouds.push({ c, sp: 0.15 + Math.random() * 0.2 });
     }
     const isl = [];
     for (const [x, y, z, s] of [[-3.6, 0.6, -6, 0.5], [4.2, 1.6, -9, 0.7], [-5.5, 2.4, -12, 0.8], [2.6, -0.6, -5, 0.35], [7, 0.2, -13, 0.9]]) {
@@ -105,7 +106,30 @@ export class Showcase {
     for (let i = 0; i < n; i++) { pp[i * 3] = (Math.random() - 0.5) * 14; pp[i * 3 + 1] = Math.random() * 6 - 1.5; pp[i * 3 + 2] = -1 - Math.random() * 9; }
     pg.setAttribute('position', new THREE.BufferAttribute(pp, 3));
     g.add(new THREE.Points(pg, new THREE.PointsMaterial({ size: 0.12, map: glowTexture(), color: T.partCol, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })));
-    const sunG = glowSprite(new THREE.Color(T.skyBot).lerp(new THREE.Color('#ffffff'), 0.5), 9); sunG.position.set(-4.5, 4.2, -16); sunG.material.opacity = 0.85; g.add(sunG);
+    // paysage peint au loin : montagnes enneigées, forêt, château sur sa colline, rayons de soleil
+    const haze = new THREE.Color(T.fog), farC = new THREE.Color(T.rock).lerp(new THREE.Color(T.skyTop), 0.45).multiplyScalar(0.9), snow = new THREE.Color('#ffffff').lerp(haze, 0.15);
+    const flatM = c => new THREE.MeshStandardMaterial({ color: c, flatShading: true, roughness: 0.95 });
+    for (let i = 0; i < 9; i++) {
+      const x = -20 + i * 5 + (Math.random() - 0.5) * 3, z = -30 - Math.random() * 10, hgt = 7 + Math.random() * 6, r = 4 + Math.random() * 3;
+      const m = new THREE.Mesh(new THREE.ConeGeometry(r, hgt, 6), flatM(farC.clone().multiplyScalar(0.85 + Math.random() * 0.25))); m.position.set(x, -4 + hgt / 2, z); m.rotation.y = Math.random(); g.add(m);
+      if (!['braise', 'ombre'].includes(world)) { const cap = new THREE.Mesh(new THREE.ConeGeometry(r * 0.38, hgt * 0.38, 6), flatM(snow)); cap.position.set(x, -4 + hgt - hgt * 0.19 + 0.02, z); cap.rotation.y = m.rotation.y; g.add(cap); }
+    }
+    const treeC = new THREE.Color(T.ground2 || T.ground).lerp(new THREE.Color(T.skyTop), 0.15).multiplyScalar(0.75), tg = new THREE.ConeGeometry(0.5, 1.6, 6);
+    const forest = new THREE.InstancedMesh(tg, flatM('#ffffff'), 70), o = new THREE.Object3D(), tc = new THREE.Color();
+    for (let i = 0; i < 70; i++) { o.position.set(-16 + Math.random() * 32, -3.2 + Math.random() * 0.6, -15 - Math.random() * 7); o.scale.setScalar(0.8 + Math.random() * 0.9); o.updateMatrix(); forest.setMatrixAt(i, o.matrix); forest.setColorAt(i, tc.copy(treeC).multiplyScalar(0.8 + Math.random() * 0.4)); }
+    g.add(forest);
+    const hill = new THREE.Mesh(new THREE.SphereGeometry(5, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2), flatM(new THREE.Color(T.ground).lerp(new THREE.Color(T.skyTop), 0.2))); hill.scale.set(1.4, 0.55, 1); hill.position.set(7, -3.4, -20); g.add(hill);
+    const castle = new THREE.Group(), cm = flatM(new THREE.Color('#d8dcef').lerp(haze, 0.35)), roofM = flatM(new THREE.Color(T.partCol || '#6a8ad8').lerp(haze, 0.25));
+    for (const [x, hgt, r] of [[-1.1, 2.2, 0.32], [0, 3.2, 0.42], [1.1, 2.4, 0.32], [0.55, 1.6, 0.6], [-0.55, 1.6, 0.6]]) {
+      const tw = new THREE.Mesh(r > 0.5 ? new THREE.BoxGeometry(r * 1.6, hgt, 0.9) : new THREE.CylinderGeometry(r, r, hgt, 8), cm); tw.position.set(x, hgt / 2, 0); castle.add(tw);
+      if (r < 0.5) { const rf = new THREE.Mesh(new THREE.ConeGeometry(r * 1.35, r * 2.6, 8), roofM); rf.position.set(x, hgt + r * 1.3, 0); castle.add(rf); }
+    }
+    castle.position.set(7, -1.2, -20); castle.scale.setScalar(1.1); g.add(castle);
+    const rayM = new THREE.MeshBasicMaterial({ color: new THREE.Color(T.skyBot).lerp(new THREE.Color('#fff8e0'), 0.6), transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+    const rays = [];
+    for (let i = 0; i < 5; i++) { const r = new THREE.Mesh(new THREE.PlaneGeometry(1.4 + i * 0.4, 30), rayM.clone()); r.position.set(-4.5 + i * 1.6, -6, -15); r.rotation.z = 0.5 - i * 0.12; r.geometry.translate(0, 15, 0); g.add(r); rays.push(r); }
+    this.ups.push((dt, t) => rays.forEach((r, i) => { r.material.opacity = 0.035 + Math.sin(t * 0.6 + i * 1.3) * 0.02; }));
+    const sunG = glowSprite(new THREE.Color(T.skyBot).lerp(new THREE.Color('#ffffff'), 0.5), 9); sunG.position.set(-5, 6, -18); sunG.material.opacity = 0.35; g.add(sunG);
     const DC = { aurore: ['#e8b04a', '#fff0b8'], sylve: ['#4caf6a', '#d8ffb0'], arcane: ['#8a5ad8', '#e0d0ff'], braise: ['#c4263c', '#ffcf70'], givre: ['#6fb8e8', '#eaf8ff'], ombre: ['#2a1e3a', '#c08aff'] }[world] || ['#e8b04a', '#fff0b8'];
     dragons(g, this.ups, [{ c: DC[0], b: DC[1], horns: true, s: 0.5, r: 7, h: 3.2, sp: 0.18, dir: 1, cz: -11 }]);
     flock(g, this.ups, { n: 7, color: world === 'ombre' ? '#120c1a' : '#3a3040', r: 6, h: 2.6, sp: 0.35, size: 0.12, cz: -8 });

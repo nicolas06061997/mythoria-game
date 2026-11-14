@@ -91,7 +91,7 @@ function topBar() {
     h('button', { class: 'gear', onclick: openSettings, 'aria-label': 'Réglages' }, icon('gear')));
 }
 
-const TABS = [['shop', 'shop', 'Boutique'], ['heroes', 'heroes', 'Héros'], ['battle', 'sword', 'Combat'], ['kingdom', 'castle', 'Royaume'], ['clan', 'clan', 'Clan']];
+const TABS = [['shop', 'shop', 'Boutique'], ['heroes', 'heroes', 'Héros'], ['battle', 'swords', 'Combat'], ['kingdom', 'castle', 'Royaume'], ['clan', 'clan', 'Clan']];
 function navBar() {
   return h('nav', { class: 'nav' }, TABS.map(([id, ic, nm]) =>
     h('button', { class: 'nav-b' + (tab === id ? ' on' : '') + (id === 'battle' ? ' mid' : ''), onclick: () => { sfx('click'); tab = id; swapIn = null; render(); } },
@@ -131,7 +131,7 @@ function homeScreen() {
       h('div', { class: 'home-prog' },
         next ? [h('div', { class: 'tbar' }, h('i', { style: { width: prog * 100 + '%' } })), h('small', {}, icon('trophy'), P.trophies + ' / ' + next.trophies + ' → ' + next.name)]
           : h('small', {}, 'Tu as atteint le dernier monde !'))),
-    h('button', { class: 'btn-battle', onclick: openModes }, h('span', { class: 'seal' }, icon('sword')), h('b', {}, 'COMBATTRE'), h('small', {}, 'Mode Arène · ' + AI_LEVELS[botLevelFor(P)].name)),
+    h('button', { class: 'btn-battle', onclick: openModes }, h('span', { class: 'seal' }, icon('swords')), h('b', {}, 'COMBATTRE'), h('small', {}, 'Mode Arène · ' + AI_LEVELS[botLevelFor(P)].name)),
     chestRow(),
     h('div', { class: 'home-row' },
       tile('map', 'Mondes', WORLDS.filter(x => P.trophies >= x.trophies).length + ' / 6', openWorlds),

@@ -31,6 +31,7 @@ Cahier des charges du 13/11/2026 ; plan en 7 phases : `docs/ROADMAP.md` ; reste 
 - Histoires des modes : `ui/story.js` (`story(id, ensuite)`, 1re fois seulement, `localStorage myt_seen`, narrateur Vael ; ids arene/royaume/campagne/survie/heros/evenement/tournoi ; `storyBtn` pour relire).
 - Fluidité : `battleview` préchauffe les shaders de tous les héros du combat (★1 et ★3, gardés cachés) ; `freeTree` et les effets ne « disposent » plus les matériaux (sinon recompilation = saccade). Portraits gardés en Cache Storage (`warmPortraits`, au chargement). Test auto : `?speed=8&autoplay` (une IA joue pour toi, `window.__app.play/playHero`, `__battle.perf`).
 - Accueil (`showcase.js` home) : autel magique `altar()` (runes, colonne de lumière, cristaux, cascade), le héros tourne seul.
+- Style d'interface (14/11, d'après une maquette de l'utilisateur) : bloc « Style jeu mobile pro » en fin de `styles.css` (bleu royal `--b1..b4` + or, cadre doré, bannière parchemin `.home-world`, bouton `.btn-battle` orange bombé, tuiles/coffres bleus bombés, barre du bas bleue avec onglet actif doré). Icône `swords`. Accueil : paysage 3D (montagnes, forêt, château, rayons) dans `showcase.backdrop`, ciel `HS` par monde.
 - Combat : toucher un héros du Cercle (sélection, `select()`), puis toucher l'île = déploiement ; toucher un héros identique = fusion ; le glisser-déposer marche toujours.
 
 ## Concept et code

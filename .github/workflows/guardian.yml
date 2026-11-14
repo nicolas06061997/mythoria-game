@@ -1,0 +1,149 @@
+# MYTHORIA GUARDIAN — contrôle automatique et publication protégée.
+#
+# - Chaque modification part sur une branche d'essai (essai/…, claude/…, ccr-…).
+#   Le contrôleur joue au jeu (téléphone + ordinateur). Si tout est vert, la modification est
+#   publiée sur main (= le site). Sinon, rien n'est publié.
+# - Après publication : on attend que le site en ligne soit à jour, puis on le contrôle.
+#   Si le site en ligne est cassé → retour arrière automatique (git revert) et republication.
+# - Toutes les heures : contrôle complet du jeu (même quand personne n'y touche).
+name: Guardian
+
+on:
+  push:
+    branches: ['essai/**', 'claude/**', 'ccr-**', 'main']
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+    inputs:
+      rapide:
+        description: 'Contrôle rapide (sans combat ni Mode Héros)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: guardian-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  PLAYWRIGHT_VERSION: '1.63.0'
+
+jobs:
+  controle:
+    name: Contrôle du jeu
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - name: Installer le navigateur de test
+        run: |
+          npm install --no-save --no-package-lock playwright@${PLAYWRIGHT_VERSION}
+          npx playwright install --with-deps chromium
+      - name: Tests des règles du jeu (npm test)
+        run: npm test
+      - name: Règle de version (index.html + version.json changés avec le jeu)
+        if: github.event_name == 'push' && github.ref != 'refs/heads/main'
+        run: |
+          git fetch origin main
+          CHANGED=$(git diff --name-only origin/main...HEAD | grep -vE '^(guardian/|docs/|\.github/|tests/|\.gitignore$|[^/]+\.md$)' || true)
+          OLD=$(git show origin/main:index.html | grep -o 'data-version="[^"]*"' || true)
+          NEW=$(grep -o 'data-version="[^"]*"' index.html)
+          echo "Fichiers du jeu modifiés :"; echo "$CHANGED"
+          if [ -n "$CHANGED" ] && [ "$OLD" = "$NEW" ]; then
+            echo "::error::Le jeu a changé mais pas sa version : changer data-version (index.html) et v (version.json)."; exit 1
+          fi
+      - name: Le contrôleur joue au jeu
+        run: |
+          if [ "${{ inputs.rapide }}" = "true" ]; then node guardian/check.mjs --quick; else node guardian/check.mjs; fi
+      - name: Résumé
+        if: always()
+        run: cat guardian/out/summary.md >> "$GITHUB_STEP_SUMMARY" || echo "Pas de résumé (le contrôleur n'a pas démarré)." >> "$GITHUB_STEP_SUMMARY"
+      - name: Garder les captures et le rapport
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: guardian-${{ github.run_id }}
+          path: guardian/out/
+          retention-days: 30
+
+  publier:
+    name: Publication protégée
+    needs: controle
+    if: github.event_name == 'push' && github.ref != 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency: { group: guardian-publication, cancel-in-progress: false }
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - name: Publier sur main (seulement si la branche contient tout main)
+        id: pub
+        run: |
+          git fetch origin main
+          PREV=$(git rev-parse origin/main)
+          if ! git merge-base --is-ancestor "$PREV" HEAD; then
+            echo "::error::main a avancé entre-temps : il faut d'abord rebaser la branche d'essai sur main (rien n'est publié)."; exit 1
+          fi
+          if [ "$PREV" = "$(git rev-parse HEAD)" ]; then echo "Déjà publié."; echo "skip=1" >> "$GITHUB_OUTPUT"; exit 0; fi
+          echo "prev=$PREV" >> "$GITHUB_OUTPUT"
+          if git diff --name-only "$PREV" HEAD | grep -q '^\.github/workflows/'; then
+            # GitHub interdit au jeton automatique de modifier ses propres règles (.github/workflows)
+            echo "::error::Cette modification change les règles du Guardian (.github/workflows) : GitHub exige une publication manuelle sur main (contrôle réussi, rien n'est publié automatiquement)."; exit 1
+          fi
+          git push origin HEAD:main
+          echo "Publié : $PREV → $(git rev-parse HEAD)"
+      - name: Demander la mise en ligne (GitHub Pages)
+        if: steps.pub.outputs.skip != '1'
+        env: { GH_TOKEN: '${{ github.token }}' }
+        run: |
+          gh api -X POST "repos/${{ github.repository }}/pages/builds" || echo "La demande a échoué, GitHub Pages publiera quand même depuis main."
+      - name: Attendre que le site en ligne soit à jour
+        if: steps.pub.outputs.skip != '1'
+        id: live
+        run: |
+          WANT=$(node -p "require('./version.json').v")
+          URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          for i in $(seq 1 40); do
+            GOT=$(curl -s "${URL}version.json?t=$(date +%s)" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{console.log(JSON.parse(s).v)}catch(e){console.log('?')}})")
+            echo "En ligne : $GOT · attendu : $WANT"
+            if [ "$GOT" = "$WANT" ]; then echo "ok=1" >> "$GITHUB_OUTPUT"; exit 0; fi
+            sleep 15
+          done
+          echo "::warning::Le site n'affiche pas encore la nouvelle version après 10 min (GitHub Pages lent ?). Pas de retour arrière : le contrôle horaire vérifiera."
+      - name: Installer le navigateur de test
+        if: steps.live.outputs.ok == '1'
+        run: |
+          npm install --no-save --no-package-lock playwright@${PLAYWRIGHT_VERSION}
+          npx playwright install --with-deps chromium
+      - name: Contrôler le site en ligne
+        if: steps.live.outputs.ok == '1'
+        id: verif
+        run: node guardian/check.mjs --url "${{ steps.live.outputs.url }}" --quick
+      - name: Retour arrière automatique si le site en ligne est cassé
+        if: failure() && steps.verif.outcome == 'failure'
+        env: { GH_TOKEN: '${{ github.token }}' }
+        run: |
+          git config user.name "MYTHORIA Guardian"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main && git checkout -B retour origin/main
+          git revert --no-commit "${{ steps.pub.outputs.prev }}..HEAD"
+          git commit -m "Guardian : retour arrière automatique (le site en ligne ne passait pas le contrôle)"
+          git push origin HEAD:main
+          gh api -X POST "repos/${{ github.repository }}/pages/builds" || true
+          echo "::error::Le site en ligne était cassé : la version précédente a été remise en ligne."
+      - name: Garder le rapport du site en ligne
+        if: always() && steps.verif.outcome != 'skipped'
+        uses: actions/upload-artifact@v4
+        with:
+          name: guardian-en-ligne-${{ github.run_id }}
+          path: guardian/out/
+          retention-days: 30

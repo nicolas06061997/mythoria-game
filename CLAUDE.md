@@ -10,7 +10,13 @@ Cahier des charges du 13/11/2026 ; plan en 7 phases : `docs/ROADMAP.md` ; reste 
 ## À chaque modification
 1. Changer `data-version` dans `index.html` **et** `v` dans `version.json` (même valeur `AAAA-MM-JJ.n`, + `notes` courtes).
 2. Nouveau fichier JS → l'ajouter à `FILES` dans `sw.js`.
-3. `npm test` puis commit + push sur `main` (Pages publie en 2-3 min).
+3. `npm test` puis commit + push sur une **branche d'essai** (`essai/…`, `claude/…` ou `ccr-…`), **jamais directement sur `main`**. La branche doit contenir tout `main` (sinon : `git rebase origin/main`).
+4. MYTHORIA GUARDIAN (`.github/workflows/guardian.yml`) joue au jeu (téléphone + ordinateur) ; si tout est vert il publie sur `main`, attend le site en ligne, le recontrôle et fait un retour arrière automatique (`git revert`) s'il est cassé. Compter ~15-20 min. Contrôle complet aussi toutes les heures.
+
+## MYTHORIA GUARDIAN (agent de surveillance, 14/11) — voir `docs/GUARDIAN.md`
+- `guardian/check.mjs` : contrôleur Playwright (petit serveur intégré ; `--url` pour le site en ligne, `--quick` sans combat/Mode Héros). Parcours d'un nouveau joueur (nom, récompense, 5 onglets), combat complet en `?autoplay`, Mode Héros ; relève erreurs JS, fichiers manquants, chargement, FPS, débordements, écrans vides. Sortie `guardian/out/` (results.json, summary.md, captures ; ignoré par git).
+- `guardian/static.mjs` (aussi dans `npm test`) : même version index.html/version.json, tous les JS dans `FILES` de sw.js, fichiers listés existants, syntaxe, three.js, manifeste.
+- Les FPS du contrôleur sont mesurés sans carte graphique (≈ 3-4 FPS normal) : seuls les effondrements comptent.
 
 ## Lancer / tester
 - `python3 -m http.server 8000` puis `http://localhost:8000/`. Pas de build. three.js r160 dans `vendor/` (import map dans index.html).

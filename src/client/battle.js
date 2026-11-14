@@ -47,13 +47,14 @@ export class Battle {
       h('div', { class: 'b-field' },
         this.cv = h('canvas', { class: 'b-3d' }),
         this.ovc = h('canvas', { class: 'b-ov' }),
-        this.elBanner = h('div', { class: 'b-banner' })),
+        this.elBanner = h('div', { class: 'b-banner' }),
+        // barres de vie posées sur les Sanctuaires
+        ...(this.tp = [0, 1].map(k => { const red = k === 1, el = h('div', { class: 'tplate ' + (red ? 'red' : 'blue') },
+          h('div', { class: 'tp-head' }, h('span', { class: 'tp-tag' }, red ? (this.o.simMode === 'survival' ? 'SURVIE' : '🤖 IA') : 'TOI'),
+            h('b', { class: 'tp-name' }, red ? (this.o.simMode === 'survival' ? 'Vague 0' : (this.o.title || AI_LEVELS[this.o.botLevel].name)) : this.o.myName),
+            h('span', { class: 'tp-n' }, '')),
+          h('div', { class: 'tp-bar' }, h('i', { class: 'tp-lag' }), h('i', { class: 'tp-fill' }), h('u'))); return { el, name: el.querySelector('.tp-name'), n: el.querySelector('.tp-n'), fill: el.querySelector('.tp-fill'), lag: el.querySelector('.tp-lag'), hp: -1, lagK: 1, hitT: 0 }; })).map(t => t.el)),
       h('div', { class: 'b-top' },
-        h('div', { class: 'b-who red' },
-          this.o.simMode === 'survival' ? h('div', { class: 'b-name' }, h('span', { class: 'ai-tag' }, 'SURVIE'), this.elWave = h('b', {}, 'Vague 0')) : h('div', { class: 'b-name' }, h('span', { class: 'ai-tag' }, '🤖 IA'), h('b', {}, this.o.title || AI_LEVELS[this.o.botLevel].name)),
-          h('div', { class: 'b-hp red' }, this.elOppHp = h('i'), this.elOppHpN = h('span', {}, '')),
-          h('div', { class: 'b-name me' }, h('span', { class: 'me-tag' }, 'TOI'), h('b', {}, this.o.myName)),
-          h('div', { class: 'b-hp blue' }, this.elMyHp = h('i'), this.elMyHpN = h('span', {}, ''))),
         h('div', { class: 'b-clock' }, this.elTimer = h('b', {}, '3:00'), this.elHeart = h('small', {}, 'Cœur : libre')),
         this.elBoss = h('div', { class: 'b-boss' }, h('b', {}, ''), h('div', { class: 'b-hp red' }, h('i'), h('span', {}, ''))),
         h('button', { class: 'b-quit', onclick: () => this.quit(), 'aria-label': 'Quitter' }, icon('close'))),
@@ -210,18 +211,35 @@ export class Battle {
     if (!this.dbl && this.s.t >= DOUBLE_AT) { this.dbl = true; this.banner('Éther ×2 !', 'go'); setTimeout(() => !this.ended && this.banner(''), 1500); }
   }
 
+  // Barres de vie des Sanctuaires : suivent la tour à l'écran (au-dessus de la tour ennemie, au pied de la tienne)
+  plates(ents) {
+    const now = performance.now() / 1000, dt = Math.min(0.1, now - (this.tpT || now)); this.tpT = now;
+    ents.forEach((e, k) => {
+      const t = this.tp[k], k01 = Math.max(0, e.hp) / e.maxHp;
+      if (t.hp !== Math.ceil(Math.max(0, e.hp))) {
+        if (t.hp > 0 && e.hp < t.hp) { t.hitT = 0.35; t.el.classList.remove('hit'); void t.el.offsetWidth; t.el.classList.add('hit'); }
+        t.hp = Math.ceil(Math.max(0, e.hp)); t.n.textContent = t.hp.toLocaleString('fr-FR');
+        t.fill.style.width = (k01 * 100) + '%'; t.el.classList.toggle('low', k01 < 0.3);
+      }
+      t.hitT -= dt; if (t.hitT <= 0) t.lagK = Math.max(k01, t.lagK - dt * 0.6); t.lag.style.width = (t.lagK * 100) + '%';
+      if (this.view && this.view.screenOf) {
+        const p = k === 0 ? this.view.screenOf(e.x, e.y + 2.5, 0) : this.view.screenOf(e.x, e.y, 5.4);
+        t.el.style.transform = `translate(${p.x.toFixed(1)}px, ${p.y.toFixed(1)}px) translate(-50%, -50%)`;
+      }
+    });
+  }
+
   hud() {
     const s = this.s, P = s.players[this.me];
     const boss = s.ents.find(e => e.boss && !e.dead);
     this.elBoss.classList.toggle('on', !!boss);
     if (boss) { this.elBoss.querySelector('b').textContent = '☠ ' + boss.boss.name; this.elBoss.querySelector('i').style.width = (boss.hp / boss.maxHp * 100) + '%'; this.elBoss.querySelector('span').textContent = Math.ceil(boss.hp); }
-    if (this.elWave) this.elWave.textContent = 'Vague ' + s.wave;
+    if (this.o.simMode === 'survival') this.tp[1].name.textContent = 'Vague ' + s.wave;
     const tl = s.mode === 'survival' ? Math.floor(s.t) : Math.max(0, Math.ceil(timeLeft(s)));
     const txt = Math.floor(tl / 60) + ':' + String(tl % 60).padStart(2, '0');
     if (this.elTimer.textContent !== txt) { this.elTimer.textContent = txt; this.elTimer.classList.toggle('hot', s.overtime || tl <= 30); }
     const me = sanctOf(s, this.me), op = sanctOf(s, 1 - this.me);
-    this.elMyHp.style.width = (Math.max(0, me.hp) / me.maxHp * 100) + '%'; this.elMyHpN.textContent = Math.max(0, Math.ceil(me.hp));
-    this.elOppHp.style.width = (Math.max(0, op.hp) / op.maxHp * 100) + '%'; this.elOppHpN.textContent = Math.max(0, Math.ceil(op.hp));
+    this.plates([me, op]);
     const full = Math.floor(P.mana), frac = P.mana - full;
     this.gems.forEach((g, i) => { g.className = i < full ? 'on' : i === full ? 'part' : ''; if (i === full) g.style.setProperty('--f', frac); });
     if (this.elManaN.textContent !== String(full)) this.elManaN.textContent = full;

@@ -223,13 +223,15 @@ export const STARTER_SPELL = 'meteore';
 export const DECK_SIZE = 8;
 
 // Déblocage : chaque monde débloque les héros de sa faction (et le neutre au départ).
+// Progression par rareté : on commence avec des héros communs (+ 3 rares du deck de départ),
+// les épiques, légendaires et mythiques se gagnent en montant en trophées.
 export const UNLOCKS = {
-  0: ['ecuyer', 'frere', 'archeres', 'loups', 'apprenti', 'brann', 'jarl', 'squelettes', 'belier', 'osseuse', 'follets', 'solenne'],
-  1: ['myra', 'cerf', 'golem', 'elwyn'],
-  2: ['tourelle', 'vael'],
-  3: ['dragonnet', 'kaelis', 'ignar'],
-  4: ['frimas', 'nevra'],
-  5: ['damne', 'morvak', 'malakar'],
+  0: ['ecuyer', 'archeres', 'loups', 'follets', 'jarl', 'squelettes', 'osseuse', 'frere', 'apprenti', 'brann'],
+  1: ['belier', 'damne', 'tourelle', 'dragonnet', 'frimas'],
+  2: ['cerf', 'elwyn', 'golem'],
+  3: ['myra', 'morvak', 'kaelis'],
+  4: ['solenne', 'nevra', 'vael'],
+  5: ['ignar', 'malakar'],
 };
 export const SPELL_UNLOCKS = { 0: ['meteore', 'benediction'], 2: ['foudre'], 4: ['givre'] };
 

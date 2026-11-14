@@ -373,7 +373,7 @@ body.in-battle #inst { display: none; }
 .gfx { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 6px 0; }
 .gfxb { padding: 10px 2px; border-radius: 12px; border: 2px solid rgba(255,255,255,.15); background: rgba(255,255,255,.06); color: inherit; font: inherit; font-size: 12px; font-weight: 800; line-height: 1.1; }
 .gfxb.on { border-color: #ffd36a; background: linear-gradient(#ffd36a, #e8a93a); color: #2a1a05; }
-.fps { position: absolute; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top, 0px) + 86px); right: 8px; left: auto; transform: none; z-index: 30; pointer-events: none; font: 700 11px/1 system-ui, sans-serif; color: #9f9; background: rgba(0,0,0,.55); padding: 3px 7px; border-radius: 6px; }
+.fps { position: absolute; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top, 0px) + 86px); left: 8px; right: auto; transform: none; z-index: 30; pointer-events: none; font: 700 11px/1 system-ui, sans-serif; color: #9f9; background: rgba(0,0,0,.55); padding: 3px 7px; border-radius: 6px; }
 /* le bouton « Installer » ne cache plus rien : on peut faire défiler sous lui, il disparaît quand un panneau est ouvert */
 body:has(#inst.on) .screen { padding-bottom: 76px; }
 body:has(.sheet-back) #inst, body:has(.wsheet) #inst { display: none; }
@@ -441,3 +441,22 @@ body::after { /* brume colorée qui dérive */
 @keyframes ldshine { 0%, 55% { background-position: 160% 0, 0 0; } 100% { background-position: -60% 0, 0 0; } }
 @keyframes ldin { from { opacity: 0; transform: translateY(-10px) scale(.96); } to { opacity: 1; transform: none; } }
 @keyframes ldbar { from { background-position: 200% 0; } to { background-position: -100% 0; } }
+
+/* ---------- Barres de vie sur les Sanctuaires ---------- */
+.b-top { justify-content: center; }
+.b-top .b-quit { position: absolute; right: 10px; top: calc(8px + var(--safe-t)); }
+.tplate { position: absolute; left: 0; top: 0; width: 158px; pointer-events: none; will-change: transform; z-index: 2; filter: drop-shadow(0 3px 6px rgba(0, 0, 0, .55)); }
+.tp-head { display: flex; align-items: center; gap: 5px; margin: 0 4px 3px; font-size: 11.5px; line-height: 1; text-shadow: 0 1px 3px #000, 0 0 6px rgba(0, 0, 0, .8); }
+.tp-tag { flex: none; font-size: 9px; font-weight: 900; padding: 2px 5px; border-radius: 5px; color: #fff; letter-spacing: .3px; }
+.tplate.red .tp-tag { background: linear-gradient(#ff6a76, #c8283a); } .tplate.blue .tp-tag { background: linear-gradient(#5ab8ff, #1f6fd0); }
+.tp-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 900; color: #fff; }
+.tp-n { flex: none; font-weight: 900; font-size: 11px; color: #fff3cf; font-variant-numeric: tabular-nums; }
+.tp-bar { position: relative; height: 11px; border-radius: 7px; padding: 0; overflow: hidden; background: linear-gradient(#1a1030, #2a1d48); border: 1.5px solid #e8c37a; box-shadow: inset 0 2px 3px rgba(0, 0, 0, .6), 0 0 0 1px rgba(40, 20, 0, .7); }
+.tp-bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 5px; }
+.tp-lag { background: linear-gradient(#fff6c8, #ffc94a); }
+.tp-fill { transition: width .15s ease-out; box-shadow: inset 0 3px 0 rgba(255, 255, 255, .35), inset 0 -2px 0 rgba(0, 0, 0, .25); }
+.tplate.red .tp-fill { background: linear-gradient(#ff8a94, #e8344a 55%, #b51e33); } .tplate.blue .tp-fill { background: linear-gradient(#8fd4ff, #2f8ef0 55%, #1a5fc0); }
+.tp-bar u { position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 calc(25% - 1px), rgba(0, 0, 0, .45) calc(25% - 1px) 25%); }
+.tplate.low .tp-bar { animation: tplow .8s ease-in-out infinite; } @keyframes tplow { 50% { box-shadow: 0 0 12px 2px rgba(255, 60, 70, .9); border-color: #ff8a94; } }
+.tplate.hit .tp-bar { animation: tphit .3s; } @keyframes tphit { 25% { transform: translateX(-2px); } 75% { transform: translateX(2px); } }
+.tplate.low.hit .tp-bar { animation: tphit .3s, tplow .8s ease-in-out infinite; }

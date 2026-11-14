@@ -33,6 +33,7 @@ Cahier des charges du 13/11/2026 ; plan en 7 phases : `docs/ROADMAP.md` ; reste 
 - Accueil (`showcase.js` home) : autel magique `altar()` (runes, colonne de lumière, cristaux, cascade), le héros tourne seul.
 - Style d'interface (14/11, d'après une maquette de l'utilisateur) : bloc « Style jeu mobile pro » en fin de `styles.css` (bleu royal `--b1..b4` + or, cadre doré, bannière parchemin `.home-world`, bouton `.btn-battle` orange bombé, tuiles/coffres bleus bombés, barre du bas bleue avec onglet actif doré). Icône `swords`. Accueil : paysage 3D (montagnes, forêt, château, rayons) dans `showcase.backdrop`, ciel `HS` par monde.
 - Monde 1 (Aurore) = colisée cosmique (d'après une image de l'utilisateur) : ciel `nebulaDome()` (world.js, pas de gouffre ni d'îlots par défaut), sol de pierre + grande mosaïque dorée aux runes bleues (`groundTexture`, `cosmic`), pas d'herbe ni d'arbres, `buildArena(..., { a0: .70, a1: 2.30, tiers: 3, gate: false })`, bannières à blasons `bannerTex`, 6 stèles de runes, îles satellites + statue de dragon doré (`surroundings.aurore`). La consigne de combat se place sous la barre ennemie.
+- Sanctuaires : `fortress()` dans `battleview.js` (remparts crénelés, 4 tours à toits bleus/rouges, cristaux, porte vers le Cœur) + temple au centre ; la tienne plus basse (`hk` 0,66) pour ne pas cacher le combat.
 - Combat : toucher un héros du Cercle (sélection, `select()`), puis toucher l'île = déploiement ; toucher un héros identique = fusion ; le glisser-déposer marche toujours.
 
 ## Concept et code

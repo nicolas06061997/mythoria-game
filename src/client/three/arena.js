@@ -121,9 +121,9 @@ export function buildArena(group, T, key, EX, EZ, { low = false, noPit = false, 
   const gArms = mergeGeometries([armA, armB]);
   const spots = [];
   for (let k = 0; k < TIERS; k++) {
-    const s = S0 + k * DS + DS * 0.3, n = Math.round((low ? 44 : 76) * (1 + k * 0.12));
+    const s = S0 + k * DS + DS * 0.3, n = Math.round((low ? 56 : 112) * (1 + k * 0.12));
     for (let i = 0; i < n; i++) {
-      if (Math.random() < 0.1) continue;
+      if (Math.random() < 0.04) continue;
       const a = A0 + (A1 - A0) * (i + 0.2 + Math.random() * 0.6) / n, seg = Math.floor((a - A0) / (A1 - A0) * SEG);
       if (aisle(seg)) continue; if (k >= 1 && k <= 4 && Math.abs(a - ROY) < royW * 1.25) continue;
       const [x, z] = P(s, a);

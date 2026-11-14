@@ -12,6 +12,33 @@ import { createComposer, blobShadow } from './look.js';
 export const TEAM = ['#3da9ff', '#ff4f5e'];
 const BENCH_Z = RY + 3.1, BENCH_X = [-4.6, -2.3, 0, 2.3, 4.6];
 
+// Forteresse des Sanctuaires (remplace le simple temple)
+function fortress(roof, crys, stone, hk = 1) {
+  const g = new THREE.Group(), st = new THREE.MeshStandardMaterial({ color: stone, flatShading: true, roughness: 0.9 }), st2 = new THREE.MeshStandardMaterial({ color: new THREE.Color(stone).multiplyScalar(0.8), flatShading: true });
+  const rf = new THREE.MeshStandardMaterial({ color: roof, flatShading: true, roughness: 0.6 }), cm = new THREE.MeshStandardMaterial({ color: crys, emissive: crys, emissiveIntensity: 1.6, flatShading: true });
+  const W = 3.7, H = 1.05 * hk, T = 0.34;
+  for (const [x, z, rot] of [[0, -W / 2, 0], [0, W / 2, 0], [-W / 2, 0, Math.PI / 2], [W / 2, 0, Math.PI / 2]]) {
+    const front = z > 0;
+    const wall = new THREE.Mesh(new THREE.BoxGeometry(W, H, T), st); wall.position.set(x, H / 2, z); wall.rotation.y = rot; wall.castShadow = wall.receiveShadow = true; g.add(wall);
+    for (let i = 0; i < 7; i++) { if (front && (i === 3)) continue; const c = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.22, T + 0.04), st2); const u = -W / 2 + 0.3 + i * (W - 0.6) / 6; c.position.set(x + (rot ? 0 : u), H + 0.11, z + (rot ? u : 0)); g.add(c); }
+  }
+  // porte (vers le Cœur) avec bannières
+  const gate = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.85 * hk, 0.1), new THREE.MeshStandardMaterial({ color: '#2a1a12', flatShading: true })); gate.position.set(0, 0.42 * hk, W / 2 + T / 2 + 0.01); g.add(gate);
+  const arch = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.1, 5, 10, Math.PI), st2); arch.position.set(0, 0.85 * hk, W / 2 + T / 2); g.add(arch);
+  for (const sx of [-0.85, 0.85]) { const b = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.85), rf); b.position.set(sx, H * 0.55, W / 2 + T / 2 + 0.02); g.add(b); }
+  // tours d'angle
+  for (const [x, z] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+    const th = (1.9 + (z < 0 ? 0.3 : 0)) * hk;
+    const t = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.52, th, 8), st); t.position.set(x * W / 2, th / 2, z * W / 2); t.castShadow = true; g.add(t);
+    const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.58, 0.58, 0.18, 8), st2); ring.position.set(x * W / 2, th, z * W / 2); g.add(ring);
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(0.62, 1.0 * hk, 8), rf); cone.position.set(x * W / 2, th + 0.55 * hk, z * W / 2); cone.castShadow = true; g.add(cone);
+    const sh = new THREE.Mesh(new THREE.OctahedronGeometry(0.12, 0), cm); sh.scale.y = 1.8; sh.position.set(x * W / 2, th + 1.2 * hk, z * W / 2); g.add(sh);
+  }
+  // cristaux au pied des murs
+  for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2 + 0.3, c = new THREE.Mesh(new THREE.OctahedronGeometry(0.16 + (i % 2) * 0.08, 0), cm); c.scale.y = 2; c.position.set(Math.cos(a) * 2.35, 0.25, Math.sin(a) * 2.35); c.rotation.z = (Math.random() - 0.5) * 0.5; g.add(c); }
+  return g;
+}
+
 export class BattleView {
   constructor(canvas, overlay, worldKey, me = 0) {
     this.cv = canvas; this.ov = overlay; this.octx = overlay.getContext('2d');
@@ -42,7 +69,10 @@ export class BattleView {
     for (const p of [0, 1]) {
       const g = new THREE.Group(), w = this.toWorld(CX, SANCT.y[p]);
       g.position.set(w.x, 0, w.z); g.rotation.y = p === this.me ? Math.PI : 0;
-      try { const t = await prop('Temple_SecondAge_Level3', { scale: 1 }); const b = new THREE.Box3().setFromObject(t); const k = 3.3 / Math.max(b.max.x - b.min.x, b.max.z - b.min.z); t.scale.multiplyScalar(k); t.scale.y *= p === this.me ? 0.55 : 0.8; g.add(t); } catch (e) {}
+      // forteresse : remparts crénelés, 4 tours à toits colorés, donjon (temple) au centre, porte vers le Cœur
+      const mine = p === this.me, stoneC = this.key === 'aurore' ? '#9a98a8' : world.theme.rock;
+      g.add(fortress(mine ? '#3a7be0' : '#c8323e', mine ? '#8fe0ff' : '#c48aff', stoneC, mine ? 0.66 : 1));
+      try { const t = await prop('Temple_SecondAge_Level3', { scale: 1 }); const b = new THREE.Box3().setFromObject(t); const k = 2.2 / Math.max(b.max.x - b.min.x, b.max.z - b.min.z); t.scale.multiplyScalar(k); t.scale.y *= mine ? 0.75 : 1; g.add(t); } catch (e) {}
       const col = TEAM[p === this.me ? 0 : 1];
       const cr = sanctuaryCrystal(col); cr.group.position.y = p === this.me ? 3.0 : 4.0; if (p === this.me) cr.group.scale.setScalar(0.8); g.add(cr.group);
       const base = new THREE.Mesh(new THREE.RingGeometry(1.9, 2.2, 48), new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.6, depthWrite: false, side: THREE.DoubleSide }));

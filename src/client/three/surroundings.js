@@ -77,7 +77,7 @@ const BUILDERS = {
   // ---------- Royaume d'Aurore : arène de tournoi ----------
   async aurore(g, T, EX, EZ, ups, low) {
     // Colisée flottant dans l'espace : gradins presque tout autour (ouverts devant pour ton Sanctuaire)
-    const arena = buildArena(g, T, 'aurore', EX, EZ, { low, noPit: true, a0: 0.70, a1: 2.30, tiers: 3, gate: false });
+    const arena = buildArena(g, T, 'aurore', EX, EZ, { low, noPit: true, a0: 0.70, a1: 2.30, tiers: 4, gate: false });
     ups.push((dt, t) => arena.update(dt, t));
     // stèles de runes autour de la plateforme centrale
     const steleM = flat('#8a8aa0'), runeM = glow('#7fd8ff', 2.2), steles = [];

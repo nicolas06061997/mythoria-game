@@ -11,7 +11,7 @@ const DRAGON_COL = {
 const CROWD = ['#d84a4a', '#3d8ad8', '#e8c040', '#5ab85a', '#a060d0', '#e08a40', '#f0f0f0', '#4a4a5a'];
 
 // Ellipse de l'île (doit correspondre à world.js)
-export function buildArena(group, T, key, EX, EZ, { low = false } = {}) {
+export function buildArena(group, T, key, EX, EZ, { low = false, noPit = false } = {}) {
   const ups = [];
   const A0 = Math.PI * 0.80, A1 = Math.PI * 2.20; // gradins en fer à cheval, ouverts vers la caméra
   const TIERS = 5, S0 = 1.13, DS = 0.11, H = 0.85, Y0 = -0.35, SEG = 72;
@@ -118,12 +118,15 @@ export function buildArena(group, T, key, EX, EZ, { low = false } = {}) {
   ups.push((dt, t) => { emblem.material.opacity = 0.6 + Math.sin(t * 2) * 0.25; });
   group.add(gate);
 
+  if (!noPit) {
   // ---------- Faille lumineuse sous l'île ----------
   const riftG = new THREE.RingGeometry(0.98, S0 + 0.02, 64, 1); riftG.scale(EX, EZ, 1);
   const rift = new THREE.Mesh(riftG, new THREE.MeshBasicMaterial({ color: T.partCol, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
   rift.rotation.x = -Math.PI / 2; rift.position.y = -1.6; group.add(rift);
   ups.push((dt, t) => { rift.material.opacity = 0.25 + Math.sin(t * 1.3) * 0.1; });
 
+  }
+  if (!noPit) {
   // ---------- Gouffre sous l'île (plus de vide) ----------
   const pit = new THREE.Mesh(new THREE.CircleGeometry(90, 48), new THREE.MeshBasicMaterial({ color: new THREE.Color(T.rock2).multiplyScalar(0.45), fog: true }));
   pit.rotation.x = -Math.PI / 2; pit.position.y = -11; group.add(pit);
@@ -131,6 +134,8 @@ export function buildArena(group, T, key, EX, EZ, { low = false } = {}) {
   pitGlow.scale.set(EX * 1.4, EZ * 1.4, 1); pitGlow.rotation.x = -Math.PI / 2; pitGlow.position.y = -10.8; group.add(pitGlow);
   ups.push((dt, t) => { pitGlow.material.opacity = 0.14 + Math.sin(t * 0.9) * 0.06; });
 
+  }
+  if (!noPit) {
   // ---------- Dragons qui volent autour de l'arène ----------
   const [dc, db] = DRAGON_COL[key] || DRAGON_COL.aurore;
   const dragons = [];
@@ -149,6 +154,7 @@ export function buildArena(group, T, key, EX, EZ, { low = false } = {}) {
     }
   });
 
+  }
   return {
     update(dt, t) { for (const u of ups) u(dt, t); },
     cheer(k = 1) { cheer = Math.min(1.5, cheer + k); },

@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { prop } from './assets.js';
 import { glowTexture } from './procedural.js';
-import { buildArena } from './arena.js';
+import { buildSurroundings } from './surroundings.js';
 import { RX, RY } from '../../shared/sim.js';
 
 export const THEMES = {
@@ -240,7 +240,7 @@ export async function buildWorld(scene, key, { light = 'high' } = {}) {
     group.add(s); clouds.push(s);
   }
   const amb = ambient(T, light === 'low' ? 90 : 170); group.add(amb);
-  const arena = buildArena(group, T, key, EX, EZ, { low: light === 'low' });
+  const arena = await buildSurroundings(group, T, key, EX, EZ, { low: light === 'low' });
   await Promise.all(jobs.map(j => j.catch(() => {})));
   return {
     theme: T, group, sun, ground,

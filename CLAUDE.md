@@ -22,6 +22,7 @@ Cahier des charges du 13/11/2026 ; plan en 7 phases : `docs/ROADMAP.md` ; reste 
 
 ## Arène et commandes (14/11)
 - `three/arena.js` (appelé par `world.js`) : gradins en fer à cheval ouverts vers la caméra, public instancié qui saute (`world.cheer(k)` sur fusion, Cœur, boss, fin), piliers + torches + braises, bannières couleur du monde, grande porte au fond, faille lumineuse et gouffre sous l'île, 1-2 dragons procéduraux qui tournent autour.
+- Décor par monde : `three/surroundings.js` (`buildSurroundings`, appelé par `world.js`) : Aurore = arène (`buildArena` avec `noPit`), Sylve = arbres géants + cascade, Arcane = cristaux/runes/livres volants, Braise = volcans qui crachent, Givre = glaciers + aurore boréale, Ombres = paysage démoniaque (pics, tours aux fenêtres rouges, lune rouge, chauves-souris). Netteté : MSAA dans `createComposer` (look.js), pixel ratio jusqu'à 2 (`stage.js`, 1,5 sur petits téléphones).
 - Combat : toucher un héros du Cercle (sélection, `select()`), puis toucher l'île = déploiement ; toucher un héros identique = fusion ; le glisser-déposer marche toujours.
 
 ## Concept et code

@@ -3,14 +3,16 @@ import * as THREE from 'three';
 
 export function quality() {
   const mobile = /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent);
-  const cores = navigator.hardwareConcurrency || 4;
-  return { mobile, low: mobile && cores <= 4, dpr: Math.min(window.devicePixelRatio || 1, mobile ? 1.6 : 2) };
+  const cores = navigator.hardwareConcurrency || 4, mem = navigator.deviceMemory || 4;
+  const low = mobile && (cores <= 4 || mem <= 2);
+  // image plus nette : jusqu'à 2× la résolution (1,5× sur les petits téléphones)
+  return { mobile, low, dpr: Math.min(window.devicePixelRatio || 1, low ? 1.5 : 2) };
 }
 
 export function createRenderer(canvas, { alpha = false } = {}) {
   const q = quality();
-  const r = new THREE.WebGLRenderer({ canvas, antialias: !q.low, alpha, powerPreference: 'high-performance' });
-  r.setPixelRatio(q.low ? Math.min(q.dpr, 1.25) : q.dpr);
+  const r = new THREE.WebGLRenderer({ canvas, antialias: true, alpha, powerPreference: 'high-performance' });
+  r.setPixelRatio(q.dpr);
   r.outputColorSpace = THREE.SRGBColorSpace;
   r.toneMapping = THREE.ACESFilmicToneMapping;
   r.toneMappingExposure = 1.0;

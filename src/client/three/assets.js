@@ -201,7 +201,92 @@ async function buildHero(id, { star = 1, skin = null } = {}) {
 
 // Fabrique un héros 3D complet : modèle + lumière de contour + contour sombre + effets propres au héros.
 // opts : star, outline (true), fx (true), lite (moins de particules)
+// Héros « illustrés » : l'illustration détourée (assets/sprites/<id>.webp) joue en combat, avec des animations
+export const SPRITE_HEROES = { malakar: 2.7, damne: 2.2, osseuse: 2.15, morvak: 2.25, frimas: 2.2, belier: 2.0 };
+const SPR_TEX = new Map();
+function spriteTex(id) {
+  if (!SPR_TEX.has(id)) SPR_TEX.set(id, new THREE.TextureLoader().loadAsync('assets/sprites/' + id + '.webp').then(t => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; }));
+  return SPR_TEX.get(id);
+}
+class SpriteActor {
+  constructor(tex, h, star = 1) {
+    const asp = tex.image.width / tex.image.height;
+    this.holder = new THREE.Group(); this.root = new THREE.Group(); this.holder.add(this.root);
+    this.mat = new THREE.SpriteMaterial({ map: tex, transparent: true, alphaTest: 0.08, fog: false });
+    this.fl = new THREE.SpriteMaterial({ map: tex, transparent: true, color: 0xffffff, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0, fog: false });
+    const k = 1 + (star - 1) * 0.12; this.h = h * k; this.w = this.h * asp;
+    this.spr = new THREE.Sprite(this.mat); this.spr.center.set(0.5, 0.02); this.root.add(this.spr);
+    this.glow = new THREE.Sprite(this.fl); this.glow.center.set(0.5, 0.02); this.root.add(this.glow);
+    this.height = this.h; this.state = 'idle'; this.st = 0; this.t = Math.random() * 10; this.flashT = 0; this.frozen = false; this.mats = [this.mat]; this.noOutline = true; this.dead = false; this.dir = 1;
+    this.v = new THREE.Vector3(); this.q = new THREE.Quaternion();
+  }
+  play(state, { force = false } = {}) { if (this.state === 'death' && !force) return; if (force || state !== this.state || ['attack', 'cast', 'hit', 'spawn', 'cheer'].includes(state)) { this.state = state; this.st = 0; } }
+  flash(col = 0xffffff) { this.flashT = 0.14; this.fl.color.set(col); }
+  setFrozen(on) { this.frozen = on; this.mat.color.set(on ? 0x9fe4ff : 0xffffff); }
+  setOpacity(a) { this.mat.opacity = a; this.mat.alphaTest = a < 1 ? 0.01 : 0.08; }
+  update(dt) {
+    if (!this.frozen) { this.t += dt; this.st += dt; }
+    const t = this.t, st = this.st, S = this.state;
+    // regarde vers la gauche ou la droite selon la direction de marche (vue caméra)
+    this.holder.getWorldQuaternion(this.q); this.v.set(0, 0, 1).applyQuaternion(this.q);
+    if (Math.abs(this.v.x) > 0.15) this.dir = this.v.x > 0 ? 1 : -1;
+    let sx = 1, sy = 1, y = 0, rz = 0, op = 1, glow = 0;
+    if (S === 'run' || S === 'walk') { const w = Math.sin(t * (S === 'run' ? 13 : 9)); y = Math.abs(w) * 0.09; rz = w * 0.05; sy = 1 - Math.abs(w) * 0.03; }
+    else if (S === 'attack') { const k = Math.min(1, st / 0.45), p = Math.sin(k * Math.PI); rz = -p * 0.22 * this.dir; sx = 1 + p * 0.1; sy = 1 - p * 0.06; y = p * 0.05; if (st > 0.6) this.state = this.back || 'idle'; }
+    else if (S === 'cast') { const p = Math.sin(Math.min(1, st / 0.6) * Math.PI); sy = 1 + p * 0.06; glow = p * 0.45; if (st > 0.7) this.state = this.back || 'idle'; }
+    else if (S === 'hit') { rz = Math.sin(st * 40) * 0.06 * Math.max(0, 1 - st / 0.3); if (st > 0.3) this.state = this.back || 'idle'; }
+    else if (S === 'spawn') { const k = Math.min(1, st / 0.4); sx = sy = 0.3 + 0.7 * (1 - Math.pow(1 - k, 3)); glow = (1 - k) * 0.8; if (st > 0.45) this.state = this.back || 'idle'; }
+    else if (S === 'cheer') { y = Math.abs(Math.sin(st * 9)) * 0.3; if (st > 1.4) this.state = this.back || 'idle'; }
+    else if (S === 'death') { const k = Math.min(1, st / 0.9); rz = k * 1.35 * this.dir; y = -k * 0.1; op = 1 - Math.max(0, (st - 0.6) / 0.8); }
+    else { sy = 1 + Math.sin(t * 2.2) * 0.018; sx = 1 - Math.sin(t * 2.2) * 0.008; }
+    if (this.flashT > 0) { this.flashT -= dt; glow = Math.max(glow, 0.9 * (this.flashT / 0.14)); }
+    for (const s of [this.spr, this.glow]) { s.scale.set(this.w * sx * this.dir, this.h * sy, 1); s.position.y = y; this.mat.rotation = this.fl.rotation = rz; }
+    this.mat.opacity = op * (this.mat.opacity > 0 ? 1 : 1); if (S === 'death') this.mat.opacity = Math.max(0, op);
+    this.fl.opacity = glow;
+  }
+  dispose() { this.mat.dispose(); this.fl.dispose(); }
+}
+
+// Héros 3D « HD » (modèles détaillés animés, ex. créés à partir des illustrations) : assets/models/hd/index.json
+// { "heroes": { "malakar": { "file": "malakar.glb", "height": 2.7, "clips": { "idle": "Idle", "run": "Walk", "attack": "Attack", "death": "Death" } } } }
+let HD = null;
+export function hdList() { if (!HD) HD = fetch('assets/models/hd/index.json').then(r => r.ok ? r.json() : { heroes: {} }).then(j => j.heroes || {}).catch(() => ({})); return HD; }
+class HDActor {
+  constructor(g, cfg, star) {
+    this.holder = new THREE.Group(); this.root = SkeletonUtils.clone(g.scene); this.holder.add(this.root);
+    const b = new THREE.Box3().setFromObject(this.root), k = (cfg.height || 2.1) * (1 + (star - 1) * 0.12) / Math.max(0.01, b.max.y - b.min.y);
+    this.root.scale.setScalar(k); this.root.position.y = -b.min.y * k; this.height = (cfg.height || 2.1) * (1 + (star - 1) * 0.12);
+    this.mats = []; this.root.traverse(o => { if (o.isMesh) { o.castShadow = true; o.material = o.material.clone(); this.mats.push(o.material); o.material.userData.e = o.material.emissive ? o.material.emissive.clone() : null; } });
+    this.mixer = new THREE.AnimationMixer(this.root); this.clips = {};
+    const byName = n => g.animations.find(a => a.name === n) || g.animations.find(a => a.name.toLowerCase().includes(String(n).toLowerCase()));
+    const want = { idle: 'idle', run: 'run', walk: 'walk', attack: 'attack', cast: 'cast', hit: 'hit', death: 'death', spawn: 'idle', cheer: 'cheer', ...(cfg.clips || {}) };
+    for (const [st, n] of Object.entries(want)) { const c = byName(n); if (c) this.clips[st] = c; }
+    if (!this.clips.run) this.clips.run = this.clips.walk || this.clips.idle; if (!this.clips.walk) this.clips.walk = this.clips.run;
+    if (!this.clips.cast) this.clips.cast = this.clips.attack; if (!this.clips.cheer) this.clips.cheer = this.clips.idle;
+    this.state = ''; this.cur = null; this.flashT = 0; this.frozen = false; this.play('idle');
+  }
+  play(state, { force = false } = {}) {
+    if (this.state === 'death' && !force) return; if (!force && state === this.state && !['attack', 'cast', 'hit'].includes(state)) return;
+    const c = this.clips[state] || this.clips.idle; this.state = state; if (!c) return;
+    const a = this.mixer.clipAction(c); const once = ['attack', 'cast', 'hit', 'death', 'cheer', 'spawn'].includes(state);
+    a.reset(); a.setLoop(once ? THREE.LoopOnce : THREE.LoopRepeat); a.clampWhenFinished = state === 'death';
+    if (this.cur && this.cur !== a) a.crossFadeFrom(this.cur, 0.15, false); a.play(); this.cur = a;
+    if (once && state !== 'death') { const back = () => { this.mixer.removeEventListener('finished', back); if (this.state === state) this.play(this.back || 'idle', { force: true }); }; this.mixer.addEventListener('finished', back); }
+  }
+  flash(col = 0xffffff) { this.flashT = 0.12; this.fc = col; }
+  setFrozen(on) { this.frozen = on; }
+  setOpacity(a) { for (const m of this.mats) { m.transparent = a < 1; m.opacity = a; } }
+  update(dt) {
+    if (!this.frozen) this.mixer.update(dt);
+    if (this.flashT > 0 || this.frozen) { this.flashT -= dt; const on = this.flashT > 0; for (const m of this.mats) if (m.emissive) { if (on) { m.emissive.set(this.fc); m.emissiveIntensity = 0.9; } else if (this.frozen) { m.emissive.set(0x7fd8ff); m.emissiveIntensity = 0.5; } else { m.emissive.copy(m.userData.e); m.emissiveIntensity = 1; } } }
+  }
+  dispose() { this.mixer.stopAllAction(); for (const m of this.mats) m.dispose(); }
+}
+
 export async function makeHero(id, opts = {}) {
+  const hd = (await hdList())[id];
+  if (hd && opts.hd !== false) { try { const g = await loadGLB('hd/' + hd.file); return new HDActor(g, hd, opts.star || 1); } catch (e) { console.warn('modèle HD', id, e); } }
+  if (SPRITE_HEROES[id] && opts.sprite !== false) { const tex = await spriteTex(id); const a = new SpriteActor(tex, SPRITE_HEROES[id], opts.star || 1); a.update(0); return a; }
   const a = await buildHero(id, opts);
   const c = HERO[id], m = opts.skin && SKINS[opts.skin] ? { ...c.model, glow: SKINS[opts.skin].glow } : c.model;
   const rimCol = m.glow || (m.proc ? '#ffe0b0' : '#cfe0ff');

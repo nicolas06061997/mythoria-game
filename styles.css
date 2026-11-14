@@ -587,3 +587,9 @@ body { --w1: #24357a; --w2: #101a46; background: radial-gradient(120% 60% at 50%
 .kp-badge { position: absolute; left: 50%; top: -6%; width: 30px; height: 30px; margin-left: -15px; border-radius: 50%; display: none; place-content: center; font-style: normal; font-size: 17px; font-weight: 900; color: #fff;
   background: radial-gradient(circle at 40% 35%, #a6ff8f, #36b833 65%, #1d7a20); border: 2.5px solid #fff; box-shadow: 0 0 0 1.5px #0d4a12, 0 3px 6px rgba(0, 0, 0, .45); animation: kcbob 1.4s ease-in-out infinite; }
 .kp-badge.up, .kp-badge.plus { display: grid; } .kp-badge.up::before { content: '⬆'; } .kp-badge.plus::before { content: '+'; font-size: 22px; line-height: 1; }
+/* Illustrations HD des héros */
+.hcard.has-art .pt.art { object-fit: cover; object-position: 50% 8%; transform: scale(1.06); }
+.hcard.has-art .hc-name { padding-top: 22px; }
+.hd-art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: 50% 40%; background: #08060f; }
+.hero-detail.art .hd-anims, .hero-detail.art .hd-stage small, .hero-detail.art .hd-hint { display: none; }
+.hcard.has-art .pt.art { object-position: 50% 0; transform: scale(1.5); transform-origin: 50% 8%; }

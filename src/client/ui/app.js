@@ -71,7 +71,10 @@ function render() {
   lastTab = tab;
 }
 
+// Illustrations haute définition des héros (assets/cards/<id>.webp) : remplacent le portrait 3D dans les menus
+export const ART = new Set(['frimas', 'morvak', 'osseuse', 'belier', 'malakar', 'damne']);
 function portraitImg(id, cls = 'pt') {
+  if (ART.has(id) && cls === 'pt') return h('img', { class: 'pt art', alt: HERO[id].name, src: 'assets/cards/' + id + '.webp' });
   const img = h('img', { class: cls + ' loading', alt: HERO[id].name });
   portrait(id).then(u => { if (u) { img.src = u; img.classList.remove('loading'); } });
   return img;
@@ -263,7 +266,7 @@ function heroesScreen() {
 }
 
 function heroCard(c, { lock, inDeck, sub, onclick } = {}) {
-  return h('button', { class: 'hcard r-' + c.rar + (lock ? ' lock' : '') + (inDeck ? ' indeck' : ''), style: { '--rc': RARITIES[c.rar].color, '--fc': FACTIONS[c.fac].color }, onclick },
+  return h('button', { class: 'hcard r-' + c.rar + (ART.has(c.id) ? ' has-art' : '') + (lock ? ' lock' : '') + (inDeck ? ' indeck' : ''), style: { '--rc': RARITIES[c.rar].color, '--fc': FACTIONS[c.fac].color }, onclick },
     h('div', { class: 'hc-bg' }), portraitImg(c.id),
     h('span', { class: 'hc-fac' }),
     h('div', { class: 'hc-name' }, h('b', {}, c.name), h('small', {}, c.title)),
@@ -300,7 +303,7 @@ function openHero(id) {
   const cv = h('canvas', { class: 'hd-3d' });
   let sc = null;
   const close = () => { if (sc) sc.dispose(); page.remove(); };
-  const page = h('div', { class: 'hero-detail', style: { '--rc': R.color, '--fc': F.color } },
+  const page = h('div', { class: 'hero-detail' + (ART.has(id) ? ' art' : ''), style: { '--rc': R.color, '--fc': F.color } },
     h('div', { class: 'hd-stage' }, cv,
       h('button', { class: 'hd-close', onclick: close }, icon('close')),
       h('div', { class: 'hd-anims' },
@@ -328,7 +331,8 @@ function openHero(id) {
         : inDeck ? h('div', { class: 'row gap' }, h('button', { class: 'btn ghost grow', onclick: () => { P.avatar = id; saveProfile(P); toast('Héros favori ✓'); close(); render(); } }, 'Mettre en vedette'), h('span', { class: 'tip grow' }, '✓ Dans ton deck'))
           : h('div', { class: 'row gap' }, h('button', { class: 'btn ghost', onclick: () => { P.avatar = id; saveProfile(P); toast('Héros favori ✓'); close(); render(); } }, 'Vedette'), h('button', { class: 'btn big gold grow', onclick: () => { swapIn = id; tab = 'heroes'; close(); render(); } }, 'Mettre dans le deck'))));
   document.body.append(page);
-  requestAnimationFrame(() => { if (stage) stage.spin = 0; sc = new Showcase(cv, { world: worldOf(P).key, heroId: id, mode: 'hero', skin: P.skins.eq[id] }); });
+  if (ART.has(id)) cv.replaceWith(h('img', { class: 'hd-art', src: 'assets/cards/' + id + '.webp', alt: c.name }));
+  else requestAnimationFrame(() => { if (stage) stage.spin = 0; sc = new Showcase(cv, { world: worldOf(P).key, heroId: id, mode: 'hero', skin: P.skins.eq[id] }); });
 }
 
 // ---------- Mondes ----------

@@ -1,7 +1,8 @@
 // MYTHORIA — écran du Royaume (phase 4).
 import { BUILDINGS, BUILD_ORDER, DECOS, DECO_SLOTS, buildCost, buildTime, speedupGems, produced, perHour, canBuild } from '../../shared/kingdom.js';
+const affordable = (P, id) => { const K = P.kingdom, l = K.b[id] || 0; if (canBuild(K, id)) return false; const c = buildCost(id, l + 1); return P.gold >= c.gold && P.stone >= c.stone; };
 import { startBuild, speedup, collectAll, buyDeco, finishJob, worldOf, maxHeroLevel } from '../store.js';
-import { KingdomView } from '../three/kingdomview.js';
+import { KingdomView, buildingPicture } from '../three/kingdomview.js';
 import { h, toast, sheet } from './dom.js';
 import { icon } from './icons.js';
 import { sfx } from '../audio.js';
@@ -32,44 +33,42 @@ export function kingdomScreen() {
   const P = C.P(); finishJob(P);
   const K = P.kingdom;
   const cv = h('canvas', { class: 'k-3d' }), labels = h('div', { class: 'k-labels' });
-  const lab = {};
-  for (const id of BUILD_ORDER) { lab[id] = h('div', { class: 'k-lab' }); labels.append(lab[id]); }
   const ready = () => ['mine', 'carriere', 'cristal'].reduce((n, id) => n + produced(K, id, Date.now()), 0);
   const collectBtn = h('button', { class: 'btn gold k-collect', onclick: () => {
     const got = collectAll(P); const parts = Object.entries(got).map(([k, v]) => '+' + v + ' ' + resName[k]);
     if (!parts.length) return toast('Rien à récolter pour l’instant');
     sfx('coin'); toast(parts.join(' · ')); C.render();
   } }, 'Récolter');
+  const badges = () => Object.fromEntries(BUILD_ORDER.map(id => [id, affordable(P, id) ? ((K.b[id] || 0) ? 'up' : 'plus') : null]));
   const upd = () => {
     finishJob(P);
-    for (const id of BUILD_ORDER) {
-      const l = K.b[id] || 0, job = K.job && K.job.id === id, b = BUILDINGS[id];
-      const pr = b.prod && l ? produced(K, id, Date.now()) : 0;
-      lab[id].className = 'k-lab' + (job ? ' job' : '') + (!l ? ' empty' : '') + (pr > perHour(K, id) * 0.25 ? ' full' : '');
-      lab[id].textContent = job ? '🔨 ' + fmt((K.job.end - Date.now()) / 1000) : !l ? '+ ' + b.name : b.name + ' ' + l + (pr ? ' · ' + pr : '');
-    }
     collectBtn.textContent = 'Récolter (' + ready() + ')';
+    if (view) view.setBadges(badges());
   };
+  const best = BUILD_ORDER.find(id => affordable(P, id));
   const el = h('section', { class: 'kingdom' },
     h('div', { class: 'k-stage' }, cv, labels,
       h('div', { class: 'k-res' }, h('span', {}, icon('coin'), P.gold), h('span', {}, '🪨 ', P.stone), h('span', {}, icon('crystal'), P.crystals)),
       collectBtn,
-      h('small', { class: 'k-help' }, 'Touche un bâtiment · glisse pour tourner'), storyBtn('royaume', '📖')),
+      storyBtn('royaume', '📖')),
     K.job ? h('div', { class: 'panel k-job' }, h('b', {}, '🔨 ' + BUILDINGS[K.job.id].name + ' → niveau ' + K.job.to), h('small', { class: 'jt' }, ''),
       h('button', { class: 'btn small ghost', onclick: () => { const e = speedup(P); if (e) return toast(e, 'bad'); sfx('fuse'); C.render(); } }, 'Terminer : ', icon('gem'), speedupGems((K.job.end - Date.now()) / 1000))) : null,
-    h('div', { class: 'panel' }, h('h3', {}, 'Bâtiments'),
-      h('div', { class: 'k-list' }, BUILD_ORDER.map(id => {
-        const l = K.b[id] || 0, b = BUILDINGS[id];
-        return h('button', { class: 'k-item' + (l ? '' : ' empty'), onclick: () => openBuilding(id) }, h('b', {}, b.name), h('small', {}, l ? 'Niveau ' + l + ' / ' + b.max : 'À construire'), h('em', {}, l ? effectText(id, l) : b.desc));
-      }))),
+    h('div', { class: 'panel k-panel' }, h('h3', {}, 'Bâtiments'),
+      h('div', { class: 'k-cards' }, BUILD_ORDER.map(id => {
+        const l = K.b[id] || 0, b = BUILDINGS[id], img = h('img', { class: 'kc-img', alt: '' }), ok = affordable(P, id), job = K.job && K.job.id === id;
+        buildingPicture(id, Math.max(1, l)).then(u => { if (u) img.src = u; });
+        return h('button', { class: 'kc' + (l ? '' : ' empty') + (ok ? ' ok' : ''), onclick: () => openBuilding(id) },
+          h('div', { class: 'kc-txt' }, h('b', {}, b.name), h('small', {}, job ? '🔨 En construction' : l ? 'Niveau ' + l + ' / ' + b.max : 'À construire'), h('em', {}, l ? effectText(id, l) : b.desc)),
+          img, ok ? h('span', { class: 'kc-up' }, l ? '⬆' : '+') : null);
+      })),
+      best ? h('button', { class: 'k-cta', onclick: () => openBuilding(best) }, h('small', {}, BUILDINGS[best].name + ' · ', icon('coin'), buildCost(best, (K.b[best] || 0) + 1).gold, ' · 🪨 ', buildCost(best, (K.b[best] || 0) + 1).stone), h('b', {}, (K.b[best] ? 'AMÉLIORER' : 'CONSTRUIRE') + ' LE ROYAUME')) : null),
     h('div', { class: 'panel' }, h('h3', {}, 'Décorations'), h('p', { class: 'muted' }, 'Pour embellir ton île (sans effet en combat).'),
       h('div', { class: 'deco-row' }, Array.from({ length: DECO_SLOTS }, (_, i) => h('button', { class: 'deco' + (K.deco[i] ? ' on' : ''), onclick: () => openDeco(i) }, K.deco[i] ? DECOS[K.deco[i]].name : '+')))),
     h('p', { class: 'muted center' }, 'Les bonus du Royaume comptent en Campagne, en Survie et en Défense, jamais en Arène : l’Arène reste équitable.'));
   requestAnimationFrame(() => {
     if (!cv.isConnected) return;
     view = new KingdomView(cv, labels, worldOf(P).key, id => openBuilding(id));
-    view.setLabels(id => lab[id]);
-    view.sync(K);
+    view.sync(K).then(() => view && view.setBadges(badges()));
     upd();
     clearInterval(tick);
     tick = setInterval(() => { if (!cv.isConnected) return clearInterval(tick); const jobBefore = K.job; upd(); const jt = el.querySelector('.jt'); if (jt && K.job) jt.textContent = 'Fin dans ' + fmt((K.job.end - Date.now()) / 1000); if (jobBefore && !K.job) { sfx('fuse'); toast('Construction terminée !'); C.render(); } }, 1000);

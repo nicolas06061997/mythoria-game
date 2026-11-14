@@ -547,3 +547,30 @@ body { --w1: #24357a; --w2: #101a46; background: radial-gradient(120% 60% at 50%
 .sheet { background: linear-gradient(180deg, rgba(255, 255, 255, .05), transparent 30%), linear-gradient(#22357c, #121d4c 60%); border: 2px solid #0a1440; border-bottom: 0; box-shadow: 0 -3px 0 #c8902e, 0 -10px 40px rgba(0, 0, 0, .5); }
 .sheet h3 { color: #ffd36a; -webkit-text-stroke: 3px #3a2004; paint-order: stroke fill; }
 .btn.ghost { background: linear-gradient(#2e4f9e, #1d3576); border: 2px solid #0a1a4a; box-shadow: inset 0 2px 0 rgba(255, 255, 255, .2), 0 3px 0 #0a1a4a; }
+
+/* ---------- Royaume : cartes de bâtiments + bouton vert ---------- */
+.k-stage { height: min(58dvh, 500px); border: 0; box-shadow: 0 0 0 3px #f2c25a, 0 0 0 6px #6a3a08, 0 10px 26px rgba(0, 0, 0, .55); }
+.k-labels { display: none; }
+.k-collect { right: 12px; bottom: 12px; padding: 12px 20px; font-size: 17px; font-weight: 900; color: #5a2e0e; border-radius: 14px;
+  background: linear-gradient(#fff1c2, #f6c45a 55%, #d9901e); border: 2px solid #8a5a22; box-shadow: 0 0 0 2px #fff3cf inset, 0 4px 0 #6a3e14, 0 8px 16px rgba(0, 0, 0, .45); }
+.k-res span { background: rgba(10, 16, 46, .78); border: 2px solid #0a1230; }
+.k-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 10px; }
+.kc { position: relative; display: flex; align-items: stretch; min-height: 118px; padding: 10px 6px 10px 11px; border-radius: 16px; text-align: left; overflow: hidden;
+  background: linear-gradient(135deg, #24397e, #16245a); border: 2px solid #0a1440; box-shadow: inset 0 0 0 2px rgba(120, 160, 255, .25), 0 4px 0 #0a1440; }
+.kc:active { transform: translateY(2px); box-shadow: inset 0 0 0 2px rgba(120, 160, 255, .25); }
+.kc.empty { background: linear-gradient(135deg, #1c2a5c, #111a42); }
+.kc.ok { box-shadow: inset 0 0 0 2px rgba(120, 255, 140, .5), 0 4px 0 #0a1440, 0 0 14px rgba(90, 255, 120, .25); }
+.kc-txt { position: relative; z-index: 1; flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.kc-txt b { font-family: var(--title); font-size: 15px; color: #f3e6c8; -webkit-text-stroke: 3px #0a1440; paint-order: stroke fill; line-height: 1.05; }
+.kc-txt small { font-weight: 900; font-size: 11.5px; color: #ffd36a; }
+.kc-txt em { font-style: normal; font-size: 10.5px; font-weight: 700; color: #c8d6ff; line-height: 1.25; max-width: 56%; text-shadow: 0 1px 2px #0a1440; }
+.kc-img { position: absolute; right: -8px; bottom: -6px; width: 50%; max-width: 116px; aspect-ratio: 320 / 260; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, .55)); pointer-events: none; }
+.kc.empty .kc-img { filter: grayscale(.6) brightness(.7) drop-shadow(0 4px 6px rgba(0, 0, 0, .55)); }
+.kc-up { position: absolute; right: 7px; top: 7px; z-index: 2; width: 26px; height: 26px; border-radius: 50%; display: grid; place-content: center; font-size: 14px; font-weight: 900; color: #fff;
+  background: radial-gradient(circle at 40% 35%, #9dff8a, #2fae2c 70%); border: 2px solid #fff; box-shadow: 0 2px 0 #0d4a12; animation: kcbob 1.4s ease-in-out infinite; }
+@keyframes kcbob { 50% { transform: translateY(-3px); } }
+.k-cta { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 100%; margin-top: 12px; padding: 10px 12px 12px; border-radius: 18px;
+  background: linear-gradient(#9cf07a, #4cc23a 55%, #2f9a24); border: 3px solid #e9ffd8; box-shadow: 0 0 0 3px #1d5a14, 0 6px 0 #1d5a14, 0 10px 20px rgba(0, 0, 0, .45), inset 0 3px 0 rgba(255, 255, 255, .5); }
+.k-cta small { display: inline-flex; align-items: center; gap: 4px; font-weight: 900; font-size: 13px; color: #fff; text-shadow: 0 2px 0 #1d5a14; } .k-cta small .ic { width: 16px; height: 16px; }
+.k-cta b { font-family: var(--title); font-size: 22px; font-weight: 900; color: #fff; -webkit-text-stroke: 5px #1d5a14; paint-order: stroke fill; text-shadow: 0 3px 0 #1d5a14; letter-spacing: .5px; }
+.k-cta:active { transform: translateY(3px); }

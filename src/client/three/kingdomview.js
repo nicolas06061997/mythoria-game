@@ -6,6 +6,7 @@ import { THEMES, skyDome } from './world.js';
 import { glowSprite, glowTexture } from './procedural.js';
 import { createComposer } from './look.js';
 import { dragons, flock } from './surroundings.js';
+import { islandGroundTexture, islandRock, waterfall, emitter, villager, badge, castleModel } from './kingdomlife.js';
 import { BUILD_ORDER, BUILDINGS, DECOS, DECO_SLOTS } from '../../shared/kingdom.js';
 
 // Emplacements des bâtiments sur l'île (x, z)
@@ -18,7 +19,7 @@ const DECO_POS = [[6.6, -1.6], [-1.4, 7.0], [1.4, 7.0], [-7.0, 3.4], [7.0, 3.6],
 function modelFor(id, lvl) {
   const T = lvl <= 3 ? 0 : lvl <= 6 ? 1 : 2;
   switch (id) {
-    case 'chateau': return [lvl <= 3 ? 'kingdom/TownCenter_FirstAge_Level' + Math.max(2, lvl) : 'kingdom/TownCenter_SecondAge_Level' + Math.min(3, lvl - 3)];
+    case 'chateau': return ['kingdom/TownCenter_SecondAge_Level' + (lvl <= 3 ? 1 : lvl <= 6 ? 2 : 3)];
     case 'mine': return ['kingdom/Mine', 'kingdom/Resource_Gold_1'];
     case 'carriere': return ['kingdom/Resource_Rock_1', 'kingdom/Resource_Rock_2', 'kingdom/Logs'];
     case 'cristal': return ['kingdom/Resource_Rock_2'];
@@ -113,26 +114,28 @@ export class KingdomView {
     this.r = createRenderer(canvas); this.r.toneMappingExposure = 1.05;
     this.scene = new THREE.Scene();
     const T = THEMES[worldKey] || THEMES.aurore; this.T = T;
-    this.scene.add(skyDome(T));
-    this.scene.fog = new THREE.Fog(T.fog, 60, 200);
+    // ciel lumineux de fin d'après-midi (chaud en bas, bleu en haut)
+    this.scene.add(skyDome({ skyTop: '#3f63c0', skyBot: '#ffcf9a' }));
+    this.scene.fog = new THREE.Fog('#e8c8b0', 60, 210);
     this.scene.add(new THREE.HemisphereLight(T.hemiSky, T.hemiGround, T.hemiI * 1.1));
-    const sun = new THREE.DirectionalLight(T.sun, T.sunI); sun.position.set(-8, 16, 9); sun.castShadow = true;
+    const sun = new THREE.DirectionalLight('#ffe2b8', 3.0); sun.position.set(-10, 15, 7); sun.castShadow = true;
     const q = quality(); sun.shadow.mapSize.set(Math.min(2048, q.shadowSize), Math.min(2048, q.shadowSize));
     Object.assign(sun.shadow.camera, { left: -11, right: 11, top: 11, bottom: -11, near: 1, far: 50 }); sun.shadow.bias = -0.0008; sun.shadow.normalBias = 0.03;
     this.scene.add(sun);
     // île
     this.root = new THREE.Group(); this.scene.add(this.root);
-    const top = new THREE.Mesh(new THREE.CylinderGeometry(9.4, 9.0, 0.6, 48), new THREE.MeshStandardMaterial({ color: T.ground, flatShading: true }));
+    // île vivante : sol détaillé (herbe, fleurs, chemins pavés), dessous rocheux, cascades
+    const GT = { ...T, ground: worldKey === 'aurore' ? '#6cbf4a' : T.ground };
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(9.4, 9.2, 0.6, 64), [new THREE.MeshStandardMaterial({ color: '#4a8a34', roughness: 1 }), new THREE.MeshStandardMaterial({ map: islandGroundTexture(GT, SPOTS), roughness: 1 }), new THREE.MeshStandardMaterial({ color: '#4a8a34' })]);
     top.position.y = -0.3; top.receiveShadow = true; this.root.add(top);
-    const under = new THREE.Mesh(new THREE.ConeGeometry(9.0, 9, 14, 3), new THREE.MeshStandardMaterial({ color: T.rock, flatShading: true }));
-    under.rotation.x = Math.PI; under.position.y = -5.1; this.root.add(under);
-    // chemins
-    const path = new THREE.MeshStandardMaterial({ color: T.path, flatShading: true });
-    for (const id of BUILD_ORDER) { if (id === 'chateau') continue; const [x, z] = SPOTS[id], len = Math.hypot(x, z + 1.2); const p = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.04, len), path); p.position.set(x / 2, 0.02, (z - 1.2) / 2); p.rotation.y = Math.atan2(x, z + 1.2); p.receiveShadow = true; this.root.add(p); }
-    const plaza = new THREE.Mesh(new THREE.CylinderGeometry(2.8, 2.8, 0.05, 32), path); plaza.position.set(0, 0.03, -1.2); plaza.receiveShadow = true; this.root.add(plaza);
+    this.root.add(islandRock(T));
+    this.life = [];
+    for (const [x, z] of [[-6.1, 6.9], [7.6, -4.9], [-8.5, -2.2]]) { const w = waterfall(x, z, 10, 1.1); this.root.add(w); this.life.push(w.userData.update); }
+    for (let i = 0; i < 6; i++) { const v = villager(...[[[0, 1.4], [-4.8, 1.5]], [[0, 1.4], [4.8, 1.5]], [[-0.4, 1.6], [-2.2, 4.3]], [[0.4, 1.6], [2.2, 4.3]], [[-3.9, 0.2], [-5.4, 2.4]], [[4, 0.2], [5.6, 2.6]]][i], i >= 4); this.root.add(v); this.life.push(v.userData.update); }
     // arbres sur le bord
-    (async () => { for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2 + 0.2; try { const o = await prop(T.props[i % T.props.length][0], { scale: 0.8, tint: T.tintProps }); o.position.set(Math.cos(a) * 8.4, 0, Math.sin(a) * 8.4); o.rotation.y = a; if (!this.dead) this.root.add(o); } catch (e) {} } })();
-    this.ups = []; kingdomBackdrop(this.scene, T, worldKey, this.ups, q.low);
+    (async () => { const names = ['PineTree_1', 'CommonTree_1', 'PineTree_3', 'Bush_1', 'CommonTree_3', 'Rock_Moss_2']; for (let i = 0; i < 30; i++) { const a = i / 30 * Math.PI * 2 + 0.2, rr = 7.9 + (i % 3) * 0.45; if ([[-6.1, 6.9], [7.6, -4.9], [-8.5, -2.2]].some(([x, z]) => Math.hypot(Math.cos(a) * rr - x, Math.sin(a) * rr - z) < 1.6)) continue; try { const o = await prop(worldKey === 'aurore' ? names[i % names.length] : T.props[i % T.props.length][0], { scale: 0.75 + (i % 4) * 0.12, tint: T.tintProps }); o.position.set(Math.cos(a) * rr, 0, Math.sin(a) * rr); o.rotation.y = a; if (!this.dead) this.root.add(o); } catch (e) {} } })();
+    this.ups = [(dt, t) => { this.root.position.y = Math.sin(t * 0.7) * 0.22; this.root.rotation.z = Math.sin(t * 0.45) * 0.008; for (const u of this.life) u(dt, t); }]; kingdomBackdrop(this.scene, T, worldKey, this.ups, q.low);
+    this.scene.fog.color.set('#c9d6f2'); this.scene.traverse(o => { if (o.isMesh && o.geometry && o.geometry.type === 'CircleGeometry' && o.position.y < -10) o.material.color.set('#b4c6ee'); });
     this.slots = {}; this.hits = [];
     this.cam = new THREE.PerspectiveCamera(40, 1, 0.5, 300);
     this.rot = 0.35; this.dist = 24; this.spin = 0;
@@ -156,15 +159,19 @@ export class KingdomView {
       if (!lvl) S.g.add(plot());
       else {
         const grp = new THREE.Group();
-        const paths = modelFor(id, lvl);
+        const paths = id === 'chateau' ? [] : modelFor(id, lvl);
+        if (id === 'chateau') { const c = castleModel(lvl); fit(c, SIZE.chateau); grp.add(c); }
         for (let k = 0; k < paths.length; k++) {
           try { const o = await loadModel(paths[k]); fit(o, k ? SIZE[id] * 0.45 : SIZE[id]); if (k) o.position.set(k === 1 ? SIZE[id] * 0.45 : -SIZE[id] * 0.4, 0, SIZE[id] * 0.35); grp.add(o); } catch (e) {}
         }
         if (id === 'cristal') grp.add(crystals(lvl));
-        if (id === 'chateau' && lvl > 6) grp.scale.multiplyScalar(1 + (lvl - 6) * 0.06);
+        if (id === 'chateau') { const c = grp.children[0], ch = c.userData.chimney, k = c.scale.x; this.life.push(emitter(grp, { n: 22, color: '#ecebe8', size: 0.9, rise: 0.6, spread: 0.25, life: 4, at: [ch[0] * k, ch[1] * k, ch[2] * k] })); }
+        if (id === 'mine') this.life.push(emitter(grp, { n: 26, color: '#ffd45a', size: 0.32, rise: 0.5, spread: 0.9, life: 1.6, additive: true, at: [0, 0.5, 0.4] }));
+        if (id === 'carriere') this.life.push(emitter(grp, { n: 14, color: '#c8b8a0', size: 0.6, rise: 0.25, spread: 0.8, life: 2.5, at: [0, 0.3, 0] }));
+        
         S.g.add(grp);
       }
-      if (job) S.g.add(scaffold(SIZE[id] * 0.9));
+      if (job) { S.g.add(scaffold(SIZE[id] * 0.9)); this.life.push(emitter(S.g, { n: 16, color: '#d8c8a8', size: 0.5, rise: 0.4, spread: 0.9, life: 2, at: [0, 0.2, 0] })); }
     }
     // décorations
     this.decos = this.decos || [];
@@ -174,6 +181,19 @@ export class KingdomView {
       this.decos[i] = { id };
       if (!id) continue;
       try { const o = await loadModel('kingdom/' + DECOS[id].model); fit(o, id === 'moulin' ? 2.2 : 1.4); o.position.set(DECO_POS[i][0], 0, DECO_POS[i][1]); this.root.add(o); this.decos[i].o = o; } catch (e) {}
+    }
+  }
+
+  // pastilles ↑ / + au-dessus des bâtiments améliorables (kinds : { id: 'up' | 'plus' | null })
+  setBadges(kinds) {
+    this.badges = this.badges || {};
+    for (const id of BUILD_ORDER) {
+      const k = kinds[id], cur = this.badges[id];
+      if (cur && cur.kind === k) continue;
+      if (cur) cur.s.parent && cur.s.parent.remove(cur.s);
+      if (!k) { delete this.badges[id]; continue; }
+      const s = badge(k), S = this.slots[id]; if (!S) continue;
+      s.position.y = SIZE[id] * 0.85 + 0.9; S.g.add(s); this.badges[id] = { kind: k, s, y: s.position.y };
     }
   }
 
@@ -195,7 +215,7 @@ export class KingdomView {
   resize() {
     const w = this.cv.clientWidth || 1, h = this.cv.clientHeight || 1;
     this.r.setSize(w, h, false); this.cam.aspect = w / h; this.cam.fov = w / h < 0.8 ? 48 : 38; this.cam.updateProjectionMatrix(); if (this.post) this.post.setSize(w, h);
-    this.dist = w / h < 0.8 ? 27 : 23;
+    this.dist = w / h < 0.8 ? 25 : 22;
   }
   // étiquettes (nom, niveau, minuteur, production) placées au-dessus des bâtiments
   setLabels(fn) { this.labelFn = fn; }
@@ -203,9 +223,10 @@ export class KingdomView {
     if (this.dead) return;
     this.raf = requestAnimationFrame(this.loop);
     const dt = this.last ? Math.min(0.05, (now - this.last) / 1000) : 0; this.last = now; this.t += dt;
-    this.cam.position.set(Math.sin(this.rot) * this.dist, this.dist * 0.82, Math.cos(this.rot) * this.dist);
-    this.cam.lookAt(0, 0, -0.5);
+    this.cam.position.set(Math.sin(this.rot) * this.dist, this.dist * 0.66, Math.cos(this.rot) * this.dist);
+    this.cam.lookAt(0, -0.6, -0.5);
     for (const u of this.ups) u(dt, this.t);
+    if (this.badges) for (const b of Object.values(this.badges)) { b.s.position.y = b.y + Math.sin(this.t * 3) * 0.12; }
     if (this.post) this.post.render(); else this.r.render(this.scene, this.cam);
     if (this.labelFn) {
       const rc = this.cv.getBoundingClientRect(), v = new THREE.Vector3();
@@ -221,4 +242,35 @@ export class KingdomView {
     removeEventListener('pointermove', this.onMove); removeEventListener('pointerup', this.onUp);
     this.r.dispose(); { const rr = this.r; setTimeout(() => { try { rr.forceContextLoss && rr.forceContextLoss(); } catch (e) {} }, 1500); } // libère la carte graphique après l’affichage du nouvel écran
   }
+}
+
+// Illustrations 3D des bâtiments pour les cartes du panneau (rendues une fois, gardées en mémoire)
+const BPICS = new Map(); let bRig = null, bQueue = Promise.resolve();
+export function buildingPicture(id, lvl) {
+  const key = id + ':' + (id === 'chateau' ? Math.max(1, lvl) : lvl <= 3 ? 1 : lvl <= 6 ? 2 : 3);
+  if (BPICS.has(key)) return BPICS.get(key);
+  const p = (bQueue = bQueue.then(async () => {
+    if (!bRig) {
+      const cv = document.createElement('canvas'); cv.width = 320; cv.height = 260;
+      const r = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true, preserveDrawingBuffer: true });
+      r.setPixelRatio(1); r.setSize(320, 260, false); r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.setClearColor(0, 0);
+      const sc = new THREE.Scene(); sc.add(new THREE.HemisphereLight('#ffffff', '#6a5a4a', 1.5));
+      const d = new THREE.DirectionalLight('#fff0d8', 2.6); d.position.set(-3, 6, 5); sc.add(d);
+      const rim = new THREE.DirectionalLight('#9ac0ff', 1.6); rim.position.set(4, 3, -5); sc.add(rim);
+      bRig = { cv, r, sc, cam: new THREE.PerspectiveCamera(30, 320 / 260, 0.1, 100) };
+    }
+    const { cv, r, sc, cam } = bRig, grp = new THREE.Group();
+    const paths = id === 'chateau' ? [] : modelFor(id, Math.max(1, lvl));
+    if (id === 'chateau') { const c = castleModel(Math.max(1, lvl)); fit(c, 1); grp.add(c); }
+    for (let k = 0; k < paths.length; k++) { try { const o = await loadModel(paths[k]); fit(o, k ? 0.45 : 1); if (k) o.position.set(k === 1 ? 0.45 : -0.4, 0, 0.35); grp.add(o); } catch (e) {} }
+    if (id === 'cristal') { const c = crystals(5); c.scale.setScalar(0.4); grp.add(c); }
+    const base = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.78, 0.1, 32), new THREE.MeshStandardMaterial({ color: '#6aae48', roughness: 1 })); base.position.y = -0.05; grp.add(base);
+    sc.add(grp);
+    const b = new THREE.Box3().setFromObject(grp), h = b.max.y - b.min.y, ctr = b.getCenter(new THREE.Vector3());
+    const dist = Math.max(1.6, h * 2.1 + 0.6);
+    cam.position.set(ctr.x + dist * 0.55, ctr.y + dist * 0.55, ctr.z + dist * 0.75); cam.lookAt(ctr.x, ctr.y - h * 0.05, ctr.z);
+    r.render(sc, cam); const url = cv.toDataURL('image/png'); sc.remove(grp);
+    return url;
+  }).catch(() => ''));
+  BPICS.set(key, p); return p;
 }

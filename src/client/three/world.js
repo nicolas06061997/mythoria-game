@@ -28,38 +28,64 @@ export const THEMES = {
 
 const EX = RX + 2.2, EZ = RY + 2.2;
 
-function groundTexture(T) {
-  const w = 512, h = Math.round(512 * EZ / EX);
+function groundTexture(T, key = '', hi = false) {
+  // texture du sol dessinée par le jeu : herbe/terre détaillée, chemins pavés, dalles, lignes de terrain
+  const w = hi ? 2048 : 1024, h = Math.round(w * EZ / EX);
   const c = document.createElement('canvas'); c.width = w; c.height = h;
   const g = c.getContext('2d');
   const e = document.createElement('canvas'); e.width = w; e.height = h;
   const ge = e.getContext('2d'); ge.fillStyle = '#000'; ge.fillRect(0, 0, w, h);
   const P = (X, Z) => [(X + EX) / (2 * EX) * w, (Z + EZ) / (2 * EZ) * h];
-  g.fillStyle = T.ground; g.fillRect(0, 0, w, h);
+  const s = w / (2 * EX), K = w / 512;
   let seed = 11; const r = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  for (let i = 0; i < 260; i++) { g.fillStyle = r() < 0.5 ? T.ground2 : shade(T.ground, 14); g.globalAlpha = 0.35; g.beginPath(); g.ellipse(r() * w, r() * h, 8 + r() * 28, 6 + r() * 18, r() * 3, 0, 7); g.fill(); }
+  const grassy = key === 'aurore' || key === 'sylve';
+  g.fillStyle = T.ground; g.fillRect(0, 0, w, h);
+  // grandes taches de couleur (relief doux)
+  for (let i = 0; i < 160; i++) { const x = r() * w, y = r() * h, rr = (30 + r() * 90) * K; const gr = g.createRadialGradient(x, y, 0, x, y, rr); const col = r() < 0.5 ? shade(T.ground, -16) : shade(T.ground, 14); gr.addColorStop(0, col); gr.addColorStop(1, col + '00'); g.globalAlpha = 0.45; g.fillStyle = gr; g.fillRect(x - rr, y - rr, rr * 2, rr * 2); }
   g.globalAlpha = 1;
-  // chemins : des Sanctuaires vers le Cœur
-  g.lineCap = 'round'; g.strokeStyle = T.path;
-  const s = w / (2 * EX);
-  for (const [lw, a] of [[2.6, 0.35], [1.9, 0.9]]) {
-    g.globalAlpha = a; g.lineWidth = lw * s;
-    g.beginPath(); g.moveTo(...P(0, -RY + 1)); g.bezierCurveTo(...P(-1.5, -5), ...P(1.5, -3), ...P(0, 0)); g.stroke();
-    g.beginPath(); g.moveTo(...P(0, RY - 1)); g.bezierCurveTo(...P(1.5, 5), ...P(-1.5, 3), ...P(0, 0)); g.stroke();
+  // bandes de tonte (terrain de tournoi d'Aurore)
+  if (key === 'aurore') { const bw = 1.6 * s; for (let y = 0, k = 0; y < h; y += bw, k++) if (k % 2) { g.fillStyle = 'rgba(255,255,230,.07)'; g.fillRect(0, y, w, bw); } }
+  // petits détails : brins d'herbe, cailloux, flocons, cendres…
+  const nDet = (hi ? 26000 : 9000);
+  for (let i = 0; i < nDet; i++) {
+    const x = r() * w, y = r() * h;
+    if (grassy) { g.strokeStyle = r() < 0.5 ? shade(T.ground, 22 + r() * 18) : shade(T.ground, -22 - r() * 14); g.globalAlpha = 0.55; g.lineWidth = 0.9 * K; const l = (2 + r() * 3) * K, a = -Math.PI / 2 + (r() - 0.5) * 0.9; g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke(); }
+    else { g.fillStyle = r() < 0.5 ? shade(T.ground, 20) : shade(T.ground, -20); g.globalAlpha = 0.4; g.fillRect(x, y, (1 + r() * 1.5) * K, (1 + r() * 1.5) * K); }
   }
   g.globalAlpha = 1;
-  // dalles autour des Sanctuaires et du Cœur
+  // fleurs (mondes verts)
+  if (grassy) for (let i = 0; i < (hi ? 900 : 380); i++) { const [x, y] = [r() * w, r() * h]; g.fillStyle = ['#fff6d0', '#ffd24a', '#ff8fb0', '#b8a0ff', '#ffffff'][Math.floor(r() * 5)]; g.globalAlpha = 0.85; g.beginPath(); g.arc(x, y, (1 + r()) * K, 0, 7); g.fill(); }
+  g.globalAlpha = 1;
+  // chemins pavés : des Sanctuaires vers le Cœur
+  const curve = (a, b, c2, d, t) => { const u = 1 - t; return [u * u * u * a[0] + 3 * u * u * t * b[0] + 3 * u * t * t * c2[0] + t * t * t * d[0], u * u * u * a[1] + 3 * u * u * t * b[1] + 3 * u * t * t * c2[1] + t * t * t * d[1]]; };
+  const paths = [[[0, -RY + 1], [-1.5, -5], [1.5, -3], [0, 0]], [[0, RY - 1], [1.5, 5], [-1.5, 3], [0, 0]]];
+  g.lineCap = 'round';
+  for (const pth of paths) { // bord de terre puis lit de pavés
+    for (const [lw, col, a] of [[2.6, shade(T.path, -45), 0.4], [2.0, shade(T.path, -48), 1]]) { g.globalAlpha = a; g.strokeStyle = col; g.lineWidth = lw * s; g.beginPath(); for (let t = 0; t <= 1.001; t += 0.02) { const [X, Z] = curve(...pth, t); const [px, pz] = P(X, Z); t ? g.lineTo(px, pz) : g.moveTo(px, pz); } g.stroke(); }
+    g.globalAlpha = 1;
+    for (let t = 0; t <= 1; t += 0.0016) { const [X, Z] = curve(...pth, t); const off = (r() - 0.5) * 1.75, [px, pz] = P(X + off, Z + (r() - 0.5) * 0.2); const rr = (0.12 + r() * 0.1) * s; g.fillStyle = shade(T.path, -6 + (r() - 0.5) * 34); g.strokeStyle = shade(T.path, -60); g.lineWidth = 0.8 * K; g.beginPath(); g.ellipse(px, pz, rr, rr * (0.7 + r() * 0.3), r() * 3, 0, 7); g.fill(); g.stroke(); }
+  }
+  // dalles autour des Sanctuaires et du Cœur (anneaux de pierres taillées)
   for (const [x, z, rr] of [[0, -9.8, 2.6], [0, 9.8, 2.6], [0, 0, 3.0]]) {
     const [px, pz] = P(x, z);
-    g.fillStyle = T.path; g.beginPath(); g.ellipse(px, pz, rr * s, rr * s, 0, 0, 7); g.fill();
-    g.strokeStyle = shade(T.path, -30); g.lineWidth = 2;
-    for (let k = 0; k < 14; k++) { const a = k / 14 * Math.PI * 2; g.beginPath(); g.moveTo(px + Math.cos(a) * rr * s * 0.45, pz + Math.sin(a) * rr * s * 0.45); g.lineTo(px + Math.cos(a) * rr * s, pz + Math.sin(a) * rr * s); g.stroke(); }
-    g.beginPath(); g.ellipse(px, pz, rr * s * 0.45, rr * s * 0.45, 0, 0, 7); g.stroke();
+    g.fillStyle = shade(T.path, -40); g.beginPath(); g.arc(px, pz, (rr + 0.18) * s, 0, 7); g.fill();
+    const rings = [[0, 0.45, 1], [0.45, 0.72, 10], [0.72, 1, 16]];
+    for (const [r0, r1, n] of rings) for (let k = 0; k < n; k++) {
+      const a0 = k / n * Math.PI * 2 + (r0 ? 0.08 : 0), a1 = (k + 1) / n * Math.PI * 2 + (r0 ? 0.08 : 0);
+      g.fillStyle = shade(T.path, (k % 2 ? -8 : 6) + (r() - 0.5) * 10); g.beginPath();
+      g.arc(px, pz, r1 * rr * s, a0, a1); if (r0) g.arc(px, pz, r0 * rr * s, a1, a0, true); else g.lineTo(px, pz); g.closePath(); g.fill();
+      g.strokeStyle = shade(T.path, -42); g.lineWidth = 1.4 * K; g.stroke();
+    }
   }
+  // ligne du milieu (frontière entre les deux camps)
+  g.setLineDash([0.5 * s, 0.4 * s]); g.strokeStyle = 'rgba(255,240,200,.35)'; g.lineWidth = 0.12 * s;
+  g.beginPath(); g.moveTo(...P(-RX + 0.6, 0.4)); g.lineTo(...P(-3.2, 0.4)); g.moveTo(...P(3.2, 0.4)); g.lineTo(...P(RX - 0.6, 0.4)); g.stroke(); g.setLineDash([]);
+  // bord du terrain : bande plus sombre au-delà de la zone de jeu
+  g.save(); g.beginPath(); g.ellipse(...P(0, 0), EX * s + 2, EZ * s + 2, 0, 0, 7); g.ellipse(...P(0, 0), (RX + 0.3) * s, (RY + 0.3) * s, 0, 0, 7, true); g.fillStyle = 'rgba(0,0,0,.16)'; g.fill('evenodd'); g.restore();
   // runes lumineuses autour du Cœur
   const runeCol = T.runes || T.lava || '#fff3c0';
   const [hx, hz] = P(0, 0);
-  ge.strokeStyle = runeCol; g.strokeStyle = shade(T.path, -45); ge.lineWidth = 2.2; g.lineWidth = 2.2;
+  ge.strokeStyle = runeCol; g.strokeStyle = shade(T.path, -45); ge.lineWidth = 2.2 * K; g.lineWidth = 2.2 * K;
   for (const gg of [g, ge]) { gg.beginPath(); gg.ellipse(hx, hz, 3.35 * s, 3.35 * s, 0, 0, 7); gg.stroke(); }
   for (let k = 0; k < 12; k++) {
     const a = k / 12 * Math.PI * 2, rx = hx + Math.cos(a) * 3.65 * s, rz = hz + Math.sin(a) * 3.65 * s;
@@ -67,7 +93,7 @@ function groundTexture(T) {
   }
   // spécial par monde
   if (T.lava) {
-    ge.strokeStyle = T.lava; g.strokeStyle = '#3a1a10'; ge.lineWidth = 3; g.lineWidth = 4;
+    ge.strokeStyle = T.lava; g.strokeStyle = '#3a1a10'; ge.lineWidth = 3 * K; g.lineWidth = 4 * K;
     for (let i = 0; i < 16; i++) {
       let x = (r() - 0.5) * 2 * EX * 0.9, z = (r() - 0.5) * 2 * EZ * 0.9; if (Math.abs(z) < 4 && Math.abs(x) < 4) continue;
       const pts = [P(x, z)]; for (let k = 0; k < 5; k++) { x += (r() - 0.5) * 2.2; z += (r() - 0.5) * 2.2; pts.push(P(x, z)); }
@@ -78,9 +104,40 @@ function groundTexture(T) {
     ge.fillStyle = T.runes; for (let i = 0; i < 40; i++) { ge.globalAlpha = 0.5; ge.beginPath(); ge.arc(r() * w, r() * h, 1.5, 0, 7); ge.fill(); }
     ge.globalAlpha = 1;
   }
-  const map = new THREE.CanvasTexture(c); map.colorSpace = THREE.SRGBColorSpace; map.anisotropy = 4;
+  const map = new THREE.CanvasTexture(c); map.colorSpace = THREE.SRGBColorSpace; map.anisotropy = hi ? 8 : 4;
   const em = new THREE.CanvasTexture(e); em.colorSpace = THREE.SRGBColorSpace;
   return { map, em };
+}
+
+// Bordure de pierres autour du terrain + touffes d'herbe / cailloux en 3D (une seule géométrie instanciée)
+function edgeDetails(group, T, key, low) {
+  let seed = 77; const r = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const N = 84, bx = new THREE.BoxGeometry(1, 1, 1);
+  const curb = new THREE.InstancedMesh(bx, new THREE.MeshStandardMaterial({ color: '#ffffff', flatShading: true, roughness: 0.9 }), N);
+  const o = new THREE.Object3D(), cc = new THREE.Color(), base = new THREE.Color(T.rock);
+  for (let i = 0; i < N; i++) {
+    const a = i / N * Math.PI * 2, x = Math.cos(a) * (RX + 0.55), z = Math.sin(a) * (RY + 0.55);
+    const len = 2 * Math.PI * Math.sqrt((RX * RX + RY * RY) / 2) / N * 0.92;
+    o.position.set(x, 0.1, z); o.rotation.set(0, -Math.atan2(Math.sin(a) * RX, Math.cos(a) * RY) + Math.PI / 2, 0); o.scale.set(len, 0.32 + r() * 0.08, 0.5);
+    o.updateMatrix(); curb.setMatrixAt(i, o.matrix); curb.setColorAt(i, cc.copy(base).multiplyScalar(0.85 + r() * 0.3));
+  }
+  curb.castShadow = true; curb.receiveShadow = true; group.add(curb);
+  // touffes (herbe dans les mondes verts, cailloux ailleurs)
+  const grassy = key === 'aurore' || key === 'sylve';
+  let geo;
+  if (grassy) { const v = []; for (let k = 0; k < 5; k++) { const a = k / 5 * Math.PI * 2, dx = Math.cos(a) * 0.08, dz = Math.sin(a) * 0.08, tx = Math.cos(a) * 0.16, tz = Math.sin(a) * 0.16; v.push(dx - 0.03, 0, dz, dx + 0.03, 0, dz, tx, 0.32 + (k % 2) * 0.12, tz); } geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(v, 3)); geo.computeVertexNormals(); }
+  else geo = new THREE.DodecahedronGeometry(0.12, 0);
+  const n = low ? 260 : 620, tufts = new THREE.InstancedMesh(geo, new THREE.MeshStandardMaterial({ color: '#ffffff', flatShading: true, side: THREE.DoubleSide, roughness: 0.9 }), n);
+  const gcol = new THREE.Color(grassy ? T.ground : T.rock);
+  let m = 0;
+  for (let tries = 0; m < n && tries < n * 6; tries++) {
+    const a = r() * Math.PI * 2, rim = r() < 0.65, k = rim ? 1.07 + r() * 0.18 : Math.sqrt(r()) * 0.95;
+    const x = Math.cos(a) * RX * k, z = Math.sin(a) * RY * k;
+    if (!rim) { if (Math.abs(x) < 1.6 + Math.abs(z) * 0.05) continue; if (Math.hypot(x, z) < 3.6 || Math.hypot(x, z - 9.8) < 3 || Math.hypot(x, z + 9.8) < 3) continue; }
+    o.position.set(x, 0, z); o.rotation.set(0, r() * 6.28, 0); o.scale.setScalar(0.7 + r() * 0.9); o.updateMatrix();
+    tufts.setMatrixAt(m, o.matrix); tufts.setColorAt(m, cc.copy(gcol).multiplyScalar(grassy ? 0.75 + r() * 0.5 : 0.6 + r() * 0.5)); m++;
+  }
+  tufts.count = m; tufts.receiveShadow = true; group.add(tufts);
 }
 
 function shade(hex, amt) {
@@ -191,7 +248,7 @@ export async function buildWorld(scene, key, { light = 'high', shadow = 0 } = {}
   const fill = new THREE.DirectionalLight(T.skyBot, 1.3); fill.position.set(6, 9, -16); group.add(fill);
 
   // sol de l'île
-  const { map, em } = groundTexture(T);
+  const { map, em } = groundTexture(T, key, light !== 'low');
   const shape = new THREE.Shape(); shape.absellipse(0, 0, EX, EZ, 0, Math.PI * 2, false, 0);
   const gg = new THREE.ShapeGeometry(shape, 64);
   const uv = gg.attributes.uv, ps = gg.attributes.position;
@@ -200,6 +257,7 @@ export async function buildWorld(scene, key, { light = 'high', shadow = 0 } = {}
   ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; ground.name = 'ground';
   group.add(ground);
   const body = islandBody(T); group.add(body);
+  edgeDetails(group, T, key, light === 'low');
 
   // décor sur le pourtour
   let seed = 21; const r = () => (seed = (seed * 16807) % 2147483647) / 2147483647;

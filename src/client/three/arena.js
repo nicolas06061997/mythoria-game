@@ -27,8 +27,9 @@ export function buildArena(group, T, key, EX, EZ, { low = false, noPit = false }
     for (let i = 0; i < SEG; i++) {
       const a = A0 + (A1 - A0) * i / SEG, b = A0 + (A1 - A0) * (i + 1) / SEG;
       const [xa, za] = P(si, a), [xb, zb] = P(si, b), [xa2, za2] = P(so, a), [xb2, zb2] = P(so, b);
-      quad([xa, y, za], [xa2, y, za2], [xb2, y, zb2], [xb, y, zb], ctop);   // marche
-      quad([xa, yb, za], [xa, y, za], [xb, y, zb], [xb, yb, zb], crise);    // contremarche
+      const vr = 0.9 + ((i * 7 + k * 13) % 5) * 0.05; // blocs de pierre un peu différents
+      quad([xa, y, za], [xa2, y, za2], [xb2, y, zb2], [xb, y, zb], ctop.clone().multiplyScalar(vr));   // marche
+      quad([xa, yb, za], [xa, y, za], [xb, y, zb], [xb, yb, zb], crise.clone().multiplyScalar(vr * (i % 2 ? 0.94 : 1)));    // contremarche
     }
   }
   // mur extérieur
@@ -88,6 +89,23 @@ export function buildArena(group, T, key, EX, EZ, { low = false, noPit = false }
       const a2 = A0 + (A1 - A0) * (i + 0.5) / NP, [bx, bz] = P(sw - 0.01, a2);
       const ban = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 2.2, 1, 4), banMat); ban.position.set(bx, yTop + 0.3, bz); ban.rotation.y = Math.atan2(-bx, -bz); group.add(ban); banners.push(ban);
     }
+  }
+  // guirlandes de fanions colorés entre les piliers (ambiance de tournoi)
+  {
+    const tri = new THREE.BufferGeometry(); tri.setAttribute('position', new THREE.Float32BufferAttribute([-0.18, 0, 0, 0.18, 0, 0, 0, -0.42, 0], 3)); tri.computeVertexNormals();
+    const per = 9, flags = new THREE.InstancedMesh(tri, new THREE.MeshStandardMaterial({ color: '#fff', side: THREE.DoubleSide, flatShading: true }), NP * per);
+    const o = new THREE.Object3D(), fc = new THREE.Color(), FC = [banCol, '#ffffff', '#d84a4a', '#3d8ad8', '#e8c040'];
+    let m = 0; const ropePts = [];
+    for (let i = 0; i < NP; i++) {
+      const a0 = A0 + (A1 - A0) * i / NP, a1 = A0 + (A1 - A0) * (i + 1) / NP, [x0, z0] = P(sw + 0.02, a0), [x1, z1] = P(sw + 0.02, a1);
+      for (let j = 0; j < per; j++) {
+        const t = (j + 0.5) / per, x = x0 + (x1 - x0) * t, z = z0 + (z1 - z0) * t, y = yTop + 3.0 - Math.sin(t * Math.PI) * 0.9;
+        o.position.set(x, y, z); o.rotation.set(0, Math.atan2(x1 - x0, z1 - z0) + Math.PI / 2, 0); o.updateMatrix(); flags.setMatrixAt(m, o.matrix); flags.setColorAt(m, fc.set(FC[(i + j) % FC.length])); m++;
+      }
+      for (let j = 0; j <= 8; j++) { const t = j / 8; ropePts.push(new THREE.Vector3(x0 + (x1 - x0) * t, yTop + 3.0 - Math.sin(t * Math.PI) * 0.9, z0 + (z1 - z0) * t)); }
+    }
+    group.add(flags);
+    const rope = new THREE.Line(new THREE.BufferGeometry().setFromPoints(ropePts), new THREE.LineBasicMaterial({ color: '#3a2a1a' })); group.add(rope);
   }
   ups.push((dt, t) => {
     torches.forEach((f, i) => f.scale.setScalar(1.4 + Math.sin(t * 13 + i * 2) * 0.15 + Math.sin(t * 7 + i) * 0.1));

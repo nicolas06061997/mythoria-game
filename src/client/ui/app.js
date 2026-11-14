@@ -26,9 +26,37 @@ export function startApp(el, version) {
   initKingdom({ P: () => P, render: () => render() });
   initModes({ P: () => P, render: () => render(), play: (m, l, w, x) => play(m, l, w, x) });
   render();
-  setTimeout(loginPopup, 900);
+  if (P.named) setTimeout(loginPopup, 900); else setTimeout(() => openWelcome(() => setTimeout(loginPopup, 500)), 700);
   // prépare les portraits en arrière-plan
   setTimeout(() => P.deck.forEach(id => portrait(id)), 600);
+}
+
+// ---------- Bienvenue : choisir son nom au premier lancement ----------
+const NAME_A = ['Aube', 'Braise', 'Givre', 'Lune', 'Rune', 'Orage', 'Sylve', 'Ombre', 'Étoile', 'Fer', 'Cristal', 'Tempête'];
+const NAME_B = ['lame', 'cœur', 'garde', 'chasseur', 'mage', 'loup', 'flamme', 'bouclier', 'croc', 'vent', 'roi', 'reine'];
+const randomName = () => NAME_A[Math.floor(Math.random() * NAME_A.length)] + NAME_B[Math.floor(Math.random() * NAME_B.length)];
+function cleanName(v) { return v.replace(/[<>&"']/g, '').replace(/\s+/g, ' ').trim().slice(0, 16); }
+function openWelcome(done) {
+  const input = h('input', { class: 'inp big', maxlength: 16, placeholder: 'Ton nom de héros', value: '', autocomplete: 'off', enterkeyhint: 'done' });
+  const err = h('small', { class: 'w-err' });
+  const go = () => {
+    const v = cleanName(input.value);
+    if (v.length < 3) { err.textContent = 'Il faut au moins 3 lettres.'; input.focus(); return; }
+    P.name = v; P.named = true; saveProfile(P); sfx('fuse');
+    page.classList.add('off'); setTimeout(() => page.remove(), 400);
+    render(); toast('Bienvenue dans Mythoria, ' + v + ' !'); done && done();
+  };
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+  const page = h('div', { class: 'welcome' },
+    h('div', { class: 'logo' }, 'MYTHORIA'),
+    h('p', { class: 'w-intro' }, 'Les Failles se sont ouvertes sur les six royaumes. Mythoria a besoin d’un nouveau héros…'),
+    h('label', {}, 'Comment t’appelles-tu dans le jeu ?'),
+    input, err,
+    h('button', { class: 'btn ghost small', onclick: () => { input.value = randomName(); err.textContent = ''; sfx('click'); } }, '🎲 Choisir un nom au hasard'),
+    h('button', { class: 'btn big gold', onclick: go }, 'Commencer l’aventure'),
+    h('small', { class: 'muted' }, 'Tu pourras le changer plus tard en touchant ton portrait en haut à gauche.'));
+  document.body.append(page);
+  setTimeout(() => input.focus(), 400);
 }
 
 // ---------- Cadre ----------
@@ -326,9 +354,9 @@ function openProfile() {
   const s = sheet(h('div', { class: 'profile' },
     h('h3', {}, 'Ton profil'),
     h('label', {}, 'Pseudo'), h('div', { class: 'row gap' }, input, h('button', { class: 'btn gold', onclick: () => {
-      const v = input.value.replace(/[<>]/g, '').trim().slice(0, 16);
+      const v = cleanName(input.value);
       if (v.length < 3) return toast('3 caractères minimum', 'bad');
-      P.name = v; saveProfile(P); toast('Pseudo enregistré ✓'); s.close(); render();
+      P.name = v; P.named = true; saveProfile(P); toast('Pseudo enregistré ✓'); s.close(); render();
     } }, 'OK')),
     h('label', {}, 'Héros favori (avatar)'),
     h('div', { class: 'avatars' }, owned(P).map(id => h('button', { class: 'av' + (P.avatar === id ? ' on' : ''), onclick: () => { P.avatar = id; saveProfile(P); s.close(); render(); } }, portraitImg(id)))),

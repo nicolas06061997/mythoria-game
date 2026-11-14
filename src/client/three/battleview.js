@@ -154,27 +154,52 @@ export class BattleView {
     const E = (cx, cy, rx, ry) => new THREE.Vector4(cx / A.W, cy / A.imgH, rx / A.W, ry / A.imgH);
     this.bgU = { map: { value: tex }, t: { value: 0 }, cheer: { value: 0 },
       outE: { value: E(588, 1090, 575, 520) }, inE: { value: E(588, 1095, 455, 352) }, floorE: { value: E(588, 1095, 440, 340) },
-      castA: { value: new THREE.Vector4(470 / A.W, 530 / A.imgH, 710 / A.W, 780 / A.imgH) }, castB: { value: new THREE.Vector4(380 / A.W, 1390 / A.imgH, 800 / A.W, 1790 / A.imgH) } };
+      castA: { value: new THREE.Vector4(470 / A.W, 530 / A.imgH, 710 / A.W, 780 / A.imgH) }, castB: { value: new THREE.Vector4(380 / A.W, 1390 / A.imgH, 800 / A.W, 1790 / A.imgH) },
+      islE: { value: E(588, 1480, 590, 470) }, res: { value: new THREE.Vector2(A.W, A.imgH) } };
     const mat = new THREE.ShaderMaterial({ uniforms: this.bgU, transparent: true, depthWrite: false, toneMapped: false,
       vertexShader: 'varying vec2 vu; void main(){ vu = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
-      fragmentShader: `uniform sampler2D map; uniform float t, cheer; uniform vec4 outE, inE, floorE, castA, castB; varying vec2 vu;
+      fragmentShader: `uniform sampler2D map; uniform float t, cheer; uniform vec4 outE, inE, floorE, castA, castB, islE; uniform vec2 res; varying vec2 vu;
         float ell(vec2 p, vec4 e){ vec2 d = (p - e.xy) / e.zw; return dot(d, d); }
         float box(vec2 p, vec4 b){ return step(b.x, p.x) * step(p.x, b.z) * step(b.y, p.y) * step(p.y, b.w); }
         float h21(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+        vec2 rot(vec2 p, vec2 c, float a){ vec2 d = p - c; float s = sin(a), co = cos(a); return c + vec2(co * d.x - s * d.y, s * d.x + co * d.y); }
+        vec2 toUV(vec2 P){ return vec2(P.x / res.x, 1.0 - P.y / res.y); }
         void main(){
-          vec2 p = vec2(vu.x, 1.0 - vu.y), uv = vu;
+          vec2 p = vec2(vu.x, 1.0 - vu.y), P = p * res;
+          // --- la statue de dragon s'anime : ailes qui battent, corps qui respire ---
+          vec2 Q = P; float flap = 0.2 * sin(t * 3.0) + 0.05 * sin(t * 7.0);
+          vec2 L = vec2(860.0, 182.0), R = vec2(902.0, 182.0);
+          float wL = smoothstep(4.0, 40.0, L.x - P.x) * (1.0 - smoothstep(150.0, 195.0, length(P - L))) * step(P.y, 245.0);
+          float wR = smoothstep(4.0, 40.0, P.x - R.x) * (1.0 - smoothstep(140.0, 180.0, length(P - R))) * step(P.y, 245.0);
+          if (wL > 0.0) Q = rot(Q, L, -flap * wL);
+          if (wR > 0.0) Q = rot(Q, R, flap * wR);
+          float wB = (1.0 - smoothstep(70.0, 110.0, abs(P.x - 880.0))) * smoothstep(262.0, 222.0, P.y) * step(40.0, P.y);
+          Q.y -= wB * (2.5 * sin(t * 1.6) + 2.0 * flap * 6.0);
+          float drag = box(P, vec4(770.0, 40.0, 1030.0, 262.0));
+          // --- le vide sous l'arène tourbillonne doucement (deux échantillons en fondu, sans à-coup) ---
+          vec2 V = vec2(588.0, 1900.0); float r = length(P - V), fall = exp(-r / 520.0);
+          float skyM = smoothstep(1.0, 1.15, ell(p, outE)) * smoothstep(1.0, 1.12, ell(p, islE)) * (1.0 - smoothstep(1935.0, 1960.0, P.y)) * (1.0 - drag);
+          float f = fract(t * 0.05), aw = 0.32 * fall * skyM;
+          vec2 uvA = toUV(rot(Q, V, aw * f)), uvB = toUV(rot(Q, V, aw * fract(f + 0.5)));
+          float lerpF = abs((0.5 - f) / 0.5);
+          // --- public qui saute ---
           float crowd = smoothstep(1.0, 0.96, ell(p, outE)) * smoothstep(1.0, 1.06, ell(p, inE)) * (1.0 - box(p, castA)) * (1.0 - box(p, castB));
           vec2 cell = floor(p * vec2(70.0, 95.0)); float ph = h21(cell);
-          float jump = max(0.0, sin(t * (5.0 + cheer * 7.0) * (0.8 + ph * 0.5) + ph * 6.283));
-          uv.y -= crowd * jump * (0.0012 + cheer * 0.0042);
-          vec4 c = texture2D(map, uv);
+          float jump = max(0.0, sin(t * (5.0 + cheer * 7.0) * (0.8 + ph * 0.5) + ph * 6.283)) * crowd * (0.0012 + cheer * 0.0042);
+          uvA.y -= jump; uvB.y -= jump;
+          vec4 c = skyM > 0.001 ? mix(texture2D(map, uvA), texture2D(map, uvB), lerpF) : texture2D(map, uvA);
+          // reflet doré qui passe sur le dragon
+          float gold = clamp((c.r - c.b) * 2.0, 0.0, 1.0) * drag;
+          c.rgb += vec3(1.0, 0.85, 0.45) * gold * 0.55 * pow(max(0.0, sin((P.x + P.y) * 0.03 - t * 2.5)), 12.0);
+          // vagues d'énergie qui partent du tourbillon
+          c.rgb += vec3(0.45, 0.5, 1.0) * skyM * fall * 0.10 * pow(0.5 + 0.5 * sin(r * 0.035 - t * 1.4), 6.0);
           float blue = clamp((c.b - max(c.r, c.g)) * 3.0, 0.0, 1.0);
           float floorM = smoothstep(1.0, 0.9, ell(p, floorE)), castM = max(box(p, castA), box(p, castB));
           float pulse = 0.5 + 0.5 * sin(t * 2.2 - length((p - floorE.xy) / floorE.zw) * 5.0);
           c.rgb += vec3(0.25, 0.55, 1.0) * blue * (floorM * 0.18 * pulse + castM * 0.35 * (0.5 + 0.5 * sin(t * 3.1)));
           float sky = step(1.05, ell(p, outE)) * (1.0 - castM);
           vec2 sc = floor(p * vec2(120.0, 200.0)); float st = h21(sc + 7.0);
-          if (st > 0.985) { vec2 f = fract(p * vec2(120.0, 200.0)) - 0.5; float tw = pow(max(0.0, sin(t * (1.5 + st * 3.0) + st * 40.0)), 6.0); c.rgb += sky * tw * smoothstep(0.25, 0.0, length(f)) * vec3(0.9, 0.9, 1.0); }
+          if (st > 0.985) { vec2 fr = fract(p * vec2(120.0, 200.0)) - 0.5; float tw = pow(max(0.0, sin(t * (1.5 + st * 3.0) + st * 40.0)), 6.0); c.rgb += sky * (1.0 - drag) * tw * smoothstep(0.25, 0.0, length(fr)) * vec3(0.9, 0.9, 1.0); }
           gl_FragColor = c;
         }` });
     const plane = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mat);

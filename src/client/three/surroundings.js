@@ -98,7 +98,7 @@ const BUILDERS = {
     await bigProps(g, ['BirchTree_Autumn_1', 'CommonTree_3', 'Willow_Dead_1'], ring(EX, EZ, low ? 4 : 7, 1.6, 1.9, 0.1), { scale: [3.5, 5] });
     // champignons lumineux géants
     const stem = flat('#efe6d0'), caps = [glow('#7fe0ff', 0.9), glow('#c08aff', 0.9), glow('#8fff9a', 0.8)];
-    for (const p of ring(EX, EZ, low ? 6 : 10, 1.08, 1.2, 0.1)) {
+    for (const p of ring(EX, EZ, low ? 6 : 10, 1.2, 1.32, 0.1)) {
       const s = 0.8 + Math.random() * 1.2, m = new THREE.Group();
       const st = new THREE.Mesh(new THREE.CylinderGeometry(0.15 * s, 0.25 * s, 1.4 * s, 6), stem); st.position.y = 0.7 * s; m.add(st);
       const cp = new THREE.Mesh(new THREE.SphereGeometry(0.75 * s, 8, 5, 0, Math.PI * 2, 0, 1.5), caps[Math.floor(Math.random() * 3)]); cp.position.y = 1.4 * s; m.add(cp);
@@ -169,7 +169,7 @@ const BUILDERS = {
       });
       sg.attributes.position.needsUpdate = true;
     });
-    await bigProps(g, ['CommonTree_Dead_2', 'Rock_3'], ring(EX, EZ, low ? 5 : 9, 1.1, 1.25, 0.1), { tint: '#4a3a34', scale: [1.6, 2.6] });
+    await bigProps(g, ['CommonTree_Dead_2', 'Rock_3'], ring(EX, EZ, low ? 5 : 9, 1.25, 1.4, 0.1), { tint: '#4a3a34', scale: [1.6, 2.6] });
     dragons(g, ups, [{ c: '#c4263c', b: '#ffcf70', horns: true, s: 2.4, r: 24, h: 11, sp: 0.1, dir: 1 }, { c: '#ff7a3d', b: '#ffd27a', s: 1.5, r: 19, h: 8, sp: 0.16, dir: -1, ph: 2.5 }].slice(0, low ? 1 : 2));
   },
 
@@ -177,7 +177,7 @@ const BUILDERS = {
   async givre(g, T, EX, EZ, ups, low) {
     cliffs(g, EX, EZ, '#cfe6f6', '#9fc6e6', { h: 8, s0: 1.35, n: 24, spikes: true });
     const ice = glow('#bfefff', 0.35, { transparent: true, opacity: 0.85, roughness: 0.1 });
-    for (const p of ring(EX, EZ, low ? 8 : 12, 1.1, 1.3, 0.06)) {
+    for (const p of ring(EX, EZ, low ? 8 : 12, 1.22, 1.4, 0.06)) {
       const grp = new THREE.Group();
       for (let k = 0; k < 3; k++) { const s = 0.6 + Math.random() * 1.1, m = new THREE.Mesh(new THREE.OctahedronGeometry(s, 0), ice); m.scale.y = 3 + Math.random() * 2; m.position.set((Math.random() - 0.5) * 2, s * 2, (Math.random() - 0.5) * 2); m.rotation.z = (Math.random() - 0.5) * 0.6; grp.add(m); }
       grp.position.set(p.x, -0.4, p.z); g.add(grp);
@@ -199,14 +199,14 @@ const BUILDERS = {
     cliffs(g, EX, EZ, '#1e1828', '#2a1e38', { h: 9, s0: 1.4, n: 26, spikes: true });
     // pics d'obsidienne aux arêtes violettes
     const obs = flat('#14101c', { roughness: 0.3, metalness: 0.3 }), edge = glow('#b46bff', 1.4);
-    for (const p of ring(EX, EZ, low ? 9 : 14, 1.1, 1.32, 0.07)) {
+    for (const p of ring(EX, EZ, low ? 9 : 14, 1.22, 1.4, 0.07)) {
       const H = 3 + Math.random() * 5, m = new THREE.Mesh(new THREE.ConeGeometry(0.7 + Math.random() * 0.6, H, 4), obs); m.position.set(p.x, H / 2 - 0.4, p.z); m.rotation.set((Math.random() - 0.5) * 0.4, Math.random() * 3, (Math.random() - 0.5) * 0.4); g.add(m);
       const e = new THREE.Mesh(new THREE.ConeGeometry(0.12, H * 0.8, 4), edge); e.position.copy(m.position); e.rotation.copy(m.rotation); e.position.y += 0.2; g.add(e);
     }
     await bigProps(g, ['CommonTree_Dead_2', 'Willow_Dead_1'], ring(EX, EZ, low ? 5 : 8, 1.35, 1.6, 0.1), { tint: '#3a3048', scale: [3, 4.2] });
     // braseros de feu violet
     const fires = [];
-    for (const p of ring(EX, EZ, 8, 1.06, 1.06, 0.02)) {
+    for (const p of ring(EX, EZ, 8, 1.16, 1.16, 0.02)) {
       const b = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.25, 1.4, 6), flat('#2a2234', { metalness: 0.5 })); b.position.set(p.x, 0.4, p.z); g.add(b);
       const f = glowSprite(0xb46bff, 1.3); f.position.set(p.x, 1.6, p.z); g.add(f); fires.push(f);
     }

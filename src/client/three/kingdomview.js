@@ -74,7 +74,7 @@ export class KingdomView {
     this.scene.fog = new THREE.Fog(T.fog, 50, 130);
     this.scene.add(new THREE.HemisphereLight(T.hemiSky, T.hemiGround, T.hemiI * 1.1));
     const sun = new THREE.DirectionalLight(T.sun, T.sunI); sun.position.set(-8, 16, 9); sun.castShadow = true;
-    const q = quality(); sun.shadow.mapSize.set(q.low ? 1024 : 2048, q.low ? 1024 : 2048);
+    const q = quality(); sun.shadow.mapSize.set(Math.min(2048, q.shadowSize), Math.min(2048, q.shadowSize));
     Object.assign(sun.shadow.camera, { left: -11, right: 11, top: 11, bottom: -11, near: 1, far: 50 }); sun.shadow.bias = -0.0008; sun.shadow.normalBias = 0.03;
     this.scene.add(sun);
     // île

@@ -19,7 +19,7 @@ export class Showcase {
     this.t = 0; this.rotY = 0.5; this.spin = 0.25; this.dead = false;
     const T = THEMES[world] || THEMES.aurore;
     this.sky = skyDome(mode === 'home' ? T : { skyTop: '#2a1a5a', skyBot: '#0d0820' }); this.sky.scale.setScalar(0.25); this.scene.add(this.sky);
-    this.post = createComposer(this.r, this.scene, this.cam, { bloom: !quality().low, strength: 0.45, threshold: 1.1, radius: 0.5 });
+    this.post = createComposer(this.r, this.scene, this.cam, { bloom: quality().bloom, strength: 0.45, threshold: 1.1, radius: 0.5, samples: quality().msaa });
     this.scene.add(new THREE.HemisphereLight(T.hemiSky, T.hemiGround, 1.3));
     const sun = new THREE.DirectionalLight(T.sun, 2.4); sun.position.set(-3, 6, 4); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024);
     Object.assign(sun.shadow.camera, { left: -3, right: 3, top: 4, bottom: -2, near: 0.5, far: 20 }); this.scene.add(sun);

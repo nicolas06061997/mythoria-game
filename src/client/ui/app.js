@@ -9,7 +9,7 @@ import { Battle, spellIcon } from '../battle.js';
 import { HeroMode } from '../heromode.js';
 import { doInstall } from '../install.js';
 import { Showcase, portrait } from '../three/showcase.js';
-import { webglOk } from '../three/stage.js';
+import { webglOk, GFX_LEVELS, gfxChoice, setGfx, autoLevel, showFps, setShowFps } from '../three/stage.js';
 import { THEMES } from '../three/world.js';
 import { h, toast, sheet, confirmBox } from './dom.js';
 import { icon } from './icons.js';
@@ -377,6 +377,11 @@ function openSettings() {
   const s = sheet(h('div', { class: 'settings' },
     h('h3', {}, 'Réglages'),
     h('button', { class: 'btn ghost wide', onclick: () => { P.sound = !P.sound; setSound(P.sound); saveProfile(P); s.close(); openSettings(); } }, icon('sound'), P.sound ? ' Son : activé' : ' Son : coupé'),
+    h('h4', {}, '🎨 Graphismes'),
+    h('div', { class: 'gfx' }, GFX_LEVELS.map(l => h('button', { class: 'gfxb' + (gfxChoice() === l.id ? ' on' : ''), onclick: () => { setGfx(l.id); sfx('click'); s.close(); openSettings(); render(); toast('Graphismes : ' + l.name + (l.id === 'auto' ? ' (' + GFX_LEVELS.find(x => x.id === autoLevel()).name + ')' : '')); } }, l.name))),
+    h('p', { class: 'muted small' }, (GFX_LEVELS.find(l => l.id === gfxChoice()) || GFX_LEVELS[0]).desc + (gfxChoice() === 'auto' ? ' Sur ce téléphone : ' + GFX_LEVELS.find(x => x.id === autoLevel()).name + '.' : '') + ' S’applique au prochain écran 3D (combat, menu).'),
+    h('button', { class: 'btn ghost wide', onclick: () => { setShowFps(!showFps()); s.close(); openSettings(); } }, showFps() ? '📈 Compteur d’images (FPS) : affiché' : '📈 Compteur d’images (FPS) : caché'),
+    h('h4', {}, '⚙️ Général'),
     h('button', { class: 'btn ghost wide', onclick: install }, icon('install'), ' Installer le jeu sur l’écran d’accueil'),
     h('button', { class: 'btn ghost wide', onclick: share }, icon('share'), ' Partager le jeu'),
     h('button', { class: 'btn ghost wide', onclick: openRoadmap }, icon('map'), ' Le plan du jeu'),

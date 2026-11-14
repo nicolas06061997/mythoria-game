@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { HERO } from '../shared/content.js';
 import { BOSSES } from '../shared/campaign.js';
 import { levelMult } from '../shared/content.js';
-import { createRenderer, quality } from './three/stage.js';
+import { createRenderer, quality, PerfWatch } from './three/stage.js';
 import { buildWorld } from './three/world.js';
 import { makeHero, preload } from './three/assets.js';
 import { FX } from './three/fx.js';
@@ -69,10 +69,11 @@ export class HeroMode {
     this.cam = new THREE.PerspectiveCamera(50, 1, 0.5, 400);
     this.fx = new FX(this.scene);
     const ids = [this.o.heroId, 'squelette', 'pousse', 'loups', 'golemet', 'osseuse', 'follets', ...BOSSES.map(b => b.base)];
-    await Promise.all([buildWorld(this.scene, this.o.world.key, { light: q.low ? 'low' : 'high' }).then(w => { this.world = w; }), preload(ids, k => { this.elLoadBar.style.width = Math.round(k * 100) + '%'; })]);
+    await Promise.all([buildWorld(this.scene, this.o.world.key, { light: q.low ? 'low' : 'high', shadow: q.shadowSize }).then(w => { this.world = w; }), preload(ids, k => { this.elLoadBar.style.width = Math.round(k * 100) + '%'; })]);
     this.r.toneMappingExposure = this.world.theme.exposure;
-    this.post = createComposer(this.r, this.scene, this.cam, { bloom: !q.low, strength: 0.45, threshold: 1.15 });
-    this.hero = await makeHero(this.o.heroId, { skin: this.o.skin, lite: q.low });
+    this.post = createComposer(this.r, this.scene, this.cam, { bloom: q.bloom, strength: 0.45, threshold: 1.15, samples: q.msaa });
+    this.perf = new PerfWatch(this.r, () => this.resize(), this.cv.parentElement);
+    this.hero = await makeHero(this.o.heroId, { skin: this.o.skin, lite: q.lite });
     this.hero.holder.add(blobShadow(1.3));
     const ring = new THREE.Mesh(new THREE.RingGeometry(0.6, 0.78, 32), new THREE.MeshBasicMaterial({ color: '#3da9ff', transparent: true, opacity: 0.9, side: THREE.DoubleSide, depthWrite: false })); ring.rotation.x = -Math.PI / 2; ring.position.y = 0.05; this.hero.holder.add(ring);
     this.aim = new THREE.Mesh(new THREE.RingGeometry(this.p.range - 0.06, this.p.range, 48), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.18, side: THREE.DoubleSide, depthWrite: false })); this.aim.rotation.x = -Math.PI / 2; this.aim.position.y = 0.06; this.scene.add(this.aim);
@@ -225,6 +226,7 @@ export class HeroMode {
     this.cam.lookAt(P.x * 0.7, 0, P.z * 0.7 - 1.5);
     this.fx.update(dt); this.world.update(dt, this.t);
     this.post.render();
+    if (this.perf) this.perf.tick(dt);
     this.hud(dt);
   }
   hud(dt) {
@@ -255,6 +257,7 @@ export class HeroMode {
     this.ended = true; this.destroy(); this.o.onEnd({ wave: this.wave, kills: this.kills, time: Math.round(this.t) });
   }
   destroy() {
+    if (this.perf) this.perf.dispose();
     this.dead = true; cancelAnimationFrame(this.raf);
     removeEventListener('pointermove', this.mv); removeEventListener('pointerup', this.up); removeEventListener('pointercancel', this.up); removeEventListener('resize', this.onResize);
     try { this.fx.dispose(); this.world && this.world.dispose(); this.r.dispose(); this.r.forceContextLoss && this.r.forceContextLoss(); } catch (e) {}

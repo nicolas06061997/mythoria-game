@@ -69,7 +69,7 @@ export class Battle {
             h('span', { class: 'sm-ic' }, icon('summon')), h('b', {}, 'Invoquer'), h('small', {}, icon('ether'), SUMMON_COST)))),
       this.elLoad = h('div', { class: 'b-load' }, h('div', { class: 'logo' }, 'MYTHORIA'), h('b', {}, 'Ouverture de la Faille…'),
         h('small', {}, w.name), h('div', { class: 'lbar' }, this.elLoadBar = h('i'))),
-      this.elHint = h('div', { class: 'b-hint' }, 'Touche un héros du Cercle, puis touche l’île (ou fais-le glisser)'));
+      this.elHint = h('div', { class: 'b-hint' }, '👆 Touche un héros du Cercle, puis l’île'));
     this.gems = [...this.el.querySelectorAll('.eth-gems i')];
     this.root.innerHTML = ''; this.root.append(this.el);
     this.cv.addEventListener('pointerdown', e => this.down(e));
@@ -132,7 +132,7 @@ export class Battle {
   select(slot) {
     this.sel = slot;
     this.view.highlightSlot(slot);
-    if (slot >= 0) { const h0 = this.s.players[this.me].bench[slot]; this.view.zone.visible = true; this.elHint.textContent = 'Touche ta moitié de l’île (zone bleue) pour envoyer ' + HERO[h0.id].name; this.elHint.classList.remove('off'); }
+    if (slot >= 0) { const h0 = this.s.players[this.me].bench[slot]; this.view.zone.visible = true; this.elHint.textContent = 'Touche la zone bleue pour envoyer ' + HERO[h0.id].name; this.elHint.classList.remove('off'); }
     else { this.view.zone.visible = false; this.elHint.classList.add('off'); }
   }
   move(e) {
@@ -229,7 +229,7 @@ export class Battle {
     if (this.sel >= 0 && !P.bench[this.sel]) this.select(-1);
     const nb = P.bench.filter(Boolean).length;
     this.elSummon.classList.toggle('hint', P.mana >= 4 && nb < 2);
-    if (!P.deployed && s.t > 12 && nb && this.elHint.classList.contains('off') && !this.hintAgain) { this.hintAgain = true; this.elHint.textContent = 'Astuce : touche un héros du Cercle (en bas), puis touche l’île'; this.elHint.classList.remove('off'); setTimeout(() => this.elHint.classList.add('off'), 6000); }
+    if (!P.deployed && s.t > 12 && nb && this.elHint.classList.contains('off') && !this.hintAgain) { this.hintAgain = true; this.elHint.textContent = 'Astuce : touche un héros en bas, puis l’île'; this.elHint.classList.remove('off'); setTimeout(() => this.elHint.classList.add('off'), 6000); }
     this.elSpell.style.setProperty('--p', P.eveil / 100);
     this.elSpell.classList.toggle('ready', P.eveil >= 100);
     const hs = s.heart.owner < 0 ? 'Cœur : libre' : s.heart.owner === this.me ? 'Cœur : à toi ✦' : 'Cœur : ennemi';

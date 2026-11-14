@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { CX, CY, RX, RY, HEART, SANCT, BENCH } from '../../shared/sim.js';
 import { HERO, SPELL, RARITIES } from '../../shared/content.js';
-import { createRenderer, quality } from './stage.js';
+import { createRenderer, quality, PerfWatch } from './stage.js';
 import { buildWorld } from './world.js';
 import { makeHero, preload, prop } from './assets.js';
 import { sanctuaryCrystal, heartOfMyth, glowSprite } from './procedural.js';
@@ -32,7 +32,7 @@ export class BattleView {
 
   async init(heroIds, onProgress) {
     const [world] = await Promise.all([
-      buildWorld(this.scene, this.key, { light: this.q.low ? 'low' : 'high' }),
+      buildWorld(this.scene, this.key, { light: this.q.low ? 'low' : 'high', shadow: this.q.shadowSize }),
       preload(heroIds, onProgress),
     ]);
     this.world = world;
@@ -76,7 +76,8 @@ export class BattleView {
     this.scene.add(this.zone);
     this.aim = new THREE.Mesh(new THREE.RingGeometry(0.92, 1, 48), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.85, depthWrite: false, side: THREE.DoubleSide }));
     this.aim.rotation.x = -Math.PI / 2; this.aim.position.y = 0.09; this.aim.visible = false; this.scene.add(this.aim);
-    this.post = createComposer(this.r, this.scene, this.cam, { bloom: !this.q.low, strength: 0.45, threshold: 1.15, radius: 0.45 });
+    this.post = createComposer(this.r, this.scene, this.cam, { bloom: this.q.bloom, strength: 0.45, threshold: 1.15, radius: 0.45, samples: this.q.msaa });
+    this.perf = new PerfWatch(this.r, () => this.resize(), this.cv.parentElement);
     this.resize();
   }
 
@@ -211,7 +212,7 @@ export class BattleView {
   async ensureView(e) {
     const v = { pending: true, ring: null, actor: null };
     this.views.set(e.id, v);
-    const a = await makeHero(e.card, { star: e.star, lite: this.q.low, skin: e.boss ? e.boss.skin : e.p === this.me ? (this.skins || {})[e.card] : null });
+    const a = await makeHero(e.card, { star: e.star, lite: this.q.lite, skin: e.boss ? e.boss.skin : e.p === this.me ? (this.skins || {})[e.card] : null });
     if (e.boss) { a.holder.scale.multiplyScalar(e.boss.scale); a.height *= e.boss.scale; const gl = glowSprite(0xff2a3a, e.r * 4); gl.material.opacity = 0.3; gl.position.y = 0.3; a.holder.add(gl); }
     if (!this.views.has(e.id)) { a.dispose(); return; }
     a.holder.add(blobShadow(e.r * 3));
@@ -272,7 +273,7 @@ export class BattleView {
         if (b.actor) { b.g.remove(b.actor.holder); b.actor.dispose(); b.actor = null; }
         if (h) {
           const k = key;
-          makeHero(h.id, { star: h.star, lite: this.q.low, skin: (this.skins || {})[h.id] }).then(a => {
+          makeHero(h.id, { star: h.star, lite: this.q.lite, skin: (this.skins || {})[h.id] }).then(a => {
             if (b.key !== k) { a.dispose(); return; }
             a.holder.position.y = 0.23; a.holder.scale.multiplyScalar(1.05); a.play('idle'); b.actor = a; b.g.add(a.holder);
           });
@@ -296,6 +297,7 @@ export class BattleView {
     if (this.shake > 0) { this.shake = Math.max(0, this.shake - dt); const k = this.shake * 0.5; this.cam.position.set(this.camBase.x + (Math.random() - 0.5) * k, this.camBase.y + (Math.random() - 0.5) * k, this.camBase.z + (Math.random() - 0.5) * k); }
     else this.cam.position.copy(this.camBase);
     this.post.render();
+    if (this.perf) this.perf.tick(dt);
     this.drawOverlay(s, alpha, dt);
   }
 
@@ -342,6 +344,7 @@ export class BattleView {
   }
 
   dispose() {
+    if (this.perf) this.perf.dispose();
     this.fx.dispose(); this.world && this.world.dispose();
     for (const [, v] of this.views) if (v.actor) v.actor.dispose();
     this.r.dispose(); this.r.forceContextLoss && this.r.forceContextLoss();

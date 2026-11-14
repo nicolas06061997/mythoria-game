@@ -255,7 +255,7 @@ body.in-battle #app { display: none; }
 .b-load { position: absolute; inset: 0; z-index: 5; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; background: radial-gradient(circle at 50% 40%, #2a1a5a, #07040f 70%); transition: opacity .5s; }
 .b-load.off { opacity: 0; pointer-events: none; } .b-load small { color: var(--mut); }
 .lbar { width: 60%; height: 8px; border-radius: 5px; background: rgba(255, 255, 255, .1); overflow: hidden; margin-top: 8px; } .lbar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--cyan), #b48cff); transition: width .2s; }
-.b-hint { position: absolute; left: 50%; bottom: calc(150px + var(--safe-b)); transform: translateX(-50%); width: max-content; max-width: 90%; padding: 7px 12px; border-radius: 12px; background: rgba(12, 6, 26, .75); border: 1px solid var(--line); font-size: 12.5px; font-weight: 800; pointer-events: none; transition: opacity .4s; text-align: center; }
+.b-hint { position: absolute; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 104px); transform: translateX(-50%); width: max-content; max-width: 92%; padding: 5px 12px; white-space: nowrap; border-radius: 12px; background: rgba(12, 6, 26, .75); border: 1px solid var(--line); font-size: 12.5px; font-weight: 800; pointer-events: none; transition: opacity .4s; text-align: center; }
 .b-hint.off { opacity: 0; }
 
 #toast { position: fixed; left: 50%; top: 16%; transform: translate(-50%, -10px); z-index: 90; background: rgba(16, 10, 36, .94); border: 1px solid var(--line); padding: 9px 16px; border-radius: 14px; font-weight: 800; opacity: 0; pointer-events: none; transition: .2s; max-width: 90vw; text-align: center; font-size: 14px; }
@@ -350,7 +350,7 @@ body.in-battle #app { display: none; }
 .hm-sup .ring { position: absolute; inset: -4px; width: calc(100% + 8px); height: calc(100% + 8px); transform: rotate(-90deg); }
 .hm-sup .ring circle { fill: none; stroke-width: 7; } .hm-sup .ring .bg { stroke: rgba(0, 0, 0, .5); } .hm-sup .ring .fg { stroke: var(--gold); stroke-linecap: round; stroke-dasharray: 276.5; stroke-dashoffset: calc(276.5 * (1 - var(--p, 0))); }
 .hm-sup.ready { filter: none; border-color: var(--gold); box-shadow: 0 0 22px rgba(255, 207, 92, .8); animation: pulse 1s infinite; } .hm-sup.ready b { color: #fff; }
-.hero-mode .b-hint { bottom: calc(130px + var(--safe-b)); }
+.hero-mode .b-hint { top: auto; bottom: calc(130px + var(--safe-b)); }
 .hero-mode .b-boss { top: calc(76px + var(--safe-t)); }
 .b-summon.hint:not(.off) { animation: pulse .8s infinite; box-shadow: 0 4px 0 var(--gold3), 0 0 30px rgba(255, 200, 80, .9); }
 /* ---------- bouton « Installer le jeu » (comme les autres jeux) ---------- */
@@ -369,3 +369,12 @@ body.in-battle #inst { display: none; }
 .inp.big { width: 100%; max-width: 340px; flex: none; font-size: 20px; text-align: center; padding: 14px; border-radius: 14px; border-color: var(--gold); }
 .w-err { color: #ffb0b8; font-weight: 800; min-height: 16px; }
 .welcome .btn.big { max-width: 340px; }
+/* Réglages → Graphismes */
+.gfx { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 6px 0; }
+.gfxb { padding: 10px 2px; border-radius: 12px; border: 2px solid rgba(255,255,255,.15); background: rgba(255,255,255,.06); color: inherit; font: inherit; font-size: 12px; font-weight: 800; line-height: 1.1; }
+.gfxb.on { border-color: #ffd36a; background: linear-gradient(#ffd36a, #e8a93a); color: #2a1a05; }
+.fps { position: absolute; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top, 0px) + 86px); right: 8px; left: auto; transform: none; z-index: 30; pointer-events: none; font: 700 11px/1 system-ui, sans-serif; color: #9f9; background: rgba(0,0,0,.55); padding: 3px 7px; border-radius: 6px; }
+/* le bouton « Installer » ne cache plus rien : on peut faire défiler sous lui, il disparaît quand un panneau est ouvert */
+body:has(#inst.on) .screen { padding-bottom: 76px; }
+body:has(.sheet-back) #inst, body:has(.wsheet) #inst { display: none; }
+.k-help { bottom: 52px; left: 12px; right: auto; max-width: 60%; }

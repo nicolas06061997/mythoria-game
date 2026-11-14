@@ -173,7 +173,7 @@ function procProp(kind, T) {
 }
 
 // Construit tout le décor d'un monde dans la scène. Renvoie { update(dt,t), dispose(), theme }.
-export async function buildWorld(scene, key, { light = 'high' } = {}) {
+export async function buildWorld(scene, key, { light = 'high', shadow = 0 } = {}) {
   const T = THEMES[key] || THEMES.aurore;
   const group = new THREE.Group(); scene.add(group);
   const updaters = [];
@@ -183,7 +183,7 @@ export async function buildWorld(scene, key, { light = 'high' } = {}) {
   const sun = new THREE.DirectionalLight(T.sun, T.sunI);
   sun.position.set(-9, 20, 10);
   sun.castShadow = true;
-  const sm = light === 'low' ? 1024 : 2048;
+  const sm = shadow || (light === 'low' ? 1024 : 2048);
   sun.shadow.mapSize.set(sm, sm);
   Object.assign(sun.shadow.camera, { left: -14, right: 14, top: 18, bottom: -18, near: 1, far: 60 });
   sun.shadow.bias = -0.0008; sun.shadow.normalBias = 0.03;
@@ -205,7 +205,7 @@ export async function buildWorld(scene, key, { light = 'high' } = {}) {
   let seed = 21; const r = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
   const spots = [];
   for (let i = 0; i < 46; i++) {
-    const a = (i / 46) * Math.PI * 2 + r() * 0.08, k = 1.03 + r() * 0.17;
+    const a = (i / 46) * Math.PI * 2 + r() * 0.08, k = 1.07 + r() * 0.15;
     const x = Math.cos(a) * RX * k, z = Math.sin(a) * RY * k;
     if (Math.abs(z) > RY * 0.82 && Math.abs(x) < 3.2) continue; // dégager les Sanctuaires
     spots.push([x, z, a]);

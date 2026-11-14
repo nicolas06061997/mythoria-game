@@ -412,3 +412,32 @@ body::after { /* brume colorée qui dérive */
 .tile:active, .panel button:active { transform: scale(.97); }
 .tile { transition: transform .12s; }
 .sheet { background: linear-gradient(180deg, rgba(255, 255, 255, .05), transparent 30%), linear-gradient(var(--w1, #2a1d5c), #170f36 55%); }
+
+/* ---------- Écran de chargement animé ---------- */
+#splash { display: block; background: #1a0f3a; overflow: hidden; }
+#splash.off { opacity: 0; transition: opacity .6s; }
+.ld-scene { position: absolute; left: 50%; top: 50%; width: max(100vw, 56.25vh); height: max(100vh, 177.78vw); transform: translate(-50%, -50%); animation: ldzoom 14s ease-in-out infinite alternate; }
+.ld-bg { position: absolute; inset: 0; background: url(assets/loading/bg.webp) center / 100% 100% no-repeat; }
+.ld-glow { position: absolute; left: 25%; top: 14%; width: 50%; height: 34%; background: radial-gradient(closest-side, rgba(225, 190, 255, .55), rgba(170, 110, 255, .18) 55%, transparent); mix-blend-mode: screen; animation: ldpulse 3.2s ease-in-out infinite; }
+.ld-fly { position: absolute; left: 0; top: 11.615%; width: 100%; height: 30.104%; animation: ldbob 3.4s ease-in-out infinite; }
+.ld-fly i { position: absolute; inset: 0; background: url(assets/loading/fly.webp) 0 0 / 100% 1200% no-repeat; animation: ldflap .967s steps(12, jump-none) infinite; }
+.ld-sparks i { position: absolute; bottom: 8%; border-radius: 50%; background: radial-gradient(#fff, #d6b8ff 40%, transparent 70%); box-shadow: 0 0 8px #c9a0ff; animation: ldrise linear infinite; opacity: 0; }
+.ld-shade { position: absolute; inset: 0; background: linear-gradient(rgba(10, 4, 30, .55), transparent 22%, transparent 74%, rgba(10, 4, 30, .85)); }
+.ld-title { position: absolute; left: 0; right: 0; top: calc(var(--safe-t) + 5.5vh); text-align: center; }
+#splash .logo { font-size: min(13.5vw, 64px); background: linear-gradient(110deg, transparent 42%, rgba(255, 255, 255, .95) 50%, transparent 58%) , linear-gradient(#fffbe6, #ffe08a 35%, #f0a830 62%, #a8620e); background-size: 250% 100%, 100% 100%; background-repeat: no-repeat; -webkit-background-clip: text; background-clip: text; color: transparent; animation: ldshine 4.5s ease-in-out infinite, ldin .9s ease-out both; filter: drop-shadow(0 3px 0 #3a1c04) drop-shadow(0 0 22px rgba(255, 190, 80, .55)); }
+.ld-line { width: 56%; height: 2px; margin: 1.2vh auto 0; background: linear-gradient(90deg, transparent, #ffd36a, transparent); animation: ldin 1.2s ease-out both; }
+.ld-sub { margin-top: 1vh; font-family: var(--title); font-weight: 900; font-size: min(3.3vw, 15px); letter-spacing: .5em; color: #fff3cf; text-shadow: 0 2px 6px #000, 0 0 14px rgba(255, 200, 100, .6); animation: ldin 1.4s ease-out both; }
+.ld-bottom { position: absolute; left: 7%; right: 7%; bottom: calc(var(--safe-b) + 4.5vh); text-align: center; }
+.ld-tip { min-height: 2.6em; font-size: 13px; font-weight: 800; color: #efe6ff; text-shadow: 0 1px 4px #000; transition: opacity .3s; margin-bottom: 10px; }
+.ld-bar { height: 14px; border-radius: 99px; padding: 2px; background: rgba(10, 4, 30, .75); border: 1.5px solid rgba(255, 211, 106, .75); box-shadow: 0 0 14px rgba(255, 200, 100, .35); overflow: hidden; }
+.ld-bar i { display: block; height: 100%; width: 0; border-radius: 99px; background: linear-gradient(90deg, #ffe9a8, #ffcf5c 40%, #f0a830), linear-gradient(transparent, transparent); background-size: 100% 100%; position: relative; box-shadow: 0 0 10px rgba(255, 210, 110, .9); }
+.ld-bar i::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, .7) 50%, transparent 70%); background-size: 200% 100%; animation: ldbar 1.4s linear infinite; }
+.ld-txt { display: flex; justify-content: space-between; margin-top: 7px; font-size: 12.5px; font-weight: 800; color: #d9ccff; text-shadow: 0 1px 3px #000; } .ld-txt b { color: #ffd36a; }
+@keyframes ldzoom { from { transform: translate(-50%, -50%) scale(1); } to { transform: translate(-50%, -50%) scale(1.045); } }
+@keyframes ldpulse { 0%, 100% { opacity: .55; transform: scale(1); } 50% { opacity: 1; transform: scale(1.08); } }
+@keyframes ldbob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1.6%); } }
+@keyframes ldflap { from { background-position: 0 0; } to { background-position: 0 100%; } }
+@keyframes ldrise { 0% { transform: translateY(0); opacity: 0; } 15% { opacity: .9; } 100% { transform: translateY(-75vh); opacity: 0; } }
+@keyframes ldshine { 0%, 55% { background-position: 160% 0, 0 0; } 100% { background-position: -60% 0, 0 0; } }
+@keyframes ldin { from { opacity: 0; transform: translateY(-10px) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes ldbar { from { background-position: 200% 0; } to { background-position: -100% 0; } }

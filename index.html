@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-version="2026-11-14.8">
+<html lang="fr" data-version="2026-11-14.9">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
@@ -19,7 +19,25 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<div id="splash"><div class="logo">MYTHORIA</div><small>Chargement…</small></div>
+<div id="splash">
+  <div class="ld-scene"><div class="ld-bg"></div><div class="ld-glow"></div><div class="ld-fly"><i></i></div><div class="ld-sparks"></div></div>
+  <div class="ld-shade"></div>
+  <div class="ld-title"><div class="logo">MYTHORIA</div><div class="ld-line"></div><div class="ld-sub">LES FAILLES DU MYTHE</div></div>
+  <div class="ld-bottom"><div class="ld-tip">Fusionne 3 héros identiques pour les rendre bien plus forts.</div><div class="ld-bar"><i></i></div><div class="ld-txt"><span>Ouverture des Failles…</span><b>0 %</b></div></div>
+</div>
+<script>
+// Écran de chargement : étincelles, astuces, barre (piloté ensuite par main.js via window.__loader)
+(function () {
+  var sp = document.querySelector('#splash .ld-sparks');
+  for (var i = 0; i < 26; i++) { var e = document.createElement('i'); e.style.left = (Math.random() * 100) + '%'; e.style.animationDuration = (5 + Math.random() * 6) + 's'; e.style.animationDelay = (-Math.random() * 10) + 's'; var z = 2 + Math.random() * 4; e.style.width = e.style.height = z + 'px'; sp.appendChild(e); }
+  var tips = ['Fusionne 3 héros identiques pour les rendre bien plus forts.', 'Seuls les héros au sol capturent le Cœur de Mythe.', 'Les archers et les mages font +35 % de dégâts aux volants.', 'Garde deux places libres sur ton Cercle pour fusionner.', 'Ton Royaume produit de l’or même quand tu ne joues pas.', 'Quand la jauge d’Éveil est pleine, lance ton sortilège !'];
+  var tip = document.querySelector('#splash .ld-tip'), k = Math.floor(Math.random() * tips.length); tip.textContent = tips[k];
+  var ti = setInterval(function () { k = (k + 1) % tips.length; tip.style.opacity = 0; setTimeout(function () { tip.textContent = tips[k]; tip.style.opacity = 1; }, 300); }, 3200);
+  var bar = document.querySelector('#splash .ld-bar i'), lab = document.querySelector('#splash .ld-txt span'), pc = document.querySelector('#splash .ld-txt b'), shown = 0, target = 0;
+  (function tick() { shown += (target - shown) * 0.12; if (target - shown < 0.2) shown = target; bar.style.width = shown + '%'; pc.textContent = Math.round(shown) + ' %'; if (document.getElementById('splash')) requestAnimationFrame(tick); })();
+  window.__loader = { set: function (p, t) { target = Math.max(target, Math.min(100, p)); if (t) lab.textContent = t; }, stop: function () { clearInterval(ti); } };
+})();
+</script>
 <div id="app"></div>
 <div id="upd"><div><b>✨ Nouvelle mise à jour disponible</b><small></small></div><button id="updBtn" class="btn gold small">Mettre à jour</button></div>
 <noscript>MYTHORIA a besoin de JavaScript.</noscript>

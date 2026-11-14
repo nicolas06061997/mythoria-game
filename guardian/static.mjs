@@ -42,6 +42,21 @@ export async function staticChecks(ROOT) {
   for (const f of js) { try { await run(process.execPath, ['--check', join(ROOT, f)]); } catch (e) { bad.push(f + ' : ' + String(e.stderr || e.message).split('\n').find(l => /Error/.test(l))); } }
   add('Aucune faute de syntaxe dans le code', !bad.length, bad.join(' | '));
 
+  // 3 bis. l'appli MYTHORIA Guardian (tableau de bord) : syntaxe, fichiers hors ligne, icônes
+  const gbad = [];
+  for (const f of ['guardian/app.js', 'guardian/sw.js', 'guardian/check.mjs', 'guardian/record.mjs', 'guardian/static.mjs']) {
+    try { await run(process.execPath, ['--check', join(ROOT, f)]); } catch (e) { gbad.push(f + ' : ' + String(e.stderr || e.message).split('\n').find(l => /Error/.test(l))); }
+  }
+  add("Aucune faute de syntaxe dans l'appli Guardian", !gbad.length, gbad.join(' | '));
+  try {
+    const gsw = await readFile(join(ROOT, 'guardian', 'sw.js'), 'utf8');
+    const shell = [...(gsw.match(/const SHELL = \[([\s\S]*?)\];/) || ['', ''])[1].matchAll(/'\.\/([^']*)'/g)].map(m => m[1]).filter(Boolean);
+    const man = JSON.parse(await readFile(join(ROOT, 'guardian', 'manifest.webmanifest'), 'utf8'));
+    const lost = [];
+    for (const f of [...shell, ...man.icons.map(i => i.src)]) if (!(await exists(join(ROOT, 'guardian', f)))) lost.push(f);
+    add("Appli Guardian : fichiers et icônes présents", !lost.length && man.icons.some(i => i.purpose === 'maskable'), 'introuvables : ' + lost.join(', '));
+  } catch (e) { add("Appli Guardian lisible", false, String(e.message)); }
+
   // 4. fichiers de three.js de l'import map
   const im = html.match(/<script type="importmap">([\s\S]*?)<\/script>/);
   try {

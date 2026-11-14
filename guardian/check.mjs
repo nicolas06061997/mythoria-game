@@ -83,6 +83,8 @@ async function runDevice(browser, base, dev) {
   const shot = async name => {
     const file = `${dev.id}-${name}.png`;
     const buf = await page.screenshot({ path: join(OUT, file) }).catch(() => null);
+    // copie légère (JPEG) pour le tableau de bord
+    await page.screenshot({ path: join(OUT, file.replace('.png', '.jpg')), type: 'jpeg', quality: 62 }).catch(() => {});
     // une capture presque uniforme se compresse énormément : signe d'un écran noir/vide
     const area = dev.ctx.viewport.width * dev.ctx.viewport.height;
     const blank = buf ? buf.length < area * 0.02 : true;

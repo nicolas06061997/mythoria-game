@@ -39,6 +39,7 @@ self.addEventListener('fetch', e => {
   if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') { e.respondWith(fonts(req)); return; }
   if (url.origin !== location.origin) return;
   if (url.pathname.endsWith('/version.json')) return;
+  if (url.pathname.includes('/guardian/')) return; // l'appli MYTHORIA Guardian a son propre service worker
   // Modèles 3D : copie locale d'abord (ils ne changent presque jamais ; nouveau nom de fichier si besoin).
   if (url.pathname.includes('/assets/models/')) { e.respondWith(caches.open('mythoria-models').then(c => c.match(req).then(hit => hit || fetch(req).then(r => { if (r.ok) c.put(req, r.clone()); return r; })))); return; }
   e.respondWith(networkFirst(req));

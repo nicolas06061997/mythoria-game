@@ -7,6 +7,7 @@ import { initKingdom, kingdomScreen, leaveKingdom } from './kingdom.js';
 import { initModes, openCampaign, playSurvival, playEvent, playTourney, currentEvent, eventWinsLeft } from './modes.js';
 import { Battle, spellIcon } from '../battle.js';
 import { HeroMode } from '../heromode.js';
+import { doInstall } from '../install.js';
 import { Showcase, portrait } from '../three/showcase.js';
 import { webglOk } from '../three/stage.js';
 import { THEMES } from '../three/world.js';
@@ -342,8 +343,7 @@ function openProfile() {
     h('p', { class: 'muted' }, 'Compte en ligne (changer de téléphone sans rien perdre) : phase 3.')));
 }
 
-let deferredInstall = null;
-addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; });
+
 function openSettings() {
   sfx('click');
   const s = sheet(h('div', { class: 'settings' },
@@ -357,12 +357,7 @@ function openSettings() {
     h('p', { class: 'muted center' }, 'MYTHORIA · version ' + APP.version),
     h('p', { class: 'muted center small' }, 'Modèles 3D : KayKit (Kay Lousberg) et Quaternius, licence CC0. Moteur 3D : three.js.')));
 }
-async function install() {
-  if (deferredInstall) { deferredInstall.prompt(); deferredInstall = null; return; }
-  const ios = /iphone|ipad/i.test(navigator.userAgent);
-  sheet(h('div', { class: 'settings' }, h('h3', {}, 'Installer MYTHORIA'),
-    h('p', {}, ios ? 'Dans Safari : touche Partager (carré avec une flèche), puis « Sur l’écran d’accueil ».' : 'Dans Chrome : menu ⋮ en haut à droite, puis « Ajouter à l’écran d’accueil » ou « Installer l’application ».')));
-}
+function install() { doInstall(); }
 async function share() {
   const url = location.href.split('#')[0].split('?')[0];
   if (navigator.share) { try { await navigator.share({ title: 'MYTHORIA', text: 'Viens jouer à MYTHORIA avec moi !', url }); } catch (e) {} }

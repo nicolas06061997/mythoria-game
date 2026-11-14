@@ -353,3 +353,10 @@ body.in-battle #app { display: none; }
 .hero-mode .b-hint { bottom: calc(130px + var(--safe-b)); }
 .hero-mode .b-boss { top: calc(76px + var(--safe-t)); }
 .b-summon.hint:not(.off) { animation: pulse .8s infinite; box-shadow: 0 4px 0 var(--gold3), 0 0 30px rgba(255, 200, 80, .9); }
+/* ---------- bouton « Installer le jeu » (comme les autres jeux) ---------- */
+#inst { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 84px); z-index: 85; display: none; align-items: center; gap: 8px; background: linear-gradient(#69f08f, #1f9e48); color: #04260f; border-radius: 999px; padding: 7px 7px 7px 16px; box-shadow: 0 4px 0 #0c5a25, 0 0 18px rgba(118, 255, 154, .5); font-weight: 900; font-size: 15px; white-space: nowrap; animation: pop .4s; }
+#inst.on { display: flex; } #inst span { cursor: pointer; }
+#inst button { background: rgba(0, 0, 0, .18); color: #04260f; border-radius: 50%; width: 28px; height: 28px; font-size: 13px; font-weight: 900; }
+body.in-battle #inst { display: none; }
+.install .steps { text-align: left; padding-left: 22px; } .install .steps li { margin: 6px 0; font-size: 14px; }
+.install a.btn { text-decoration: none; margin: 6px 0; }

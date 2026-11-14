@@ -124,7 +124,7 @@ function statusCard(st) {
   }
   const open = S.data.problems.filter(p => p.status === 'ouvert' && p.level === 'bloquant').length;
   const lc = st.lastCheck, bad = st.status === 'probleme' || open > 0;
-  const title = bad ? `${plural(Math.max(open, 1), 'problème')} à corriger` : 'MYTHORIA va bien';
+  const title = bad ? `${plural(Math.max(open, 1), 'problème')} à corriger` : lc ? 'MYTHORIA va bien' : 'En attente du premier contrôle';
   const sub = lc ? `Dernier contrôle ${rel(lc.at)} · ${lc.steps ? lc.steps[0] + '/' + lc.steps[1] + ' étapes réussies' : ''}` : 'En attente du premier contrôle du jeu publié.';
   return h('section', { class: 'status' + (bad ? ' bad' : lc ? '' : ' wait') },
     h('div', { class: 'row1' }, h('div', { class: 'big-ic', html: bad ? I.alert : lc ? I.check : I.clock }), h('div', {}, h('h1', {}, title), h('p', {}, sub))),
@@ -204,7 +204,7 @@ function screenCheck() {
       h('p', { class: 'muted small', style: 'margin:4px 0 0' }, `${lc.trigger || ''} · version ${lc.version || '?'} · durée ${Math.round((lc.durationS || 0) / 60)} min${lc.tests ? ' · tests du code ' + lc.tests[0] + '/' + lc.tests[1] : ''}`),
       lc.url ? h('a', { class: 'btn full', style: 'margin-top:10px', href: lc.url, target: '_blank', rel: 'noopener' }, ic('ext'), 'Rapport complet sur GitHub') : null),
     h('h2', {}, 'Parcours joué par le Testeur'),
-    h('div', { class: 'dev-tabs' }, devs.map(d => h('button', { class: d.id === dev.id ? 'on' : '', onclick: () => { S.dev = d.id; render(); } }, d.id === 'telephone' ? '📱 Téléphone' : '💻 Ordinateur'))),
+    h('div', { class: 'dev-tabs' }, devs.map(d => h('button', { class: d.id === dev.id ? 'on' : '', onclick: () => { S.dev = d.id; render(); } }, d.id === 'telephone' ? '📱 Téléphone' : d.id === 'ordinateur' ? '💻 Ordinateur' : '🛡️ Appli'))),
     h('div', { class: 'card' }, dev.steps.map(s => h('div', { class: 'step' },
       h('div', { class: 'si ' + (s.ok ? (s.warn ? 'warn' : 'ok') : 'bad') }, s.ok ? (s.warn ? '!' : '✓') : '✕'),
       h('div', { style: 'min-width:0' }, h('b', {}, s.name), h('span', { class: 't' }, (s.ms / 1000).toFixed(1) + ' s'), s.notes && s.notes.length ? h('p', {}, s.notes.join(' ')) : null)))),

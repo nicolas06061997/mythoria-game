@@ -32,8 +32,10 @@ function outlineMat(color, thick) {
   const key = color + ':' + thick.toFixed(4);
   if (OUTLINE_MATS.has(key)) return OUTLINE_MATS.get(key);
   const m = new THREE.MeshBasicMaterial({ color, side: THREE.BackSide }); m.userData.isOutlineMat = true;
-  m.onBeforeCompile = sh => { sh.vertexShader = sh.vertexShader.replace('#include <begin_vertex>', `vec3 transformed = vec3(position) + normal * ${thick.toFixed(5)};`); };
-  m.customProgramCacheKey = () => 'ol' + key;
+  // épaisseur en « uniform » : tous les contours partagent le même programme (pas de recompilation = pas de saccade)
+  m.userData.olT = { value: thick };
+  m.onBeforeCompile = sh => { sh.uniforms.olT = m.userData.olT; sh.vertexShader = 'uniform float olT;\n' + sh.vertexShader.replace('#include <begin_vertex>', 'vec3 transformed = vec3(position) + normal * olT;'); };
+  m.customProgramCacheKey = () => 'ol';
   OUTLINE_MATS.set(key, m);
   return m;
 }

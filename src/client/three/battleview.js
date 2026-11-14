@@ -5,7 +5,8 @@ import { HERO, SPELL, RARITIES } from '../../shared/content.js';
 import { createRenderer, quality, PerfWatch } from './stage.js';
 import { buildWorld } from './world.js';
 import { makeHero, preload, prop } from './assets.js';
-import { sanctuaryCrystal, heartOfMyth, glowSprite } from './procedural.js';
+import { sanctuaryCrystal, heartOfMyth, glowSprite, glowTexture } from './procedural.js';
+import { dragons } from './surroundings.js';
 import { FX } from './fx.js';
 import { createComposer, blobShadow } from './look.js';
 
@@ -144,14 +145,49 @@ export class BattleView {
     if (!img) { this.art = null; this.zk = 1; return; }
     // fondu en haut de l'image, et couleur du ciel pour remplir au-dessus
     const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; const g = c.getContext('2d'); g.drawImage(img, 0, 0);
-    const top = g.getImageData(0, 4, img.width, 1).data; let r = 0, gg = 0, b = 0; for (let i = 0; i < top.length; i += 4) { r += top[i]; gg += top[i + 1]; b += top[i + 2]; } const n = top.length / 4;
-    const skyCol = new THREE.Color(`rgb(${Math.round(r / n)},${Math.round(gg / n)},${Math.round(b / n)})`);
+    const top = g.getImageData(0, 4, img.width, 1).data; let r = 0, gg = 0, b = 0; for (let i = 0; i < top.length; i += 4) { r += top[i]; gg += top[i + 1]; b += top[i + 2]; } const npx = top.length / 4;
+    const skyCol = new THREE.Color(`rgb(${Math.round(r / npx)},${Math.round(gg / npx)},${Math.round(b / npx)})`);
     g.globalCompositeOperation = 'destination-out'; const fade = g.createLinearGradient(0, 0, 0, 120); fade.addColorStop(0, 'rgba(0,0,0,1)'); fade.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = fade; g.fillRect(0, 0, img.width, 120);
     const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
     const scene = new THREE.Scene(); scene.background = skyCol;
-    const plane = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, toneMapped: false }));
+    // shader « vivant » : le public saute (plus fort quand il acclame), runes et cristaux pulsent, étoiles qui scintillent
+    const E = (cx, cy, rx, ry) => new THREE.Vector4(cx / A.W, cy / A.imgH, rx / A.W, ry / A.imgH);
+    this.bgU = { map: { value: tex }, t: { value: 0 }, cheer: { value: 0 },
+      outE: { value: E(588, 1090, 575, 520) }, inE: { value: E(588, 1095, 455, 352) }, floorE: { value: E(588, 1095, 440, 340) },
+      castA: { value: new THREE.Vector4(470 / A.W, 530 / A.imgH, 710 / A.W, 780 / A.imgH) }, castB: { value: new THREE.Vector4(380 / A.W, 1390 / A.imgH, 800 / A.W, 1790 / A.imgH) } };
+    const mat = new THREE.ShaderMaterial({ uniforms: this.bgU, transparent: true, depthWrite: false, toneMapped: false,
+      vertexShader: 'varying vec2 vu; void main(){ vu = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+      fragmentShader: `uniform sampler2D map; uniform float t, cheer; uniform vec4 outE, inE, floorE, castA, castB; varying vec2 vu;
+        float ell(vec2 p, vec4 e){ vec2 d = (p - e.xy) / e.zw; return dot(d, d); }
+        float box(vec2 p, vec4 b){ return step(b.x, p.x) * step(p.x, b.z) * step(b.y, p.y) * step(p.y, b.w); }
+        float h21(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+        void main(){
+          vec2 p = vec2(vu.x, 1.0 - vu.y), uv = vu;
+          float crowd = smoothstep(1.0, 0.96, ell(p, outE)) * smoothstep(1.0, 1.06, ell(p, inE)) * (1.0 - box(p, castA)) * (1.0 - box(p, castB));
+          vec2 cell = floor(p * vec2(70.0, 95.0)); float ph = h21(cell);
+          float jump = max(0.0, sin(t * (5.0 + cheer * 7.0) * (0.8 + ph * 0.5) + ph * 6.283));
+          uv.y -= crowd * jump * (0.0012 + cheer * 0.0042);
+          vec4 c = texture2D(map, uv);
+          float blue = clamp((c.b - max(c.r, c.g)) * 3.0, 0.0, 1.0);
+          float floorM = smoothstep(1.0, 0.9, ell(p, floorE)), castM = max(box(p, castA), box(p, castB));
+          float pulse = 0.5 + 0.5 * sin(t * 2.2 - length((p - floorE.xy) / floorE.zw) * 5.0);
+          c.rgb += vec3(0.25, 0.55, 1.0) * blue * (floorM * 0.18 * pulse + castM * 0.35 * (0.5 + 0.5 * sin(t * 3.1)));
+          float sky = step(1.05, ell(p, outE)) * (1.0 - castM);
+          vec2 sc = floor(p * vec2(120.0, 200.0)); float st = h21(sc + 7.0);
+          if (st > 0.985) { vec2 f = fract(p * vec2(120.0, 200.0)) - 0.5; float tw = pow(max(0.0, sin(t * (1.5 + st * 3.0) + st * 40.0)), 6.0); c.rgb += sky * tw * smoothstep(0.25, 0.0, length(f)) * vec3(0.9, 0.9, 1.0); }
+          gl_FragColor = c;
+        }` });
+    const plane = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mat);
     scene.add(plane);
     this.bg = { scene, camera: new THREE.OrthographicCamera(0, 1, 0, -1, -1, 1), plane };
+    this.artUps = [];
+    const dg = new THREE.Group(); this.scene.add(dg);
+    dragons(dg, this.artUps, [{ c: '#e8b04a', b: '#fff0b8', horns: true, s: 1.4, r: 17, h: 15, sp: 0.12, dir: 1, cz: -18 }]);
+    const nd = this.q.low ? 40 : 90, n = nd, pg = new THREE.BufferGeometry(), pp = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { const a = Math.random() * 6.28, r = 3 + Math.random() * 9; pp[i * 3] = Math.cos(a) * r; pp[i * 3 + 1] = Math.random() * 6; pp[i * 3 + 2] = Math.sin(a) * r * this.zk; }
+    pg.setAttribute('position', new THREE.BufferAttribute(pp, 3));
+    this.scene.add(new THREE.Points(pg, new THREE.PointsMaterial({ size: 0.22, map: glowTexture(), color: '#bfe0ff', transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })));
+    this.artUps.push(dt => { for (let i = 0; i < n; i++) { pp[i * 3 + 1] += dt * 0.5; if (pp[i * 3 + 1] > 6) pp[i * 3 + 1] = 0; } pg.attributes.position.needsUpdate = true; });
   }
   // Caméra calée sur l'image : l'image prend toute la largeur, le banc reste à la même hauteur qu'avant
   paintedCamera(w, h) {
@@ -236,7 +272,7 @@ export class BattleView {
     for (const e of ev) {
       const w = e.x !== undefined ? this.toWorld(e.x, e.y) : null;
       const team = e.p === this.me ? 0 : 1;
-      if (['fuse', 'heart', 'bossDown', 'boss'].includes(e.type) || (e.type === 'die' && e.kind === 'sanct') || e.type === 'end') this.world.cheer(e.type === 'end' || e.type === 'bossDown' ? 1.5 : 0.8);
+      if (['fuse', 'heart', 'bossDown', 'boss'].includes(e.type) || (e.type === 'die' && e.kind === 'sanct') || e.type === 'end') { const k = e.type === 'end' || e.type === 'bossDown' ? 1.5 : 0.8; this.world.cheer(k); this.artCheer = Math.min(1.5, (this.artCheer || 0) + k); }
       switch (e.type) {
         case 'deploy': this.fx.ring(w.x, w.z, 1.4, TEAM[team], 0.6); this.fx.pillar(w.x, w.z, 0.6, TEAM[team], 0.7, 7); break;
         case 'land': { const v = this.views.get(e.id); if (v) { this.fx.dust(w.x, w.z, 12); this.fx.ring(w.x, w.z, 1.0, '#ffffff', 0.35); } break; }
@@ -375,6 +411,8 @@ export class BattleView {
     this.fx.syncProjectiles(s.proj, (x, y) => this.toWorld(x, y));
     this.fx.update(dt);
     this.world.update(dt, this.time);
+    if (this.bgU) { this.artCheer = Math.max(0, (this.artCheer || 0) - dt * 0.6); this.bgU.t.value = this.time; this.bgU.cheer.value = Math.min(1, this.artCheer); }
+    if (this.artUps) for (const u of this.artUps) u(dt, this.time);
     if (this.ghost) { this.ghost.a.update(dt); }
     // caméra (tremblement)
     if (this.shake > 0) { this.shake = Math.max(0, this.shake - dt); const k = this.shake * 0.5; this.cam.position.set(this.camBase.x + (Math.random() - 0.5) * k, this.camBase.y + (Math.random() - 0.5) * k, this.camBase.z + (Math.random() - 0.5) * k); }
@@ -431,7 +469,7 @@ export class BattleView {
     this.fx.dispose(); this.world && this.world.dispose();
     for (const [, v] of this.views) if (v.actor) v.actor.dispose();
     if (this.keep) for (const a of this.keep.acts) if (a) a.dispose();
-    this.r.dispose(); this.r.forceContextLoss && this.r.forceContextLoss();
+    this.r.dispose(); { const rr = this.r; setTimeout(() => { try { rr.forceContextLoss && rr.forceContextLoss(); } catch (e) {} }, 1500); } // libère la carte graphique après l’affichage du nouvel écran
   }
 }
 

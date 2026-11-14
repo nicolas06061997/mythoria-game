@@ -189,7 +189,7 @@ export class Showcase {
     this.dead = true; cancelAnimationFrame(this.raf); this.ro.disconnect();
     removeEventListener('pointermove', this.onMove); removeEventListener('pointerup', this.onUp);
     if (this.actor) this.actor.dispose();
-    this.r.dispose(); this.r.forceContextLoss && this.r.forceContextLoss();
+    this.r.dispose(); { const rr = this.r; setTimeout(() => { try { rr.forceContextLoss && rr.forceContextLoss(); } catch (e) {} }, 1500); } // libère la carte graphique après l’affichage du nouvel écran
   }
 }
 

@@ -260,6 +260,6 @@ export class HeroMode {
     if (this.perf) this.perf.dispose();
     this.dead = true; cancelAnimationFrame(this.raf);
     removeEventListener('pointermove', this.mv); removeEventListener('pointerup', this.up); removeEventListener('pointercancel', this.up); removeEventListener('resize', this.onResize);
-    try { this.fx.dispose(); this.world && this.world.dispose(); this.r.dispose(); this.r.forceContextLoss && this.r.forceContextLoss(); } catch (e) {}
+    try { this.fx.dispose(); this.world && this.world.dispose(); this.r.dispose(); { const rr = this.r; setTimeout(() => { try { rr.forceContextLoss && rr.forceContextLoss(); } catch (e) {} }, 1500); } } catch (e) {}
   }
 }

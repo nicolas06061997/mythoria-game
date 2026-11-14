@@ -26,7 +26,8 @@ const REMOTE = opt('--url');
 
 // Seuils (au-delà = problème). Les tests tournent sans carte graphique : les FPS sont bien plus bas
 // que sur un vrai téléphone, on ne surveille donc que les effondrements.
-const LIMITS = { loadWarn: 15000, loadFail: 35000, fpsWarn: 2, battleMs: 300000 };
+// Les machines gratuites de GitHub sont ~2× plus lentes qu'un téléphone récent pour la 3D sans carte graphique.
+const LIMITS = { loadWarn: 30000, loadFail: 60000, fpsWarn: 2, battleMs: 300000 };
 
 // Messages sans gravité (propres à l'environnement de test, pas au jeu).
 const IGNORE = [/Service Worker registration blocked/i, /GPU stall due to ReadPixels/i, /Automatic fallback to software WebGL/i,

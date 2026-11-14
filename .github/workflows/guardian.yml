@@ -123,12 +123,18 @@ jobs:
         id: live
         run: |
           WANT="${{ steps.pub.outputs.version }}"
+          SHA="$(git rev-parse HEAD)"
           URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/"
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           for i in $(seq 1 40); do
+            # 1) GitHub Pages a fini de publier EXACTEMENT cette modification ?
+            BUILD=$(gh api "repos/${{ github.repository }}/pages/builds/latest" --jq '.status + " " + .commit' 2>/dev/null || echo "? ?")
+            # 2) le site en ligne affiche la bonne version ?
             GOT=$(curl -s "${URL}version.json?t=$(date +%s)" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{console.log(JSON.parse(s).v)}catch(e){console.log('?')}})")
-            echo "En ligne : $GOT · attendu : $WANT"
-            if [ "$GOT" = "$WANT" ]; then echo "ok=1" >> "$GITHUB_OUTPUT"; exit 0; fi
+            echo "Pages : $BUILD · attendu : built $SHA · version en ligne : $GOT · attendue : $WANT"
+            if [ "$BUILD" = "built $SHA" ] && [ "$GOT" = "$WANT" ]; then sleep 30; echo "ok=1" >> "$GITHUB_OUTPUT"; exit 0; fi
+            # si l'API de GitHub Pages ne répond pas, on se contente de la version (après une attente de sécurité)
+            if [ "$BUILD" = "? ?" ] && [ "$GOT" = "$WANT" ] && [ "$i" -ge 8 ]; then echo "ok=1" >> "$GITHUB_OUTPUT"; exit 0; fi
             sleep 15
           done
           bash guardian/save-data.sh publication --etat pas-en-ligne --version "$WANT" || true

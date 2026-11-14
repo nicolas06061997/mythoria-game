@@ -2,7 +2,8 @@
 import { BUILDINGS, BUILD_ORDER, DECOS, DECO_SLOTS, buildCost, buildTime, speedupGems, produced, perHour, canBuild } from '../../shared/kingdom.js';
 const affordable = (P, id) => { const K = P.kingdom, l = K.b[id] || 0; if (canBuild(K, id)) return false; const c = buildCost(id, l + 1); return P.gold >= c.gold && P.stone >= c.stone; };
 import { startBuild, speedup, collectAll, buyDeco, finishJob, worldOf, maxHeroLevel } from '../store.js';
-import { KingdomView, buildingPicture } from '../three/kingdomview.js';
+import { buildingPicture } from '../three/kingdomview.js';
+import { KingdomPainted } from '../three/kingdompainted.js';
 import { h, toast, sheet } from './dom.js';
 import { icon } from './icons.js';
 import { sfx } from '../audio.js';
@@ -47,7 +48,7 @@ export function kingdomScreen() {
   };
   const best = BUILD_ORDER.find(id => affordable(P, id));
   const el = h('section', { class: 'kingdom' },
-    h('div', { class: 'k-stage' }, cv, labels,
+    h('div', { class: 'k-stage painted' }, cv, labels,
       h('div', { class: 'k-res' }, h('span', {}, icon('coin'), P.gold), h('span', {}, '🪨 ', P.stone), h('span', {}, icon('crystal'), P.crystals)),
       collectBtn,
       storyBtn('royaume', '📖')),
@@ -67,7 +68,7 @@ export function kingdomScreen() {
     h('p', { class: 'muted center' }, 'Les bonus du Royaume comptent en Campagne, en Survie et en Défense, jamais en Arène : l’Arène reste équitable.'));
   requestAnimationFrame(() => {
     if (!cv.isConnected) return;
-    view = new KingdomView(cv, labels, worldOf(P).key, id => openBuilding(id));
+    view = new KingdomPainted(cv, labels, worldOf(P).key, id => openBuilding(id));
     view.sync(K).then(() => view && view.setBadges(badges()));
     upd();
     clearInterval(tick);

@@ -163,6 +163,7 @@ export class BattleView {
         float box(vec2 p, vec4 b){ return step(b.x, p.x) * step(p.x, b.z) * step(b.y, p.y) * step(p.y, b.w); }
         float h21(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
         vec2 rot(vec2 p, vec2 c, float a){ vec2 d = p - c; float s = sin(a), co = cos(a); return c + vec2(co * d.x - s * d.y, s * d.x + co * d.y); }
+        float vn(vec2 x){ vec2 i = floor(x), fq = fract(x); fq = fq * fq * (3.0 - 2.0 * fq); return mix(mix(h21(i), h21(i + vec2(1, 0)), fq.x), mix(h21(i + vec2(0, 1)), h21(i + vec2(1, 1)), fq.x), fq.y); }
         vec2 toUV(vec2 P){ return vec2(P.x / res.x, 1.0 - P.y / res.y); }
         void main(){
           vec2 p = vec2(vu.x, 1.0 - vu.y), P = p * res;
@@ -175,11 +176,11 @@ export class BattleView {
           if (wR > 0.0) Q = rot(Q, R, flap * wR);
           float wB = (1.0 - smoothstep(70.0, 110.0, abs(P.x - 880.0))) * smoothstep(262.0, 222.0, P.y) * step(40.0, P.y);
           Q.y -= wB * (2.5 * sin(t * 1.6) + 2.0 * flap * 6.0);
-          float drag = box(P, vec4(770.0, 40.0, 1030.0, 262.0));
+          float drag = smoothstep(770.0, 800.0, P.x) * (1.0 - smoothstep(1000.0, 1030.0, P.x)) * smoothstep(40.0, 70.0, P.y) * (1.0 - smoothstep(240.0, 275.0, P.y));
           // --- le vide sous l'arène tourbillonne doucement (deux échantillons en fondu, sans à-coup) ---
           vec2 V = vec2(588.0, 1900.0); float r = length(P - V), fall = exp(-r / 520.0);
           float skyM = smoothstep(1.0, 1.15, ell(p, outE)) * smoothstep(1.0, 1.12, ell(p, islE)) * (1.0 - smoothstep(1935.0, 1960.0, P.y)) * (1.0 - drag);
-          float f = fract(t * 0.05), aw = 0.32 * fall * skyM;
+          float low = smoothstep(1250.0, 1600.0, P.y), f = fract(t * 0.1), aw = 0.5 * fall * skyM * low;
           vec2 uvA = toUV(rot(Q, V, aw * f)), uvB = toUV(rot(Q, V, aw * fract(f + 0.5)));
           float lerpF = abs((0.5 - f) / 0.5);
           // --- public qui saute ---
@@ -192,7 +193,13 @@ export class BattleView {
           float gold = clamp((c.r - c.b) * 2.0, 0.0, 1.0) * drag;
           c.rgb += vec3(1.0, 0.85, 0.45) * gold * 0.55 * pow(max(0.0, sin((P.x + P.y) * 0.03 - t * 2.5)), 12.0);
           // vagues d'énergie qui partent du tourbillon
-          c.rgb += vec3(0.45, 0.5, 1.0) * skyM * fall * 0.10 * pow(0.5 + 0.5 * sin(r * 0.035 - t * 1.4), 6.0);
+          c.rgb += vec3(0.45, 0.5, 1.0) * skyM * low * fall * 0.10 * pow(0.5 + 0.5 * sin(r * 0.035 - t * 1.4), 6.0);
+          // étoiles et volutes qui tournent en spirale autour du tourbillon
+          { vec2 dV = P - V; float ang = atan(dV.y, dV.x), spin = t * 0.45 * exp(-r / 650.0);
+            vec2 pc = vec2(r / 20.0, (ang + spin) * r / 20.0); float hs = h21(floor(pc) + 3.1);
+            if (hs > 0.9) { vec2 fq = fract(pc) - 0.5; c.rgb += skyM * low * smoothstep(0.32, 0.0, length(fq)) * vec3(0.75, 0.85, 1.0) * (0.55 + 0.45 * sin(t * 3.0 + hs * 50.0)); }
+            float wisp = vn(vec2(r * 0.012 - t * 0.15, (ang + spin * 0.7) * 2.5)) * vn(vec2(r * 0.03, (ang + spin) * 5.0));
+            c.rgb += skyM * low * (0.35 + fall) * 0.22 * wisp * vec3(0.55, 0.45, 1.0); }
           float blue = clamp((c.b - max(c.r, c.g)) * 3.0, 0.0, 1.0);
           float floorM = smoothstep(1.0, 0.9, ell(p, floorE)), castM = max(box(p, castA), box(p, castB));
           float pulse = 0.5 + 0.5 * sin(t * 2.2 - length((p - floorE.xy) / floorE.zw) * 5.0);

@@ -32,16 +32,16 @@ function abyss(group, T, EX, EZ, ups) {
 }
 
 // Dragons qui tournent autour
-function dragons(group, ups, list) {
+export function dragons(group, ups, list) {
   const ds = list.map((o, i) => { const d = buildProc('dragon', { color: o.c, belly: o.b, horns: !!o.horns }); d.root.scale.setScalar(o.s || 2); d.play('run'); group.add(d.root); return { d, ...o }; });
   ups.push((dt, t) => { for (const o of ds) {
-    const a = (o.ph || 0) + t * o.sp * o.dir, x = Math.cos(a) * o.r, z = Math.sin(a) * o.r * 0.75 - 8, y = o.h + Math.sin(t * 0.7 + (o.ph || 0)) * 1.5;
+    const a = (o.ph || 0) + t * o.sp * o.dir, x = Math.cos(a) * o.r, z = Math.sin(a) * o.r * 0.75 + (o.cz ?? -8), y = o.h + Math.sin(t * 0.7 + (o.ph || 0)) * 1.5;
     o.d.root.position.set(x, y, z); o.d.root.rotation.y = Math.atan2(-Math.sin(a) * o.dir, Math.cos(a) * 0.75 * o.dir); o.d.root.rotation.z = -0.25 * o.dir; o.d.update(dt);
   } });
 }
 
 // Nuée (oiseaux, chauves-souris, livres) : une seule géométrie instanciée
-function flock(group, ups, { n = 14, color = '#2a2030', r = 18, h = 9, sp = 0.25, size = 0.5, kind = 'bird', glowCol = null }) {
+export function flock(group, ups, { n = 14, color = '#2a2030', r = 18, h = 9, sp = 0.25, size = 0.5, kind = 'bird', glowCol = null, cz = -10 }) {
   let geo;
   if (kind === 'book') geo = new THREE.BoxGeometry(0.6, 0.12, 0.45);
   else { geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0.2, -0.7, 0.1, -0.1, 0, 0, -0.3, 0, 0, 0.2, 0.7, 0.1, -0.1, 0, 0, -0.3], 3)); geo.computeVertexNormals(); }
@@ -50,7 +50,7 @@ function flock(group, ups, { n = 14, color = '#2a2030', r = 18, h = 9, sp = 0.25
   const B = Array.from({ length: n }, (_, i) => ({ off: Math.random() * 6.28, rr: r * (0.8 + Math.random() * 0.4), hh: h + (Math.random() - 0.5) * 3, ph: Math.random() * 6.28 }));
   const o = new THREE.Object3D();
   ups.push((dt, t) => { B.forEach((b, i) => {
-    const a = b.off + t * sp; o.position.set(Math.cos(a) * b.rr, b.hh + Math.sin(t * 2 + b.ph) * 0.4, Math.sin(a) * b.rr * 0.7 - 10);
+    const a = b.off + t * sp; o.position.set(Math.cos(a) * b.rr, b.hh + Math.sin(t * 2 + b.ph) * 0.4, Math.sin(a) * b.rr * 0.7 + cz);
     o.rotation.set(kind === 'book' ? Math.sin(t + b.ph) * 0.4 : 0, -a, 0);
     const f = kind === 'book' ? 1 : 0.3 + Math.abs(Math.sin(t * 10 + b.ph)) * 0.9; o.scale.set(size, size * f, size); o.updateMatrix(); m.setMatrixAt(i, o.matrix);
   }); m.instanceMatrix.needsUpdate = true; });

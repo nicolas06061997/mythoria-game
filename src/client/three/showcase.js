@@ -5,7 +5,8 @@ import { createRenderer, quality } from './stage.js';
 import { makeHero, preload, prop } from './assets.js';
 import { THEMES, skyDome } from './world.js';
 import { createComposer, blobShadow } from './look.js';
-import { glowSprite } from './procedural.js';
+import { glowSprite, glowTexture } from './procedural.js';
+import { dragons, flock } from './surroundings.js';
 import { HERO, RARITIES } from '../../shared/content.js';
 
 // ---------- Vitrine ----------
@@ -34,6 +35,7 @@ export class Showcase {
     if (mode === 'home') {
       const add = async (n, x, z, s) => { try { const o = await prop(n, { scale: s }); o.position.set(x, 0, z); this.base.add(o); } catch (e) {} };
       add(T.props[0][0], -1.1, -0.9, 0.55); add(T.props[Math.min(2, T.props.length - 1)][0], 1.15, -0.7, 0.6);
+      this.backdrop(T, world);
     }
     this.glow = glowSprite(0xffffff, 3); this.glow.position.y = 0.9; this.glow.material.opacity = 0.25; this.scene.add(this.glow);
     this.resize();
@@ -41,6 +43,37 @@ export class Showcase {
     this.bindDrag();
     this.loop = this.loop.bind(this); this.last = 0; this.raf = requestAnimationFrame(this.loop);
     this.ro = new ResizeObserver(() => this.resize()); this.ro.observe(canvas);
+  }
+  // Fond de l'accueil : îlots flottants, nuages, lueurs et un dragon au loin (couleurs du monde)
+  backdrop(T, world) {
+    this.ups = [];
+    const g = new THREE.Group(); this.scene.add(g);
+    const clouds = [];
+    for (let i = 0; i < 14; i++) {
+      const c = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: new THREE.Color(T.fog).lerp(new THREE.Color('#ffffff'), 0.4), transparent: true, opacity: 0.6, depthWrite: false }));
+      c.position.set((Math.random() - 0.5) * 22, -2.4 - Math.random() * 2.5, -4 - Math.random() * 12); c.scale.set(5 + Math.random() * 6, 2 + Math.random() * 1.5, 1); g.add(c); clouds.push({ c, sp: 0.15 + Math.random() * 0.2 });
+    }
+    const isl = [];
+    for (const [x, y, z, s] of [[-3.6, 0.6, -6, 0.5], [4.2, 1.6, -9, 0.7], [-5.5, 2.4, -12, 0.8], [2.6, -0.6, -5, 0.35], [7, 0.2, -13, 0.9]]) {
+      const o = new THREE.Group();
+      const top = new THREE.Mesh(new THREE.CylinderGeometry(1.4 * s, 1.6 * s, 0.35 * s + 0.1, 9), new THREE.MeshStandardMaterial({ color: T.ground, flatShading: true }));
+      const bot = new THREE.Mesh(new THREE.ConeGeometry(1.5 * s, 3 * s, 9), new THREE.MeshStandardMaterial({ color: T.rock, flatShading: true })); bot.rotation.x = Math.PI; bot.position.y = -1.6 * s;
+      o.add(top, bot); o.position.set(x, y, z); g.add(o); isl.push({ o, y, ph: Math.random() * 6 });
+      prop(T.props[isl.length % T.props.length][0], { scale: 0.55 * s, tint: T.tintProps }).then(p => { p.position.y = 0.15; if (!this.dead) o.add(p); }).catch(() => {});
+    }
+    const n = 50, pg = new THREE.BufferGeometry(), pp = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { pp[i * 3] = (Math.random() - 0.5) * 14; pp[i * 3 + 1] = Math.random() * 6 - 1.5; pp[i * 3 + 2] = -1 - Math.random() * 9; }
+    pg.setAttribute('position', new THREE.BufferAttribute(pp, 3));
+    g.add(new THREE.Points(pg, new THREE.PointsMaterial({ size: 0.12, map: glowTexture(), color: T.partCol, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })));
+    const DC = { aurore: ['#e8b04a', '#fff0b8'], sylve: ['#4caf6a', '#d8ffb0'], arcane: ['#8a5ad8', '#e0d0ff'], braise: ['#c4263c', '#ffcf70'], givre: ['#6fb8e8', '#eaf8ff'], ombre: ['#2a1e3a', '#c08aff'] }[world] || ['#e8b04a', '#fff0b8'];
+    dragons(g, this.ups, [{ c: DC[0], b: DC[1], horns: true, s: 0.5, r: 7, h: 3.2, sp: 0.18, dir: 1, cz: -11 }]);
+    flock(g, this.ups, { n: 7, color: world === 'ombre' ? '#120c1a' : '#3a3040', r: 6, h: 2.6, sp: 0.35, size: 0.12, cz: -8 });
+    this.ups.push((dt, t) => {
+      for (const c of clouds) { c.c.position.x += c.sp * dt; if (c.c.position.x > 12) c.c.position.x = -12; }
+      for (const i of isl) i.o.position.y = i.y + Math.sin(t * 0.7 + i.ph) * 0.12;
+      for (let i = 0; i < n; i++) { pp[i * 3 + 1] += dt * 0.25; if (pp[i * 3 + 1] > 4.5) pp[i * 3 + 1] = -1.5; }
+      pg.attributes.position.needsUpdate = true;
+    });
   }
   async setHero(id, star = 1) {
     const my = (this.req = (this.req || 0) + 1); this.heroId = id;
@@ -83,6 +116,7 @@ export class Showcase {
     this.base.position.y = Math.sin(this.t * 1.2) * 0.05;
     this.ring.rotation.z += dt * 0.5;
     if (this.actor) this.actor.update(dt);
+    if (this.ups) for (const u of this.ups) u(dt, this.t);
     this.post.render();
   }
   dispose() {

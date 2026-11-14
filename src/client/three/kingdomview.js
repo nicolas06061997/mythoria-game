@@ -4,6 +4,8 @@ import { createRenderer, quality } from './stage.js';
 import { loadGLB, prop } from './assets.js';
 import { THEMES, skyDome } from './world.js';
 import { glowSprite, glowTexture } from './procedural.js';
+import { createComposer } from './look.js';
+import { dragons, flock } from './surroundings.js';
 import { BUILD_ORDER, BUILDINGS, DECOS, DECO_SLOTS } from '../../shared/kingdom.js';
 
 // Emplacements des bâtiments sur l'île (x, z)
@@ -64,14 +66,55 @@ function scaffold(w) {
   return g;
 }
 
+// Fond du Royaume : mer de nuages, îlots flottants, dragon et oiseaux aux couleurs du monde.
+const KDRAGON = { aurore: ['#e8b04a', '#fff0b8'], sylve: ['#4caf6a', '#d8ffb0'], arcane: ['#8a5ad8', '#e0d0ff'], braise: ['#c4263c', '#ffcf70'], givre: ['#6fb8e8', '#eaf8ff'], ombre: ['#2a1e3a', '#c08aff'] };
+function kingdomBackdrop(scene, T, key, ups, low) {
+  const g = new THREE.Group(); scene.add(g);
+  // mer de nuages sous l'île
+  const fogC = new THREE.Color(T.fog), bright = fogC.r + fogC.g + fogC.b > 1.8;
+  const seaC = fogC.clone().lerp(new THREE.Color(T.skyTop), bright ? 0.72 : 0.45);
+  const sea = new THREE.Mesh(new THREE.CircleGeometry(220, 48), new THREE.MeshBasicMaterial({ color: seaC, fog: false }));
+  if (bright) scene.fog.color.copy(fogC.clone().lerp(new THREE.Color(T.skyTop), 0.4));
+  sea.rotation.x = -Math.PI / 2; sea.position.y = -16; g.add(sea);
+  const clouds = [];
+  for (let i = 0; i < (low ? 22 : 40); i++) {
+    const c = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: new THREE.Color(T.fog).lerp(new THREE.Color('#ffffff'), 0.35), transparent: true, opacity: 0.75, depthWrite: false }));
+    const a = Math.random() * 6.28, r = 11 + Math.random() * 55; c.position.set(Math.cos(a) * r, -7 - Math.random() * 8, Math.sin(a) * r);
+    c.scale.set(16 + Math.random() * 18, 7 + Math.random() * 5, 1); g.add(c); clouds.push({ c, a, r, sp: 0.006 + Math.random() * 0.01 });
+  }
+  // îlots flottants
+  const isl = [];
+  for (let i = 0; i < 7; i++) {
+    const a = i / 7 * 6.28 + 0.4, r = 17 + (i % 3) * 5, s = 0.7 + Math.random() * 0.9, o = new THREE.Group();
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(2 * s, 2.3 * s, 0.5, 9), new THREE.MeshStandardMaterial({ color: T.ground, flatShading: true }));
+    const bot = new THREE.Mesh(new THREE.ConeGeometry(2.2 * s, 4.5 * s, 9), new THREE.MeshStandardMaterial({ color: T.rock, flatShading: true })); bot.rotation.x = Math.PI; bot.position.y = -2.5 * s;
+    o.add(top, bot); o.position.set(Math.cos(a) * r, -3 + Math.random() * 6, Math.sin(a) * r); g.add(o); isl.push({ o, y: o.position.y, ph: Math.random() * 6 });
+    prop(T.props[i % T.props.length][0], { scale: 1.1 * s, tint: T.tintProps }).then(p => { p.position.y = 0.25; o.add(p); }).catch(() => {});
+  }
+  // lueurs qui montent
+  const n = low ? 40 : 90, pg = new THREE.BufferGeometry(), pp = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) { const a = Math.random() * 6.28, r = Math.random() * 30; pp[i * 3] = Math.cos(a) * r; pp[i * 3 + 1] = Math.random() * 14 - 4; pp[i * 3 + 2] = Math.sin(a) * r; }
+  pg.setAttribute('position', new THREE.BufferAttribute(pp, 3));
+  g.add(new THREE.Points(pg, new THREE.PointsMaterial({ size: 0.5, map: glowTexture(), color: T.partCol, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })));
+  const [dc, db] = KDRAGON[key] || KDRAGON.aurore;
+  dragons(g, ups, [{ c: dc, b: db, horns: true, s: 1.6, r: 19, h: 8, sp: 0.12, dir: 1, cz: 0 }]);
+  flock(g, ups, { n: low ? 8 : 14, color: key === 'ombre' ? '#120c1a' : '#2a2030', r: 15, h: 7, sp: 0.3, size: 0.35, cz: 0 });
+  ups.push((dt, t) => {
+    for (const c of clouds) { c.a += c.sp * dt; c.c.position.x = Math.cos(c.a) * c.r; c.c.position.z = Math.sin(c.a) * c.r; }
+    for (const i of isl) i.o.position.y = i.y + Math.sin(t * 0.6 + i.ph) * 0.4;
+    for (let i = 0; i < n; i++) { pp[i * 3 + 1] += dt * 0.6; if (pp[i * 3 + 1] > 12) pp[i * 3 + 1] = -4; }
+    pg.attributes.position.needsUpdate = true;
+  });
+}
+
 export class KingdomView {
   constructor(canvas, labelsEl, worldKey, onTap) {
     this.cv = canvas; this.labels = labelsEl; this.onTap = onTap; this.dead = false;
     this.r = createRenderer(canvas); this.r.toneMappingExposure = 1.05;
     this.scene = new THREE.Scene();
     const T = THEMES[worldKey] || THEMES.aurore; this.T = T;
-    const sky = skyDome(T); sky.scale.setScalar(0.4); this.scene.add(sky);
-    this.scene.fog = new THREE.Fog(T.fog, 50, 130);
+    this.scene.add(skyDome(T));
+    this.scene.fog = new THREE.Fog(T.fog, 60, 200);
     this.scene.add(new THREE.HemisphereLight(T.hemiSky, T.hemiGround, T.hemiI * 1.1));
     const sun = new THREE.DirectionalLight(T.sun, T.sunI); sun.position.set(-8, 16, 9); sun.castShadow = true;
     const q = quality(); sun.shadow.mapSize.set(Math.min(2048, q.shadowSize), Math.min(2048, q.shadowSize));
@@ -89,10 +132,12 @@ export class KingdomView {
     const plaza = new THREE.Mesh(new THREE.CylinderGeometry(2.8, 2.8, 0.05, 32), path); plaza.position.set(0, 0.03, -1.2); plaza.receiveShadow = true; this.root.add(plaza);
     // arbres sur le bord
     (async () => { for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2 + 0.2; try { const o = await prop(T.props[i % T.props.length][0], { scale: 0.8, tint: T.tintProps }); o.position.set(Math.cos(a) * 8.4, 0, Math.sin(a) * 8.4); o.rotation.y = a; if (!this.dead) this.root.add(o); } catch (e) {} } })();
+    this.ups = []; kingdomBackdrop(this.scene, T, worldKey, this.ups, q.low);
     this.slots = {}; this.hits = [];
     this.cam = new THREE.PerspectiveCamera(40, 1, 0.5, 300);
     this.rot = 0.35; this.dist = 24; this.spin = 0;
     this.ray = new THREE.Raycaster(); this.v2 = new THREE.Vector2();
+    this.post = createComposer(this.r, this.scene, this.cam, { bloom: q.bloom, strength: 0.4, threshold: 1.1, radius: 0.5, samples: q.msaa });
     this.bind();
     this.resize();
     this.ro = new ResizeObserver(() => this.resize()); this.ro.observe(canvas);
@@ -149,8 +194,8 @@ export class KingdomView {
   }
   resize() {
     const w = this.cv.clientWidth || 1, h = this.cv.clientHeight || 1;
-    this.r.setSize(w, h, false); this.cam.aspect = w / h; this.cam.fov = w / h < 0.8 ? 48 : 38; this.cam.updateProjectionMatrix();
-    this.dist = w / h < 0.8 ? 27 : 21;
+    this.r.setSize(w, h, false); this.cam.aspect = w / h; this.cam.fov = w / h < 0.8 ? 48 : 38; this.cam.updateProjectionMatrix(); if (this.post) this.post.setSize(w, h);
+    this.dist = w / h < 0.8 ? 36 : 31;
   }
   // étiquettes (nom, niveau, minuteur, production) placées au-dessus des bâtiments
   setLabels(fn) { this.labelFn = fn; }
@@ -160,7 +205,8 @@ export class KingdomView {
     const dt = this.last ? Math.min(0.05, (now - this.last) / 1000) : 0; this.last = now; this.t += dt;
     this.cam.position.set(Math.sin(this.rot) * this.dist, this.dist * 0.82, Math.cos(this.rot) * this.dist);
     this.cam.lookAt(0, 0, -0.5);
-    this.r.render(this.scene, this.cam);
+    for (const u of this.ups) u(dt, this.t);
+    if (this.post) this.post.render(); else this.r.render(this.scene, this.cam);
     if (this.labelFn) {
       const rc = this.cv.getBoundingClientRect(), v = new THREE.Vector3();
       for (const id of BUILD_ORDER) {

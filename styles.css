@@ -378,3 +378,37 @@ body.in-battle #inst { display: none; }
 body:has(#inst.on) .screen { padding-bottom: 76px; }
 body:has(.sheet-back) #inst, body:has(.wsheet) #inst { display: none; }
 .k-help { bottom: 52px; left: 12px; right: auto; max-width: 60%; }
+
+/* ---------- Menus plus vivants : fond aux couleurs du monde, étoiles, brume qui bouge ---------- */
+body { --w1: #3a2380; --w2: #150c33; --w3: rgba(255, 207, 92, .10); }
+body[data-world="aurore"] { --w1: #4a3a8a; --w2: #1a1238; --w3: rgba(255, 214, 120, .14); }
+body[data-world="sylve"]  { --w1: #1f5a4a; --w2: #0c1f1c; --w3: rgba(150, 255, 160, .12); }
+body[data-world="arcane"] { --w1: #4a2a9a; --w2: #140c34; --w3: rgba(190, 140, 255, .16); }
+body[data-world="braise"] { --w1: #7a2a1a; --w2: #220c0a; --w3: rgba(255, 140, 60, .16); }
+body[data-world="givre"]  { --w1: #2a5a8a; --w2: #0c1a2c; --w3: rgba(160, 230, 255, .16); }
+body[data-world="ombre"]  { --w1: #4a1a5a; --w2: #12081a; --w3: rgba(200, 80, 255, .14); }
+body { background: radial-gradient(120% 60% at 50% -10%, var(--w1) 0%, var(--w2) 50%, var(--bg) 85%) fixed; transition: background .6s; }
+body::before, body::after { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+body::before { /* étoiles qui scintillent */
+  background-image: radial-gradient(1.5px 1.5px at 12% 18%, #fff, transparent), radial-gradient(1px 1px at 72% 12%, #fff, transparent), radial-gradient(1.5px 1.5px at 40% 34%, #ffe9b0, transparent), radial-gradient(1px 1px at 86% 44%, #fff, transparent), radial-gradient(1px 1px at 22% 62%, #cfe8ff, transparent), radial-gradient(1.5px 1.5px at 62% 74%, #fff, transparent), radial-gradient(1px 1px at 8% 88%, #fff, transparent), radial-gradient(1px 1px at 92% 82%, #ffe9b0, transparent), radial-gradient(1px 1px at 50% 6%, #fff, transparent), radial-gradient(1px 1px at 30% 90%, #fff, transparent);
+  opacity: .55; animation: twinkle 4s ease-in-out infinite alternate; }
+body::after { /* brume colorée qui dérive */
+  background: radial-gradient(40% 30% at 20% 30%, var(--w3), transparent 70%), radial-gradient(45% 35% at 80% 70%, var(--w3), transparent 70%);
+  animation: drift 18s ease-in-out infinite alternate; }
+@keyframes twinkle { from { opacity: .3; } to { opacity: .7; } }
+@keyframes drift { from { transform: translate(-4%, -2%) scale(1); } to { transform: translate(4%, 3%) scale(1.12); } }
+#app { z-index: 1; }
+@media (prefers-reduced-motion: reduce) { body::before, body::after { animation: none; } }
+
+/* entrée douce de chaque écran */
+.screen.enter > * { animation: rise .35s ease-out both; }
+.screen.enter > *:nth-child(2) { animation-delay: .04s; } .screen.enter > *:nth-child(3) { animation-delay: .08s; } .screen.enter > *:nth-child(4) { animation-delay: .12s; } .screen.enter > *:nth-child(n+5) { animation-delay: .16s; }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* panneaux : reflet doré en haut + ombre portée */
+.panel, .tile { position: relative; background: linear-gradient(180deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, 0) 40%), var(--glass); box-shadow: inset 0 1px 0 rgba(255, 230, 170, .14), 0 8px 22px rgba(0, 0, 0, .35); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.panel::before { content: ''; position: absolute; left: 14%; right: 14%; top: -1px; height: 1px; background: linear-gradient(90deg, transparent, rgba(255, 207, 92, .7), transparent); }
+.tile .ic { filter: drop-shadow(0 0 6px rgba(255, 200, 90, .45)); }
+.tile:active, .panel button:active { transform: scale(.97); }
+.tile { transition: transform .12s; }
+.sheet { background: linear-gradient(180deg, rgba(255, 255, 255, .05), transparent 30%), linear-gradient(var(--w1, #2a1d5c), #170f36 55%); }

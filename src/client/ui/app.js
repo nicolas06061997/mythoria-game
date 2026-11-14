@@ -1,5 +1,5 @@
 // MYTHORIA — menus : accueil 3D, héros & deck, fiche de héros 3D, mondes, modes, résultats, profil.
-import { HERO, PLAYABLE, SPELL, SPELLS, RARITIES, FACTIONS, WORLDS, UNLOCKS, SPELL_UNLOCKS, DECK_SIZE, STAR_MULT, deckSynergies } from '../../shared/content.js';
+import { HERO, PLAYABLE, SPELL, SPELLS, RARITIES, FACTIONS, WORLDS, UNLOCKS, SPELL_UNLOCKS, DECK_SIZE, STAR_MULT, deckSynergies, worldFor } from '../../shared/content.js';
 import { AI_LEVELS } from '../../shared/ai.js';
 import { loadProfile, saveProfile, resetProfile, owned, ownedSpells, worldOf, botLevelFor, botDeck, botSpell, botLevels, applyResult, xpNeed, heroLevel, canUpgrade, CHESTS } from '../store.js';
 import { initProgress, chestRow, missionsButton, loginPopup, shopScreen, heroProgress, chestIcon } from './progress.js';
@@ -60,11 +60,14 @@ function openWelcome(done) {
 }
 
 // ---------- Cadre ----------
+let lastTab = null;
 function render() {
   if (stage) { stage.dispose(); stage = null; }
   leaveKingdom();
   root.innerHTML = '';
-  root.append(topBar(), h('main', { class: 'screen s-' + tab }, screen()), navBar());
+  try { document.body.dataset.world = worldFor(P.trophies).key; } catch (e) {}
+  root.append(topBar(), h('main', { class: 'screen s-' + tab + (tab !== lastTab ? ' enter' : '') }, screen()), navBar());
+  lastTab = tab;
 }
 
 function portraitImg(id, cls = 'pt') {

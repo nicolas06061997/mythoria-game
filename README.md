@@ -3,7 +3,7 @@
 Jeu mobile de stratégie fantastique en 3D : héros animés, invocation, fusion, Cœur de Mythe, 6 mondes.
 Jouable dans Chrome (Android) et installable sur l'écran d'accueil (PWA).
 
-**Jouer :** https://nicolas06061997.github.io/La-Fine-Crasse/mythoria/
+**Jouer :** https://nicolas06061997.github.io/mythoria-game/
 
 ## Lancer en local
 ```

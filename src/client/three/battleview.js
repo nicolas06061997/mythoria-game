@@ -152,6 +152,7 @@ export class BattleView {
     for (const e of ev) {
       const w = e.x !== undefined ? this.toWorld(e.x, e.y) : null;
       const team = e.p === this.me ? 0 : 1;
+      if (['fuse', 'heart', 'bossDown', 'boss'].includes(e.type) || (e.type === 'die' && e.kind === 'sanct') || e.type === 'end') this.world.cheer(e.type === 'end' || e.type === 'bossDown' ? 1.5 : 0.8);
       switch (e.type) {
         case 'deploy': this.fx.ring(w.x, w.z, 1.4, TEAM[team], 0.6); this.fx.pillar(w.x, w.z, 0.6, TEAM[team], 0.7, 7); break;
         case 'land': { const v = this.views.get(e.id); if (v) { this.fx.dust(w.x, w.z, 12); this.fx.ring(w.x, w.z, 1.0, '#ffffff', 0.35); } break; }

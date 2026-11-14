@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { prop } from './assets.js';
 import { glowTexture } from './procedural.js';
+import { buildArena } from './arena.js';
 import { RX, RY } from '../../shared/sim.js';
 
 export const THEMES = {
@@ -176,7 +177,7 @@ export async function buildWorld(scene, key, { light = 'high' } = {}) {
   const T = THEMES[key] || THEMES.aurore;
   const group = new THREE.Group(); scene.add(group);
   const updaters = [];
-  scene.fog = new THREE.Fog(T.fog, 40, 120);
+  scene.fog = new THREE.Fog(T.fog, 70, 190);
   group.add(skyDome(T));
   const hemi = new THREE.HemisphereLight(T.hemiSky, T.hemiGround, T.hemiI); group.add(hemi);
   const sun = new THREE.DirectionalLight(T.sun, T.sunI);
@@ -239,10 +240,13 @@ export async function buildWorld(scene, key, { light = 'high' } = {}) {
     group.add(s); clouds.push(s);
   }
   const amb = ambient(T, light === 'low' ? 90 : 170); group.add(amb);
+  const arena = buildArena(group, T, key, EX, EZ, { low: light === 'low' });
   await Promise.all(jobs.map(j => j.catch(() => {})));
   return {
     theme: T, group, sun, ground,
+    cheer: k => arena.cheer(k),
     update(dt, t) {
+      arena.update(dt, t);
       amb.userData.update(dt, t);
       for (const u of updaters) u(dt, t);
       islets.forEach((o, i) => { o.position.y += Math.sin(t * 0.5 + i) * 0.002; });

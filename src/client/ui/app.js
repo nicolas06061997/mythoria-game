@@ -398,7 +398,7 @@ function openHowTo() {
       h('li', {}, h('b', {}, 'But : '), 'détruire le Sanctuaire ennemi (au fond de l’île). Sinon, au bout de 3 minutes, gagne celui dont le Sanctuaire a le plus de vie.'),
       h('li', {}, h('b', {}, 'Invoquer : '), 'le bouton « Invoquer » (2 éther) fait apparaître un héros au hasard de ton deck sur ton Cercle d’Invocation (5 places, devant l’île). Les héros rares sortent moins souvent.'),
       h('li', {}, h('b', {}, 'Fusionner : '), 'glisse un héros sur un héros identique de même rang : il évolue en ★2, puis ★3 (beaucoup plus fort).'),
-      h('li', {}, h('b', {}, 'Envoyer au combat : '), 'glisse un héros du Cercle vers ta moitié de l’île (zone bleue). Il se bat tout seul.'),
+      h('li', {}, h('b', {}, 'Envoyer au combat : '), 'touche un héros du Cercle puis touche ta moitié de l’île (zone bleue), ou fais-le glisser. Il se bat tout seul.'),
       h('li', {}, h('b', {}, 'Cœur de Mythe : '), 'le cristal au centre. Si tes héros au sol sont seuls à côté, tu le captures : +35 % d’éther et jauge d’Éveil plus rapide. Les volants ne capturent pas.'),
       h('li', {}, h('b', {}, 'Volants : '), 'les tirs à distance (archers, mages, tours) leur font +35 % de dégâts.'),
       h('li', {}, h('b', {}, 'Sortilège : '), 'quand la jauge d’Éveil est pleine, touche le bouton rond à gauche puis l’île.'),

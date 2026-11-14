@@ -6,7 +6,7 @@ const FILES = ['./', './index.html', './styles.css', './manifest.webmanifest', '
   './vendor/three.module.min.js', './vendor/addons/loaders/GLTFLoader.js', './vendor/addons/utils/SkeletonUtils.js', './vendor/addons/utils/BufferGeometryUtils.js',
   './src/client/main.js', './src/client/install.js', './src/client/ui/app.js', './src/client/ui/dom.js', './src/client/ui/icons.js', './src/client/battle.js',
   './src/client/store.js', './src/client/audio.js', './src/client/three/assets.js', './src/client/three/procedural.js', './src/client/three/world.js',
-  './src/client/three/fx.js', './src/client/three/battleview.js', './src/client/three/stage.js', './src/client/three/showcase.js', './src/client/three/look.js', './src/client/three/herofx.js',
+  './src/client/three/fx.js', './src/client/three/battleview.js', './src/client/three/stage.js', './src/client/three/showcase.js', './src/client/three/look.js', './src/client/three/arena.js', './src/client/three/herofx.js',
   './vendor/addons/postprocessing/EffectComposer.js', './vendor/addons/postprocessing/RenderPass.js', './vendor/addons/postprocessing/UnrealBloomPass.js', './vendor/addons/postprocessing/ShaderPass.js', './vendor/addons/postprocessing/OutputPass.js', './vendor/addons/postprocessing/Pass.js', './vendor/addons/postprocessing/MaskPass.js',
   './vendor/addons/shaders/CopyShader.js', './vendor/addons/shaders/LuminosityHighPassShader.js', './vendor/addons/shaders/OutputShader.js',
   './src/shared/content.js', './src/shared/economy.js', './src/shared/kingdom.js', './src/shared/campaign.js',

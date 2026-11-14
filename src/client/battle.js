@@ -17,7 +17,7 @@ export class Battle {
     const seed = (Math.random() * 1e9) | 0;
     this.s = createBattle({ seed, decks: [opts.deck, opts.oppDeck], spells: [opts.spell, opts.oppSpell], levels: [opts.levels || {}, opts.oppLevels || {}], names: [opts.myName, 'IA ' + AI_LEVELS[opts.botLevel].name], mode: opts.simMode || 'duel', boss: opts.boss, waves: opts.waves, mods: opts.mods, bonus: opts.bonus, botMana: opts.simMode === 'survival' ? 0 : AI_LEVELS[opts.botLevel].mana });
     this.bot = opts.simMode === 'survival' ? null : createBot(1, opts.botLevel, seed ^ 0x5bd1e995);
-    this.me = 0; this.pending = []; this.drag = null; this.aiming = false;
+    this.me = 0; this.pending = []; this.drag = null; this.aiming = false; this.sel = -1;
     this.acc = 0; this.started = false; this.ended = false;
     this.build();
     this.view = new BattleView(this.cv, this.ovc, opts.world.key, this.me);
@@ -69,7 +69,7 @@ export class Battle {
             h('span', { class: 'sm-ic' }, icon('summon')), h('b', {}, 'Invoquer'), h('small', {}, icon('ether'), SUMMON_COST)))),
       this.elLoad = h('div', { class: 'b-load' }, h('div', { class: 'logo' }, 'MYTHORIA'), h('b', {}, 'Ouverture de la Faille…'),
         h('small', {}, w.name), h('div', { class: 'lbar' }, this.elLoadBar = h('i'))),
-      this.elHint = h('div', { class: 'b-hint' }, 'Fais glisser un héros du Cercle vers ta moitié de l’île'));
+      this.elHint = h('div', { class: 'b-hint' }, 'Touche un héros du Cercle, puis touche l’île (ou fais-le glisser)'));
     this.gems = [...this.el.querySelectorAll('.eth-gems i')];
     this.root.innerHTML = ''; this.root.append(this.el);
     this.cv.addEventListener('pointerdown', e => this.down(e));
@@ -109,10 +109,31 @@ export class Battle {
     const slot = this.view.pickBench(e.clientX, e.clientY);
     const P = this.s.players[this.me];
     if (slot >= 0 && P.bench[slot]) {
+      // héros déjà sélectionné + appui sur un héros identique = fusion
+      if (this.sel >= 0 && this.sel !== slot && P.bench[this.sel]) {
+        const A = P.bench[this.sel], B = P.bench[slot];
+        if (A.id === B.id && A.star === B.star) { if (this.send({ p: this.me, t: 'merge', a: this.sel, b: slot })) sfx('fuse'); this.select(-1); return; }
+      }
       this.drag = { slot, h: P.bench[slot], sx: e.clientX, sy: e.clientY, moved: false };
       sfx('click');
       this.elHint.classList.add('off');
+      return;
     }
+    // un héros est sélectionné : appuyer sur l'île l'envoie à cet endroit
+    if (this.sel >= 0 && P.bench[this.sel]) {
+      const g = this.view.pickGround(e.clientX, e.clientY);
+      if (g) {
+        g.x = Math.round(g.x * 2) / 2; g.y = Math.round(g.y * 2) / 2;
+        if (this.send({ p: this.me, t: 'deploy', slot: this.sel, x: g.x, y: g.y })) sfx('deploy');
+        this.select(-1);
+      }
+    }
+  }
+  select(slot) {
+    this.sel = slot;
+    this.view.highlightSlot(slot);
+    if (slot >= 0) { const h0 = this.s.players[this.me].bench[slot]; this.view.zone.visible = true; this.elHint.textContent = 'Touche ta moitié de l’île (zone bleue) pour envoyer ' + HERO[h0.id].name; this.elHint.classList.remove('off'); }
+    else { this.view.zone.visible = false; this.elHint.classList.add('off'); }
   }
   move(e) {
     const d = this.drag; if (!d) return;
@@ -143,7 +164,7 @@ export class Battle {
       if (d.x !== undefined && this.send({ p: this.me, t: 'spell', x: d.x, y: d.y })) { this.aiming = false; this.elSpell.classList.remove('aim'); sfx('spell'); }
       return;
     }
-    if (!d.moved) { const c = HERO[d.h.id]; toast(c.name + ' — ' + c.title + ' ' + '★'.repeat(d.h.star)); return; }
+    if (!d.moved) { this.select(this.sel === d.slot ? -1 : d.slot); return; }
     if (d.target >= 0) { if (this.send({ p: this.me, t: 'merge', a: d.slot, b: d.target })) sfx('fuse'); return; }
     if (d.ground && this.send({ p: this.me, t: 'deploy', slot: d.slot, x: d.ground.x, y: d.ground.y })) sfx('deploy');
   }
@@ -205,9 +226,10 @@ export class Battle {
     this.gems.forEach((g, i) => { g.className = i < full ? 'on' : i === full ? 'part' : ''; if (i === full) g.style.setProperty('--f', frac); });
     if (this.elManaN.textContent !== String(full)) this.elManaN.textContent = full;
     this.elSummon.classList.toggle('off', P.mana < SUMMON_COST || !P.bench.includes(null));
+    if (this.sel >= 0 && !P.bench[this.sel]) this.select(-1);
     const nb = P.bench.filter(Boolean).length;
     this.elSummon.classList.toggle('hint', P.mana >= 4 && nb < 2);
-    if (!P.deployed && s.t > 12 && nb && this.elHint.classList.contains('off') && !this.hintAgain) { this.hintAgain = true; this.elHint.textContent = 'Astuce : appuie sur un héros du Cercle (en bas) et fais-le glisser vers l’île'; this.elHint.classList.remove('off'); setTimeout(() => this.elHint.classList.add('off'), 6000); }
+    if (!P.deployed && s.t > 12 && nb && this.elHint.classList.contains('off') && !this.hintAgain) { this.hintAgain = true; this.elHint.textContent = 'Astuce : touche un héros du Cercle (en bas), puis touche l’île'; this.elHint.classList.remove('off'); setTimeout(() => this.elHint.classList.add('off'), 6000); }
     this.elSpell.style.setProperty('--p', P.eveil / 100);
     this.elSpell.classList.toggle('ready', P.eveil >= 100);
     const hs = s.heart.owner < 0 ? 'Cœur : libre' : s.heart.owner === this.me ? 'Cœur : à toi ✦' : 'Cœur : ennemi';

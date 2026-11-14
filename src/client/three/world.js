@@ -29,6 +29,8 @@ export const THEMES = {
 const EX = RX + 2.2, EZ = RY + 2.2;
 
 function groundTexture(T, key = '', hi = false) {
+  const cosmic = key === 'aurore'; // Aurore : sol de colisée en pierre + grande mosaïque de runes
+  if (cosmic) T = { ...T, ground: '#b3ac9e', ground2: '#a0998b', path: '#d6cbb2' };
   // texture du sol dessinée par le jeu : herbe/terre détaillée, chemins pavés, dalles, lignes de terrain
   const w = hi ? 2048 : 1024, h = Math.round(w * EZ / EX);
   const c = document.createElement('canvas'); c.width = w; c.height = h;
@@ -38,13 +40,13 @@ function groundTexture(T, key = '', hi = false) {
   const P = (X, Z) => [(X + EX) / (2 * EX) * w, (Z + EZ) / (2 * EZ) * h];
   const s = w / (2 * EX), K = w / 512;
   let seed = 11; const r = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  const grassy = key === 'aurore' || key === 'sylve';
+  const grassy = key === 'sylve';
   g.fillStyle = T.ground; g.fillRect(0, 0, w, h);
   // grandes taches de couleur (relief doux)
   for (let i = 0; i < 160; i++) { const x = r() * w, y = r() * h, rr = (30 + r() * 90) * K; const gr = g.createRadialGradient(x, y, 0, x, y, rr); const col = r() < 0.5 ? shade(T.ground, -16) : shade(T.ground, 14); gr.addColorStop(0, col); gr.addColorStop(1, col + '00'); g.globalAlpha = 0.45; g.fillStyle = gr; g.fillRect(x - rr, y - rr, rr * 2, rr * 2); }
   g.globalAlpha = 1;
   // bandes de tonte (terrain de tournoi d'Aurore)
-  if (key === 'aurore') { const bw = 1.6 * s; for (let y = 0, k = 0; y < h; y += bw, k++) if (k % 2) { g.fillStyle = 'rgba(255,255,230,.07)'; g.fillRect(0, y, w, bw); } }
+  if (false) { const bw = 1.6 * s; for (let y = 0, k = 0; y < h; y += bw, k++) if (k % 2) { g.fillStyle = 'rgba(255,255,230,.07)'; g.fillRect(0, y, w, bw); } }
   // petits détails : brins d'herbe, cailloux, flocons, cendres…
   const nDet = (hi ? 26000 : 9000);
   for (let i = 0; i < nDet; i++) {
@@ -60,10 +62,29 @@ function groundTexture(T, key = '', hi = false) {
   const curve = (a, b, c2, d, t) => { const u = 1 - t; return [u * u * u * a[0] + 3 * u * u * t * b[0] + 3 * u * t * t * c2[0] + t * t * t * d[0], u * u * u * a[1] + 3 * u * u * t * b[1] + 3 * u * t * t * c2[1] + t * t * t * d[1]]; };
   const paths = [[[0, -RY + 1], [-1.5, -5], [1.5, -3], [0, 0]], [[0, RY - 1], [1.5, 5], [-1.5, 3], [0, 0]]];
   g.lineCap = 'round';
-  for (const pth of paths) { // bord de terre puis lit de pavés
+  for (const pth of (cosmic ? [] : paths)) { // bord de terre puis lit de pavés
     for (const [lw, col, a] of [[2.6, shade(T.path, -45), 0.4], [2.0, shade(T.path, -48), 1]]) { g.globalAlpha = a; g.strokeStyle = col; g.lineWidth = lw * s; g.beginPath(); for (let t = 0; t <= 1.001; t += 0.02) { const [X, Z] = curve(...pth, t); const [px, pz] = P(X, Z); t ? g.lineTo(px, pz) : g.moveTo(px, pz); } g.stroke(); }
     g.globalAlpha = 1;
     for (let t = 0; t <= 1; t += 0.0016) { const [X, Z] = curve(...pth, t); const off = (r() - 0.5) * 1.75, [px, pz] = P(X + off, Z + (r() - 0.5) * 0.2); const rr = (0.12 + r() * 0.1) * s; g.fillStyle = shade(T.path, -6 + (r() - 0.5) * 34); g.strokeStyle = shade(T.path, -60); g.lineWidth = 0.8 * K; g.beginPath(); g.ellipse(px, pz, rr, rr * (0.7 + r() * 0.3), r() * 3, 0, 7); g.fill(); g.stroke(); }
+  }
+  if (cosmic) { // dalles du colisée en anneaux, puis la grande mosaïque dorée aux runes bleues
+    const [cx, cz] = P(0, 0);
+    g.strokeStyle = 'rgba(60,50,40,.35)'; g.lineWidth = 1.2 * K;
+    for (let rr = 7.4; rr < EZ + 1; rr += 1.1) { g.beginPath(); g.arc(cx, cz, rr * s, 0, 7); g.stroke(); const n = Math.round(rr * 4.2), o = r(); for (let k = 0; k < n; k++) { const a = (k + o) / n * Math.PI * 2; g.beginPath(); g.moveTo(cx + Math.cos(a) * rr * s, cz + Math.sin(a) * rr * s); g.lineTo(cx + Math.cos(a) * (rr + 1.1) * s, cz + Math.sin(a) * (rr + 1.1) * s); g.stroke(); } }
+    const ring = (r0, r1, col) => { g.fillStyle = col; g.beginPath(); g.arc(cx, cz, r1 * s, 0, 7); g.arc(cx, cz, r0 * s, 0, 7, true); g.fill('evenodd'); };
+    const gold = '#d9a93e', goldD = '#8a6018', blue1 = '#3a5ac8', blue2 = '#2a3f98';
+    const glyph = (x, y, z, sd) => { let q = sd * 9301 + 49297; const rn = () => ((q = (q * 9301 + 49297) % 233280) / 233280); for (const c of [g, ge]) { c.save(); c.translate(x, y); c.lineCap = 'round'; c.lineWidth = z * 0.16; c.strokeStyle = c === g ? '#bfe6ff' : '#7fd8ff'; c.beginPath(); c.moveTo(0, -z / 2); c.lineTo(0, z / 2); q = sd * 9301 + 49297; for (let i = 0; i < 2 + Math.floor(rn() * 2); i++) { const y0 = (rn() - 0.5) * z, side = rn() < 0.5 ? -1 : 1; c.moveTo(0, y0); c.lineTo(side * z * 0.35, y0 + (rn() - 0.5) * z * 0.6); } c.stroke(); c.restore(); } };
+    ring(6.7, 7.05, gold); ring(6.62, 6.7, goldD);
+    // anneau de carreaux bleus avec une rune dans chacun
+    const N = 20;
+    for (let k = 0; k < N; k++) { const a0 = k / N * Math.PI * 2, a1 = (k + 1) / N * Math.PI * 2; g.fillStyle = k % 2 ? blue1 : blue2; g.beginPath(); g.arc(cx, cz, 6.62 * s, a0, a1); g.arc(cx, cz, 5.35 * s, a1, a0, true); g.closePath(); g.fill(); g.strokeStyle = gold; g.lineWidth = 2 * K; g.stroke();
+      const am = (a0 + a1) / 2, rm = 5.98; glyph(cx + Math.cos(am) * rm * s, cz + Math.sin(am) * rm * s, 0.62 * s, k + 3); }
+    ring(5.2, 5.35, gold);
+    // étoile dorée à 8 branches
+    const star = (ro, ri, col, stroke) => { g.beginPath(); for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2 - Math.PI / 2, rr = (k % 2 ? ri : ro) * s; g.lineTo(cx + Math.cos(a) * rr, cz + Math.sin(a) * rr); } g.closePath(); g.fillStyle = col; g.fill(); if (stroke) { g.strokeStyle = stroke; g.lineWidth = 2.4 * K; g.stroke(); } };
+    star(5.2, 3.9, '#e6c46a', goldD); star(4.6, 3.6, '#c9c0ae', null);
+    for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2 - Math.PI / 2 + Math.PI / 8, rr = 4.55; g.fillStyle = k % 2 ? blue1 : blue2; g.beginPath(); g.arc(cx + Math.cos(a) * rr * s, cz + Math.sin(a) * rr * s, 0.42 * s, 0, 7); g.fill(); g.strokeStyle = gold; g.lineWidth = 1.6 * K; g.stroke(); glyph(cx + Math.cos(a) * rr * s, cz + Math.sin(a) * rr * s, 0.42 * s, k + 40); }
+    ring(3.25, 3.42, gold);
   }
   // dalles autour des Sanctuaires et du Cœur (anneaux de pierres taillées)
   for (const [x, z, rr] of [[0, -9.8, 2.6], [0, 9.8, 2.6], [0, 0, 3.0]]) {
@@ -78,8 +99,8 @@ function groundTexture(T, key = '', hi = false) {
     }
   }
   // ligne du milieu (frontière entre les deux camps)
-  g.setLineDash([0.5 * s, 0.4 * s]); g.strokeStyle = 'rgba(255,240,200,.35)'; g.lineWidth = 0.12 * s;
-  g.beginPath(); g.moveTo(...P(-RX + 0.6, 0.4)); g.lineTo(...P(-3.2, 0.4)); g.moveTo(...P(3.2, 0.4)); g.lineTo(...P(RX - 0.6, 0.4)); g.stroke(); g.setLineDash([]);
+  if (!cosmic) { g.setLineDash([0.5 * s, 0.4 * s]); g.strokeStyle = 'rgba(255,240,200,.35)'; g.lineWidth = 0.12 * s;
+  g.beginPath(); g.moveTo(...P(-RX + 0.6, 0.4)); g.lineTo(...P(-3.2, 0.4)); g.moveTo(...P(3.2, 0.4)); g.lineTo(...P(RX - 0.6, 0.4)); g.stroke(); g.setLineDash([]); }
   // bord du terrain : bande plus sombre au-delà de la zone de jeu
   g.save(); g.beginPath(); g.ellipse(...P(0, 0), EX * s + 2, EZ * s + 2, 0, 0, 7); g.ellipse(...P(0, 0), (RX + 0.3) * s, (RY + 0.3) * s, 0, 0, 7, true); g.fillStyle = 'rgba(0,0,0,.16)'; g.fill('evenodd'); g.restore();
   // runes lumineuses autour du Cœur
@@ -133,6 +154,7 @@ function edgeDetails(group, T, key, low) {
   for (let tries = 0; m < n && tries < n * 6; tries++) {
     const a = r() * Math.PI * 2, rim = r() < 0.65, k = rim ? 1.07 + r() * 0.18 : Math.sqrt(r()) * 0.95;
     const x = Math.cos(a) * RX * k, z = Math.sin(a) * RY * k;
+    if (key === 'aurore') continue; // colisée : pas d'herbe
     if (!rim) { if (Math.abs(x) < 1.6 + Math.abs(z) * 0.05) continue; if (Math.hypot(x, z) < 3.6 || Math.hypot(x, z - 9.8) < 3 || Math.hypot(x, z + 9.8) < 3) continue; }
     o.position.set(x, 0, z); o.rotation.set(0, r() * 6.28, 0); o.scale.setScalar(0.7 + r() * 0.9); o.updateMatrix();
     tufts.setMatrixAt(m, o.matrix); tufts.setColorAt(m, cc.copy(gcol).multiplyScalar(grassy ? 0.75 + r() * 0.5 : 0.6 + r() * 0.5)); m++;
@@ -171,6 +193,26 @@ function islandBody(T) {
   g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
   g.setIndex(idx); g.computeVertexNormals();
   return new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 1 }));
+}
+
+// Ciel de l'espace : nébuleuse violette et bleue + étoiles (Arène d'Aurore)
+export function nebulaDome() {
+  const c = document.createElement('canvas'); c.width = 2048; c.height = 1024; const g = c.getContext('2d');
+  const bg = g.createLinearGradient(0, 0, 0, 1024); bg.addColorStop(0, '#05051a'); bg.addColorStop(0.5, '#1a1450'); bg.addColorStop(0.75, '#130d40'); bg.addColorStop(1, '#070620'); g.fillStyle = bg; g.fillRect(0, 0, 2048, 1024);
+  let q = 7; const r = () => ((q = (q * 16807) % 2147483647) / 2147483647);
+  g.globalCompositeOperation = 'lighter';
+  const blob = (x, y, rad, col, a) => { const gr = g.createRadialGradient(x, y, 0, x, y, rad); gr.addColorStop(0, col + a); gr.addColorStop(1, col + '00'); g.fillStyle = gr; g.fillRect(x - rad, y - rad, rad * 2, rad * 2); };
+  for (let i = 0; i < 70; i++) { const x = r() * 2048, y = 120 + r() * 860; blob(x, y, 80 + r() * 260, ['#7a3ad8', '#3a6af0', '#c048c8', '#2a9ad8', '#5a2aa8'][i % 5], ['1c', '26', '14'][i % 3]); if (x < 300) blob(x + 2048, y, 160, '#6a3ad8', '20'); }
+  // bras de galaxie en spirale
+  for (let k = 0; k < 900; k++) { const t = k / 900 * 9, rad = 20 + t * 55, a = t * 1.1; for (const sgn of [0, Math.PI]) { const x = 1300 + Math.cos(a + sgn) * rad * 1.8, y = 740 + Math.sin(a + sgn) * rad * 0.45; blob(x, y, 30 + r() * 30, sgn ? '#8a5af0' : '#5a9aff', '0c'); } }
+  blob(1300, 740, 140, '#ffe8ff', '50'); blob(300, 760, 120, '#ffd8ff', '30');
+  g.globalCompositeOperation = 'source-over';
+  for (let i = 0; i < 3200; i++) { const x = r() * 2048, y = r() * 1024, z = r() < 0.97 ? r() * 1.3 + 0.3 : 1.8 + r() * 1.6; g.fillStyle = r() < 0.8 ? '#ffffff' : (r() < 0.5 ? '#bcd8ff' : '#ffd8f0'); g.globalAlpha = 0.4 + r() * 0.6; g.beginPath(); g.arc(x, y, z, 0, 7); g.fill(); }
+  g.globalAlpha = 1;
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+  const m = new THREE.Mesh(new THREE.SphereGeometry(250, 48, 24), new THREE.MeshBasicMaterial({ map: tex, color: 0x6a6a90, side: THREE.BackSide, fog: false, depthWrite: false }));
+  m.rotation.y = -1.2; m.userData.update = (dt, t) => { m.rotation.y += dt * 0.004; };
+  return m;
 }
 
 export function skyDome(T) {
@@ -234,8 +276,9 @@ export async function buildWorld(scene, key, { light = 'high', shadow = 0 } = {}
   const T = THEMES[key] || THEMES.aurore;
   const group = new THREE.Group(); scene.add(group);
   const updaters = [];
-  scene.fog = new THREE.Fog(T.fog, 70, 190);
-  group.add(skyDome(T));
+  const cosmic = key === 'aurore';
+  scene.fog = cosmic ? new THREE.Fog('#1c1846', 95, 260) : new THREE.Fog(T.fog, 70, 190);
+  group.add(cosmic ? nebulaDome() : skyDome(T));
   const hemi = new THREE.HemisphereLight(T.hemiSky, T.hemiGround, T.hemiI); group.add(hemi);
   const sun = new THREE.DirectionalLight(T.sun, T.sunI);
   sun.position.set(-9, 20, 10);
@@ -268,6 +311,7 @@ export async function buildWorld(scene, key, { light = 'high', shadow = 0 } = {}
     if (Math.abs(z) > RY * 0.82 && Math.abs(x) < 3.2) continue; // dégager les Sanctuaires
     spots.push([x, z, a]);
   }
+  if (key === 'aurore') spots.length = 0; // colisée de pierre : pas d'arbres sur le bord
   const jobs = spots.map(async ([x, z, a], i) => {
     let o;
     const roll = r();
@@ -283,7 +327,7 @@ export async function buildWorld(scene, key, { light = 'high', shadow = 0 } = {}
   });
   // îlots flottants en arrière-plan
   const islets = [];
-  for (const [x, y, z, s] of [[-17, -3, -22, 1.4], [18, 1, -26, 1.8], [-21, 3, 4, 1.0], [20, -4, 8, 1.1], [-6, 6, -40, 2.4]]) {
+  for (const [x, y, z, s] of (key === 'aurore' ? [] : [[-17, -3, -22, 1.4], [18, 1, -26, 1.8], [-21, 3, 4, 1.0], [20, -4, 8, 1.1], [-6, 6, -40, 2.4]])) {
     const isl = new THREE.Group();
     const top = new THREE.Mesh(new THREE.CylinderGeometry(2.2 * s, 2.5 * s, 0.4, 9), new THREE.MeshStandardMaterial({ color: T.ground2, flatShading: true })); isl.add(top);
     const bot = new THREE.Mesh(new THREE.ConeGeometry(2.4 * s, 4 * s, 9), new THREE.MeshStandardMaterial({ color: T.rock, flatShading: true })); bot.rotation.x = Math.PI; bot.position.y = -2.2 * s; isl.add(bot);

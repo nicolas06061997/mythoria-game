@@ -231,6 +231,7 @@ export class Battle {
       if (this.view && this.view.screenOf) {
         const p = k === 0 ? this.view.screenOf(e.x, e.y + 2.5, 0) : this.view.screenOf(e.x, e.y, 5.4);
         t.el.style.transform = `translate(${p.x.toFixed(1)}px, ${p.y.toFixed(1)}px) translate(-50%, -50%)`;
+        if (k === 1 && this.elHint) this.elHint.style.top = Math.round(p.y + 30) + 'px'; // consigne juste sous la barre ennemie
       }
     });
   }

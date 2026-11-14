@@ -76,10 +76,39 @@ function cliffs(group, EX, EZ, color, color2, { h = 7, s0 = 1.35, n = 26, spikes
 const BUILDERS = {
   // ---------- Royaume d'Aurore : arène de tournoi ----------
   async aurore(g, T, EX, EZ, ups, low) {
-    const arena = buildArena(g, T, 'aurore', EX, EZ, { low, noPit: true });
+    // Colisée flottant dans l'espace : gradins presque tout autour (ouverts devant pour ton Sanctuaire)
+    const arena = buildArena(g, T, 'aurore', EX, EZ, { low, noPit: true, a0: 0.70, a1: 2.30, tiers: 3, gate: false });
     ups.push((dt, t) => arena.update(dt, t));
-    dragons(g, ups, [{ c: '#e8b04a', b: '#fff0b8', horns: true, s: 2.2, r: 23, h: 10, sp: 0.11, dir: 1 }]);
-    if (!low) flock(g, ups, { n: 12, color: '#f4f0e8', r: 20, h: 12, sp: 0.3, size: 0.5 });
+    // stèles de runes autour de la plateforme centrale
+    const steleM = flat('#8a8aa0'), runeM = glow('#7fd8ff', 2.2), steles = [];
+    for (let k = 0; k < 6; k++) {
+      const a = k / 6 * Math.PI * 2, x = Math.cos(a) * 4.35, z = Math.sin(a) * 4.35;
+      const st = new THREE.Mesh(new THREE.BoxGeometry(0.42, 1.15, 0.2), steleM); st.position.set(x, 0.57, z); st.rotation.y = -a + Math.PI / 2; st.castShadow = true; g.add(st);
+      const cap = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.3, 4), steleM); cap.position.set(x, 1.3, z); cap.rotation.y = st.rotation.y + Math.PI / 4; g.add(cap);
+      const ru = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 0.5), runeM); ru.position.set(x - Math.cos(a) * 0.105, 0.65, z - Math.sin(a) * 0.105); ru.rotation.y = Math.atan2(-Math.cos(a), -Math.sin(a)); g.add(ru); steles.push(ru);
+      const gl = glowSprite(0x7fd8ff, 0.9); gl.position.set(x, 0.7, z); gl.material.opacity = 0.5; g.add(gl); steles.push(gl);
+    }
+    ups.push((dt, t) => { runeM.emissiveIntensity = 1.6 + Math.sin(t * 2.2) * 0.8; });
+    // petites îles rocheuses autour, avec des ruines
+    const rockM = flat(T.rock), grassM = flat('#6cb04e'), stoneM = flat('#c8c0b0');
+    const islet = (x, y, z, s) => { const o = new THREE.Group(); const top = new THREE.Mesh(new THREE.CylinderGeometry(2 * s, 2.3 * s, 0.5 * s, 8), grassM); const bot = new THREE.Mesh(new THREE.ConeGeometry(2.2 * s, 4.5 * s, 8), rockM); bot.rotation.x = Math.PI; bot.position.y = -2.5 * s; o.add(top, bot); o.position.set(x, y, z); g.add(o); return o; };
+    const isl = [];
+    for (const [x, y, z, s] of [[-EX * 1.75, 6, -EZ * 0.9, 1], [-EX * 1.4, 10, -EZ * 1.6, 0.7], [EX * 1.8, 3, -EZ * 0.35, 0.8], [-EX * 1.9, 1, EZ * 0.2, 0.75]]) {
+      const o = islet(x, y, z, s); isl.push({ o, y, ph: Math.random() * 6 });
+      for (let k = 0; k < 3; k++) { const h = (0.8 + Math.random() * 1.4) * s * 1.4; const col = new THREE.Mesh(new THREE.CylinderGeometry(0.22 * s, 0.25 * s, h, 6), stoneM); col.position.set((k - 1) * 0.9 * s, h / 2 + 0.25 * s, (Math.random() - 0.5) * s); o.add(col); }
+    }
+    // statue de dragon doré sur un pilier de pierre
+    {
+      const o = islet(EX * 1.55, 4, -EZ * 1.15, 1.1); isl.push({ o, y: 4, ph: 1.3 });
+      const pil = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.2, 7, 8), stoneM); pil.position.y = 3.7; o.add(pil);
+      const capP = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.1, 0.6, 8), stoneM); capP.position.y = 7.4; o.add(capP);
+      const d = buildProc('dragon', { color: '#d8a838', belly: '#f0d070', horns: true }); d.play('idle'); d.update(0.4);
+      const goldM = new THREE.MeshStandardMaterial({ color: '#e0b040', metalness: 0.85, roughness: 0.3, flatShading: true, emissive: '#3a2400', emissiveIntensity: 0.4 });
+      d.root.traverse(m => { if (m.isMesh) { m.material = goldM; m.castShadow = true; } });
+      d.root.scale.setScalar(1.7); d.root.position.y = 7.7; d.root.rotation.y = -2.3; o.add(d.root);
+    }
+    ups.push((dt, t) => { for (const i of isl) i.o.position.y = i.y + Math.sin(t * 0.5 + i.ph) * 0.4; });
+    dragons(g, ups, [{ c: '#e8b04a', b: '#fff0b8', horns: true, s: 1.8, r: 26, h: 12, sp: 0.09, dir: 1 }].slice(0, low ? 0 : 1));
     return { cheer: k => arena.cheer(k) };
   },
 
@@ -236,7 +265,7 @@ const BUILDERS = {
 
 export async function buildSurroundings(group, T, key, EX, EZ, { low = false } = {}) {
   const ups = [];
-  abyss(group, T, EX, EZ, ups);
+  if (key !== 'aurore') abyss(group, T, EX, EZ, ups); // Aurore : l'espace sous l'île, pas de gouffre
   const f = BUILDERS[key] || BUILDERS.aurore;
   const extra = (await f(group, T, EX, EZ, ups, low)) || {};
   return { update(dt, t) { for (const u of ups) u(dt, t); }, cheer: extra.cheer || (() => {}) };

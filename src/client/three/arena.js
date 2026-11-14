@@ -8,13 +8,30 @@ const DRAGON_COL = {
   aurore: ['#e8b04a', '#fff0b8'], sylve: ['#4caf6a', '#d8ffb0'], arcane: ['#8a5ad8', '#e0d0ff'],
   braise: ['#c4263c', '#ffcf70'], givre: ['#6fb8e8', '#eaf8ff'], ombre: ['#3a2a50', '#c08aff'],
 };
+// Bannières à blasons : [couleur, emblème]
+const BANNERS = [['#b8282e', 'sun'], ['#2a5ab8', 'shield'], ['#2a8a4a', 'tree'], ['#6a3aa8', 'star'], ['#c87a1a', 'dragon'], ['#1a8a9a', 'moon']];
+function bannerTex(col, em) {
+  const c = document.createElement('canvas'); c.width = 128; c.height = 256; const g = c.getContext('2d');
+  g.beginPath(); g.moveTo(0, 0); g.lineTo(128, 0); g.lineTo(128, 220); g.lineTo(64, 256); g.lineTo(0, 220); g.closePath();
+  const gr = g.createLinearGradient(0, 0, 128, 0); gr.addColorStop(0, col); gr.addColorStop(0.5, '#ffffff22'); gr.addColorStop(1, col); g.fillStyle = col; g.fill(); g.fillStyle = gr; g.fill();
+  g.lineWidth = 10; g.strokeStyle = '#e8b84a'; g.stroke(); g.lineWidth = 3; g.strokeStyle = '#6a4010'; g.stroke();
+  g.fillStyle = '#f2c85a'; g.strokeStyle = '#6a4010'; g.lineWidth = 3; g.save(); g.translate(64, 110); g.beginPath();
+  if (em === 'sun') { for (let k = 0; k < 16; k++) { const a = k / 16 * Math.PI * 2, rr = k % 2 ? 22 : 38; g.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); } }
+  else if (em === 'shield') { g.moveTo(-30, -34); g.lineTo(30, -34); g.lineTo(30, 4); g.quadraticCurveTo(30, 30, 0, 42); g.quadraticCurveTo(-30, 30, -30, 4); }
+  else if (em === 'tree') { g.moveTo(0, -40); g.lineTo(30, 10); g.lineTo(8, 10); g.lineTo(8, 38); g.lineTo(-8, 38); g.lineTo(-8, 10); g.lineTo(-30, 10); }
+  else if (em === 'star') { for (let k = 0; k < 10; k++) { const a = k / 10 * Math.PI * 2 - Math.PI / 2, rr = k % 2 ? 16 : 40; g.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); } }
+  else if (em === 'dragon') { g.moveTo(-34, 20); g.quadraticCurveTo(-10, -40, 20, -30); g.lineTo(34, -40); g.lineTo(28, -18); g.quadraticCurveTo(10, 0, 30, 30); g.quadraticCurveTo(0, 10, -34, 20); }
+  else { g.arc(0, 0, 34, 0.6, Math.PI * 2 - 0.6); g.arc(14, 0, 26, Math.PI * 2 - 0.9, 0.9, true); }
+  g.closePath(); g.fill(); g.stroke(); g.restore();
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
 const CROWD = ['#d84a4a', '#3d8ad8', '#e8c040', '#5ab85a', '#a060d0', '#e08a40', '#f0f0f0', '#4a4a5a'];
 
 // Ellipse de l'île (doit correspondre à world.js)
-export function buildArena(group, T, key, EX, EZ, { low = false, noPit = false } = {}) {
+export function buildArena(group, T, key, EX, EZ, { low = false, noPit = false, a0 = 0.80, a1 = 2.20, tiers = 5, gate: withGate = true } = {}) {
   const ups = [];
-  const A0 = Math.PI * 0.80, A1 = Math.PI * 2.20; // gradins en fer à cheval, ouverts vers la caméra
-  const TIERS = 5, S0 = 1.13, DS = 0.11, H = 0.85, Y0 = -0.35, SEG = 72;
+  const A0 = Math.PI * a0, A1 = Math.PI * a1; // gradins en fer à cheval, ouverts vers la caméra
+  const TIERS = tiers, S0 = 1.13, DS = 0.11, H = 0.85, Y0 = -0.35, SEG = 72;
   const P = (s, a) => [Math.cos(a) * EX * s, Math.sin(a) * EZ * s];
 
   // ---------- Gradins : marches de pierre, sièges colorés par tribune, allées, muret avant ----------
@@ -147,7 +164,8 @@ export function buildArena(group, T, key, EX, EZ, { low = false, noPit = false }
   // ---------- Piliers, torches, bannières ----------
   const stone = new THREE.MeshStandardMaterial({ color: T.rock, flatShading: true }), gold = new THREE.MeshStandardMaterial({ color: '#d8a83a', metalness: 0.5, roughness: 0.4, flatShading: true });
   const banCol = { aurore: '#e8b84a', sylve: '#4caf6a', arcane: '#8a6ad8', braise: '#d8402a', givre: '#7fc8f0', ombre: '#6a3a9a' }[key] || '#e8b84a';
-  const banMat = new THREE.MeshStandardMaterial({ color: banCol, side: THREE.DoubleSide, flatShading: true });
+  const banMats = BANNERS.map(([c1, em]) => new THREE.MeshStandardMaterial({ map: bannerTex(c1, em), transparent: true, alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.8 }));
+  const banMat = banMats[0];
   const torches = [], banners = [];
   const NP = 12;
   for (let i = 0; i <= NP; i++) {
@@ -157,8 +175,13 @@ export function buildArena(group, T, key, EX, EZ, { low = false, noPit = false }
     const fire = glowSprite(0xff9a3d, 1.6); fire.position.set(x, yTop + 3.9, z); group.add(fire); torches.push(fire);
     if (i < NP) {
       const a2 = A0 + (A1 - A0) * (i + 0.5) / NP, [bx, bz] = P(sw - 0.01, a2);
-      const ban = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 2.2, 1, 4), banMat); ban.position.set(bx, yTop + 0.3, bz); ban.rotation.y = Math.atan2(-bx, -bz); group.add(ban); banners.push(ban);
+      const ban = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 2.2, 1, 4), banMats[i % banMats.length]); ban.position.set(bx, yTop + 0.3, bz); ban.rotation.y = Math.atan2(-bx, -bz); group.add(ban); banners.push(ban);
     }
+  }
+  // grandes bannières accrochées à l'extérieur du mur (on les voit sur les côtés et devant)
+  for (let i = 0; i < 18; i++) {
+    const a = A0 + (A1 - A0) * (i + 0.5) / 18, [bx, bz] = P(sw + 0.012, a);
+    const ban = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 2.8), banMats[(i * 5) % banMats.length]); ban.position.set(bx, yTop - 1.2, bz); ban.rotation.y = Math.atan2(bx, bz); group.add(ban); banners.push(ban);
   }
   // guirlandes de fanions colorés entre les piliers (ambiance de tournoi)
   {
@@ -204,7 +227,7 @@ export function buildArena(group, T, key, EX, EZ, { low = false, noPit = false }
   const lint = new THREE.Mesh(new THREE.BoxGeometry(7.4, 0.8, 1.4), stone); lint.position.set(0, 6.3, 0); gate.add(lint);
   const emblem = glowSprite(new THREE.Color(banCol), 3.4); emblem.position.set(0, 4.2, 0.4); gate.add(emblem);
   ups.push((dt, t) => { emblem.material.opacity = 0.6 + Math.sin(t * 2) * 0.25; });
-  group.add(gate);
+  if (withGate) group.add(gate);
 
   if (!noPit) {
   // ---------- Faille lumineuse sous l'île ----------

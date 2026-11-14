@@ -55,7 +55,7 @@ export class BattleView {
     // Cercle d'invocation (le banc du joueur, en 3D devant l'île)
     const ledge = new THREE.Group(); ledge.position.set(0, -0.35, BENCH_Z);
     const rockMat = new THREE.MeshStandardMaterial({ color: world.theme.rock, flatShading: true });
-    const top = new THREE.Mesh(new THREE.BoxGeometry(12.6, 0.5, 2.6), new THREE.MeshStandardMaterial({ color: world.theme.ground2, flatShading: true })); top.receiveShadow = true; ledge.add(top);
+    const top = new THREE.Mesh(new THREE.BoxGeometry(12.6, 0.5, 2.6), new THREE.MeshStandardMaterial({ color: this.key === 'aurore' ? '#8f8a9e' : world.theme.ground2, flatShading: true })); top.receiveShadow = true; ledge.add(top);
     const under = new THREE.Mesh(new THREE.ConeGeometry(2.0, 3, 6), rockMat); under.scale.set(3.3, 1, 0.8); under.rotation.x = Math.PI; under.position.y = -1.7; ledge.add(under);
     this.scene.add(ledge);
     this.slotHits = [];

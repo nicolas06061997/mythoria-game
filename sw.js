@@ -2,7 +2,7 @@
 // La version vient de index.html (data-version), passée dans l'adresse : sw.js?v=…
 const VERSION = new URL(self.location.href).searchParams.get('v') || 'dev';
 const CACHE = 'mythoria-' + VERSION;
-const FILES = ['./', './index.html', './styles.css', './manifest.webmanifest', './icons/icon.svg', './assets/loading/bg.webp', './assets/loading/fly.webp', './assets/arenas/aurore.webp',
+const FILES = ['./', './index.html', './styles.css', './manifest.webmanifest', './icons/icon.svg', './assets/loading/bg.webp', './assets/loading/fly.webp', './assets/arenas/aurore.webp', './assets/ui/chest-c1.webp', './assets/ui/chest-c2.webp', './assets/ui/chest-c3.webp', './assets/ui/chest-c4.webp', './assets/ui/chest-c5.webp', './assets/ui/slot-c1.webp', './assets/ui/slot-c2.webp', './assets/ui/slot-c3.webp', './assets/ui/slot-c4.webp', './assets/ui/slot-c5.webp', './assets/ui/slot-empty.webp',
   './vendor/three.module.min.js', './vendor/addons/loaders/GLTFLoader.js', './vendor/addons/utils/SkeletonUtils.js', './vendor/addons/utils/BufferGeometryUtils.js',
   './src/client/main.js', './src/client/install.js', './src/client/ui/app.js', './src/client/ui/dom.js', './src/client/ui/icons.js', './src/client/battle.js',
   './src/client/store.js', './src/client/audio.js', './src/client/three/assets.js', './src/client/three/procedural.js', './src/client/three/world.js',

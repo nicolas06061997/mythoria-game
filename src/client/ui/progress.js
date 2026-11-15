@@ -1,5 +1,4 @@
 // MYTHORIA — écrans de progression : boutique, coffres, missions, connexion, amélioration, apparences.
-import { chestSVG } from './art.js';
 import { HERO, RARITIES, FACTIONS, SPELL } from '../../shared/content.js';
 import { SKINS, CHESTS, MAX_LEVEL } from '../../shared/economy.js';
 import { saveProfile, owned, heroLevel, canUpgrade, upgradeHero, chestState, startChest, chestGemCost, openChest, shopOffers, buy, skinsFor, missionsReady, claimMission, claimLogin, maxHeroLevel } from '../store.js';
@@ -10,9 +9,11 @@ import { sfx } from '../audio.js';
 let C; // contexte : { P(), render(), portraitImg(id) }
 export function initProgress(ctx) { C = ctx; }
 
+const CHEST_ART = { bois: 'c1', argent: 'c3', or: 'c2', magique: 'c4', legendaire: 'c5' };
 export function chestIcon(type, cls = '') {
   const s = h('span', { class: 'chest-ic ' + cls, style: { '--cc': CHESTS[type].color } });
-  s.innerHTML = chestSVG(type); // dessin vectoriel (art.js) : net à toutes les tailles
+  // coffres de la maquette de l'utilisateur, rendus nets (assets/ui/chest-c1..c5.webp ; dans un emplacement : tuile slot-*.webp)
+  s.classList.add('ci-' + (CHEST_ART[type] || 'c1')); s.append(h('img', { alt: '', draggable: 'false', src: 'assets/ui/chest-' + (CHEST_ART[type] || 'c1') + '.webp' }));
   return s;
 }
 const fmt = sec => { sec = Math.max(0, Math.ceil(sec)); const hh = Math.floor(sec / 3600), mm = Math.floor(sec % 3600 / 60), ss = sec % 60; return hh ? hh + ' h ' + String(mm).padStart(2, '0') : mm ? mm + ' min ' + String(ss).padStart(2, '0') : ss + ' s'; };
@@ -32,7 +33,7 @@ export function chestRow() {
   const P = C.P();
   const row = h('div', { class: 'chests' }, P.chests.map((c, i) => {
     const st = chestState(c);
-    if (st === 'empty') { const g = h('span', { class: 'chest-ic ghost' }); g.innerHTML = chestSVG('argent'); return h('div', { class: 'cslot empty' }, g, h('small', {}, 'Libre')); }
+    if (st === 'empty') return h('div', { class: 'cslot empty' }, h('span', { class: 'chest-ic ci-empty' }), h('small', {}, 'Libre'));
     const b = h('button', { class: 'cslot ' + st, onclick: () => chestTap(i) }, chestIcon(c.type), h('small', { class: 'cname' }, CHESTS[c.type].name.replace('Coffre ', '').replace('d’', '').replace('de ', '')));
     const lab = h('b', { class: 'ctime' });
     const upd = () => { const s2 = chestState(P.chests[i]); lab.textContent = s2 === 'ready' ? 'OUVRIR !' : s2 === 'opening' ? fmt((P.chests[i].end - Date.now()) / 1000) : fmt(CHESTS[c.type].time); };

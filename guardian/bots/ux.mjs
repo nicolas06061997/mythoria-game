@@ -60,6 +60,7 @@ export async function uxCheck(page, { minContrast = 3 } = {}) {
       const col = rgba(cs.color);
       if (!col || col[3] < 0.5) continue;
       if (cs.textShadow !== 'none' || parseFloat(cs.webkitTextStrokeWidth) > 0) continue;
+      if (cs.webkitBackgroundClip === 'text' || cs.backgroundClip === 'text') { out.nonMesures++; continue; } // texte peint en dégradé : sa couleur réelle n'est pas mesurable
       const bd = backdrop(el);
       if (!bd) { out.nonMesures++; continue; }
       let best = 0, bg = null;

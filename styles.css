@@ -587,3 +587,145 @@ body { --w1: #24357a; --w2: #101a46; background: radial-gradient(120% 60% at 50%
 .kp-badge { position: absolute; left: 50%; top: -6%; width: 30px; height: 30px; margin-left: -15px; border-radius: 50%; display: none; place-content: center; font-style: normal; font-size: 17px; font-weight: 900; color: #fff;
   background: radial-gradient(circle at 40% 35%, #a6ff8f, #36b833 65%, #1d7a20); border: 2.5px solid #fff; box-shadow: 0 0 0 1.5px #0d4a12, 0 3px 6px rgba(0, 0, 0, .45); animation: kcbob 1.4s ease-in-out infinite; }
 .kp-badge.up, .kp-badge.plus { display: grid; } .kp-badge.up::before { content: '⬆'; } .kp-badge.plus::before { content: '+'; font-size: 22px; line-height: 1; }
+
+/* =====================================================================
+   Style « fantastique cosmique » (15/11, d'après la maquette de l'utilisateur) :
+   bleu nuit profond, cyan, liserés fins or / argent lunaire, décor vivant.
+   Ne fait qu'habiller : aucune règle de jeu ici.
+   ===================================================================== */
+:root { --n0: #050818; --n1: #0a1036; --n2: #142068; --cy: #7fe9ff; --or: #e9c877; --or2: #b98a34; --lune: #cfd8f0; --fil: rgba(233, 200, 119, .45); }
+body { background: radial-gradient(120% 60% at 50% -10%, var(--n2) 0%, var(--n1) 55%, var(--n0) 90%) fixed; }
+body::after { background: radial-gradient(60% 22% at 30% 16%, rgba(80, 255, 190, .15), transparent 70%), radial-gradient(55% 20% at 72% 24%, rgba(150, 110, 255, .16), transparent 70%), radial-gradient(50% 18% at 50% 80%, rgba(90, 160, 255, .10), transparent 70%); }
+
+/* ----- barre du haut : capsule fine + cristal central ----- */
+.topbar { gap: 8px; align-items: flex-start; padding: calc(10px + var(--safe-t)) 10px 4px; background: linear-gradient(rgba(5, 8, 24, .9), rgba(5, 8, 24, 0)); box-shadow: none; }
+.me { flex: none; }
+.avatar { width: 38px; height: 38px; border-radius: 50%; border: 1.5px solid var(--or); box-shadow: 0 0 10px rgba(127, 233, 255, .3); background: radial-gradient(circle at 50% 30%, #3a5ac8, #0c1650); }
+.tb-core { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; }
+.res { position: relative; width: 100%; height: 30px; display: grid; grid-template-columns: 1fr 48px .5fr .5fr; align-items: center; gap: 0; margin-top: 4px;
+  background: linear-gradient(rgba(14, 24, 80, .8), rgba(7, 12, 44, .8)); border: 1px solid var(--fil); border-radius: 16px; box-shadow: 0 0 14px rgba(40, 90, 220, .25), inset 0 0 10px rgba(127, 233, 255, .06); }
+.pill { justify-content: center; gap: 4px; min-width: 0; background: none; border: 0; box-shadow: none; padding: 0 4px; font-size: 13.5px; font-weight: 800; color: #f2f5ff; }
+.pill .ic { width: 16px; height: 16px; flex: none; } .p-tro .ic { color: var(--or); filter: drop-shadow(0 0 4px rgba(255, 220, 130, .8)); }
+.tb-gem { position: relative; width: 48px; height: 48px; margin: -9px 0; border-radius: 50%; display: grid; place-content: center; background: radial-gradient(circle at 50% 40%, #24409c, #0a1140 70%); border: 1.5px solid var(--or); box-shadow: 0 0 0 3px rgba(5, 8, 24, .9), 0 0 16px rgba(127, 233, 255, .45); }
+.tb-gem i:first-child { width: 20px; height: 28px; clip-path: polygon(50% 0, 100% 42%, 50% 100%, 0 42%); background: linear-gradient(115deg, #fff 0 30%, #c8f6ff 30% 52%, #6cc8ff 52% 74%, #3a86e8 74%); animation: gempulse 3.2s ease-in-out infinite; }
+.tb-gem i:last-child { position: absolute; inset: 4px; border-radius: 50%; border: 1px solid transparent; border-top-color: var(--or); border-left-color: rgba(233, 200, 119, .35); animation: orbit 9s linear infinite; }
+@keyframes gempulse { 50% { filter: brightness(1.35) drop-shadow(0 0 5px #bff4ff); transform: scale(1.06); } }
+@keyframes orbit { to { transform: rotate(360deg); } }
+.me-txt { display: flex; align-items: center; gap: 7px; max-width: 86%; padding: 13px 12px 3px; margin-top: -7px; border: 1px solid rgba(233, 200, 119, .28); border-top: 0; border-radius: 0 0 12px 12px; background: rgba(7, 12, 44, .55); }
+.me-txt b { max-width: 96px; font-size: 11.5px; font-weight: 800; color: var(--lune); text-shadow: none; letter-spacing: .3px; }
+.xp { margin-top: 0; }
+.lvl { background: none; border: 1px solid var(--cy); border-radius: 6px; color: var(--cy); font-size: 10.5px; padding: 0 5px; box-shadow: none; }
+.xpbar { width: 54px; height: 4px; border: 0; border-radius: 3px; background: rgba(255, 255, 255, .14); box-shadow: none; } .xpbar i { background: linear-gradient(90deg, var(--cy), #5a9cff); box-shadow: 0 0 6px var(--cy); }
+.gear { width: 38px; height: 38px; color: var(--lune); opacity: .8; } .gear .ic { width: 21px; height: 21px; }
+
+/* ----- accueil : scène sans cadre, décor vivant ----- */
+.home { gap: 10px; }
+.home-stage { height: min(50dvh, 440px); margin: -10px -12px 0; border-radius: 0; border: 0; box-shadow: none; background: none;
+  -webkit-mask-image: linear-gradient(transparent, #000 7%, #000 76%, transparent); mask-image: linear-gradient(transparent, #000 7%, #000 76%, transparent); }
+.home-stage::after { background: none; }
+.cosmos { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.cosmos i { position: absolute; display: block; }
+/* aurores boréales : rideaux de lumière qui ondulent lentement */
+.cosmos .au { left: -30%; width: 160%; height: 34%; top: 14%; mix-blend-mode: screen; border-radius: 50%; will-change: transform, opacity;
+  background: repeating-linear-gradient(94deg, rgba(255, 255, 255, 0) 0 14px, rgba(255, 255, 255, .10) 20px, rgba(255, 255, 255, 0) 30px), linear-gradient(90deg, transparent 4%, rgba(60, 255, 180, .55) 20%, rgba(70, 150, 255, .30) 42%, rgba(160, 100, 255, .45) 62%, rgba(60, 255, 200, .50) 82%, transparent 96%);
+  -webkit-mask-image: linear-gradient(transparent, #000 55%, transparent); mask-image: linear-gradient(transparent, #000 55%, transparent); animation: aurora 13s ease-in-out infinite alternate; }
+.cosmos .a2 { top: 22%; height: 26%; opacity: .7; animation-duration: 17s; animation-direction: alternate-reverse; background: repeating-linear-gradient(86deg, rgba(255, 255, 255, 0) 0 18px, rgba(255, 255, 255, .08) 26px, rgba(255, 255, 255, 0) 38px), linear-gradient(90deg, transparent 6%, rgba(150, 110, 255, .45) 26%, rgba(60, 255, 190, .45) 52%, rgba(80, 170, 255, .35) 76%, transparent 94%); }
+.cosmos .a3 { top: 6%; height: 22%; opacity: .45; animation-duration: 23s; animation-delay: -8s; }
+@keyframes aurora { 0% { transform: translateX(-7%) skewX(-10deg) scaleY(.85); opacity: .5; } 50% { transform: translateX(2%) skewX(5deg) scaleY(1.2); opacity: .95; } 100% { transform: translateX(8%) skewX(12deg) scaleY(.95); opacity: .6; } }
+/* étoiles qui scintillent (deux couches décalées) */
+.cosmos .st { inset: 0; mix-blend-mode: screen; animation: twk 3.4s ease-in-out infinite alternate;
+  background-image: radial-gradient(1.6px 1.6px at 8% 9%, #fff, transparent), radial-gradient(1px 1px at 21% 31%, #cfe8ff, transparent), radial-gradient(1.4px 1.4px at 33% 6%, #fff, transparent), radial-gradient(1px 1px at 47% 18%, #fff, transparent), radial-gradient(1.6px 1.6px at 64% 8%, #ffe9b0, transparent), radial-gradient(1px 1px at 78% 27%, #fff, transparent), radial-gradient(1.4px 1.4px at 91% 13%, #cfe8ff, transparent), radial-gradient(1px 1px at 12% 58%, #fff, transparent), radial-gradient(1.4px 1.4px at 88% 61%, #fff, transparent), radial-gradient(1px 1px at 5% 80%, #cfe8ff, transparent), radial-gradient(1px 1px at 95% 84%, #fff, transparent); }
+.cosmos .s2 { animation-duration: 2.3s; animation-delay: -1.2s; transform: scaleX(-1) translateY(4%); }
+@keyframes twk { from { opacity: .15; } to { opacity: 1; } }
+/* rochers flottants : lévitation douce, chacun à son rythme */
+.cosmos .rk { background: linear-gradient(#8b9ad6 0 18%, #46549a 18% 30%, #2a3478 55%, #121848); clip-path: polygon(0 4%, 34% 0, 100% 8%, 90% 38%, 66% 62%, 54% 100%, 38% 66%, 10% 40%); filter: drop-shadow(0 0 6px rgba(127, 233, 255, .25)); animation: levite 6s ease-in-out infinite; will-change: transform; }
+.cosmos .r1 { left: 5%; top: 30%; width: 74px; height: 54px; animation-duration: 7.5s; }
+.cosmos .r2 { right: 3%; top: 47%; width: 86px; height: 66px; animation-duration: 9s; animation-delay: -3s; }
+.cosmos .r3 { left: 20%; top: 22%; width: 16px; height: 22px; animation-duration: 5s; animation-delay: -1s; }
+.cosmos .r4 { right: 20%; top: 33%; width: 20px; height: 26px; animation-duration: 6.2s; animation-delay: -2s; }
+.cosmos .r5 { left: 4%; top: 12%; width: 24px; height: 28px; animation-duration: 5.6s; animation-delay: -4s; }
+.cosmos .r6 { right: 9%; top: 72%; width: 30px; height: 24px; animation-duration: 6.8s; animation-delay: -1.5s; }
+.cosmos .r7 { left: 16%; top: 74%; width: 18px; height: 20px; animation-duration: 4.8s; animation-delay: -2.5s; }
+@keyframes levite { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-9px) rotate(2deg); } }
+.home-3d { animation: levite3d 7s ease-in-out infinite; } @keyframes levite3d { 0%, 100% { transform: scale(1.04) translateY(3px); } 50% { transform: scale(1.04) translateY(-3px); } }
+/* textes posés sur la scène : fins, sans bloc */
+.home-world { top: 16px; padding: 0; background: none; border: 0; box-shadow: none; color: var(--lune); }
+.home-world::before, .home-world::after { display: none; }
+.home-world small { color: var(--lune); font-size: 9.5px; letter-spacing: 3px; font-weight: 800; opacity: .8; }
+.home-world b { font-size: 19px; font-weight: 700; letter-spacing: 2px; color: var(--or); text-shadow: 0 0 12px rgba(255, 220, 130, .45), 0 2px 4px rgba(0, 0, 0, .6); }
+.home-hero { bottom: 96px; } .home-hero b { font-size: 20px; font-weight: 700; color: #fff; -webkit-text-stroke: 0; text-shadow: 0 2px 8px rgba(0, 0, 0, .8); }
+.home-hero small { color: var(--lune); font-weight: 700; font-size: 11.5px; }
+.rar { background: rgba(7, 12, 44, .7); border: 1px solid var(--rc); color: var(--rc); box-shadow: none; font-size: 9.5px; letter-spacing: 1.5px; }
+.home-prog { bottom: 62px; left: 18px; right: 18px; }
+.tbar { height: 5px; border: 0; border-radius: 3px; background: rgba(255, 255, 255, .16); } .tbar i { background: linear-gradient(90deg, #5a9cff, var(--cy)); box-shadow: 0 0 8px var(--cy); }
+.home-prog small { font-size: 11px; font-weight: 700; color: var(--lune); } .home-prog small .ic { width: 14px; height: 14px; }
+
+/* ----- bouton COMBATTRE : plaque métallique bleu / or surmontée d'un cristal ----- */
+.btn-battle { isolation: isolate; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 1px; width: min(100%, 330px); margin: -46px auto 0; padding: 17px 34px 13px; text-align: center;
+  background: none; border: 0; border-radius: 0; box-shadow: none; color: #fff; filter: drop-shadow(0 8px 14px rgba(0, 0, 0, .6)) drop-shadow(0 0 16px rgba(70, 140, 255, .45)); transition: transform .1s; }
+.btn-battle::before, .btn-battle::after { content: ''; position: absolute; z-index: -1; height: auto; border-radius: 0; clip-path: polygon(7% 0, 93% 0, 100% 50%, 93% 100%, 7% 100%, 0 50%); }
+.btn-battle::before { inset: 0; left: 0; right: 0; top: 0; background: linear-gradient(#fff6d2, #e9c877 28%, #9a6f22 62%, #f3d98f 88%, #b98a34); }
+.btn-battle::after { inset: 3px; left: 4px; right: 4px; top: 3px; background: linear-gradient(rgba(255, 255, 255, .30), rgba(255, 255, 255, 0) 34%), linear-gradient(90deg, rgba(127, 233, 255, .22), transparent 22% 78%, rgba(127, 233, 255, .22)), linear-gradient(#3f72e6, #21409f 46%, #101f68 54%, #1b3894); }
+.btn-battle:active { transform: scale(.97); box-shadow: none; }
+.btn-battle .seal { position: absolute; left: 50%; top: -22px; width: 30px; height: 40px; margin-left: -15px; border: 0; border-radius: 0; box-shadow: none; clip-path: polygon(50% 0, 100% 42%, 50% 100%, 0 42%);
+  background: linear-gradient(105deg, #e8fcff 0 30%, #9be8ff 30% 52%, #4cb4ff 52% 76%, #2a6ee0 76%); animation: gempulse 2.8s ease-in-out infinite; }
+.btn-battle .seal .ic { display: none; }
+.btn-battle .bb-l, .btn-battle .bb-r { position: absolute; top: 50%; width: 9px; height: 9px; margin-top: -5px; background: var(--cy); border: 1.5px solid var(--or); transform: rotate(45deg); box-shadow: 0 0 8px var(--cy); }
+.btn-battle .bb-l { left: 15px; } .btn-battle .bb-r { right: 15px; }
+.btn-battle b { font-family: var(--title); font-size: 27px; font-weight: 900; letter-spacing: 3px; line-height: 1.1; -webkit-text-stroke: 0; color: #f6e7b8; background: linear-gradient(#fffbe8, #f1d488 55%, #c79a45); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; text-shadow: none; filter: drop-shadow(0 2px 2px rgba(4, 8, 40, .8)); }
+.btn-battle small { color: #b9d2ff; font-size: 10.5px; font-weight: 800; letter-spacing: 1px; opacity: 1; }
+
+/* ----- coffres sur une étagère ----- */
+.chests { position: relative; gap: 4px; padding: 0 6px; margin-top: 4px; }
+.chests::after { content: ''; position: absolute; left: -4px; right: -4px; top: 58px; height: 6px; border-radius: 2px; background: linear-gradient(#f6e3a6, #c79a45 55%, #7a5a1e); box-shadow: 0 7px 12px rgba(0, 0, 0, .55), 0 16px 22px -8px rgba(127, 233, 255, .28); }
+.cslot { height: auto; justify-content: flex-start; gap: 1px; padding: 0 0 2px; background: none; border: 0; border-radius: 0; box-shadow: none; }
+.cslot .chest-ic { width: 60px; height: 50px; margin: 8px 0 13px; } .cslot .chest-ic svg { filter: drop-shadow(0 4px 5px rgba(0, 0, 0, .6)); }
+.cslot small, .cslot b { text-shadow: none; } .cslot .cname { color: var(--lune); font-size: 9.5px; letter-spacing: .5px; } .ctime { font-size: 10.5px; color: #fff; font-weight: 800; }
+.cslot.empty { background: none; border: 0; } .cslot.empty::before { content: ''; width: 22px; height: 22px; margin: 26px 0 23px; border: 1px dashed rgba(207, 216, 240, .45); transform: rotate(45deg); }
+.cslot.empty small { color: rgba(207, 216, 240, .55); font-size: 9px; }
+.cslot.ready { background: none; box-shadow: none; animation: none; } .cslot.ready .chest-ic { animation: bob 1.2s infinite; } .cslot.ready .chest-ic svg { filter: drop-shadow(0 0 9px rgba(255, 220, 130, .95)); }
+.cslot.ready .ctime { color: var(--or); text-shadow: 0 0 8px rgba(255, 220, 130, .6); }
+.cslot.opening .ctime { color: var(--cy); }
+.cslot:active { transform: scale(.95); box-shadow: none; }
+
+/* ----- tuiles, panneaux, boutons : verre bleu nuit, liseré fin ----- */
+.tile { background: rgba(10, 18, 62, .6); border: 1px solid rgba(233, 200, 119, .3); border-radius: 12px; box-shadow: none; padding: 9px 4px; }
+.tile .ic { width: 26px; height: 26px; filter: drop-shadow(0 0 6px rgba(127, 233, 255, .35)); }
+.tile b { font-size: 12.5px; font-weight: 700; -webkit-text-stroke: 0; color: #fff; text-shadow: none; letter-spacing: .5px; } .tile small { color: var(--lune); opacity: .75; text-shadow: none; font-size: 10.5px; }
+.tile:active { transform: scale(.96); box-shadow: none; }
+.panel { background: rgba(9, 15, 52, .74); border: 1px solid var(--fil); border-radius: 16px; box-shadow: 0 8px 22px rgba(0, 0, 0, .4), inset 0 0 24px rgba(60, 110, 255, .07); }
+.panel h3, .sheet h3 { color: var(--or); -webkit-text-stroke: 0; letter-spacing: 1px; }
+.sheet { background: linear-gradient(#131e5c, #070b2c 70%); border: 1px solid var(--fil); border-bottom: 0; box-shadow: 0 -10px 40px rgba(0, 0, 0, .6), 0 -1px 18px rgba(127, 233, 255, .12); }
+.btn { background: linear-gradient(#24388a, #14215c); border: 1px solid rgba(207, 216, 240, .32); border-bottom-width: 1px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12); }
+.btn:active { transform: scale(.97); }
+.btn.gold { background: linear-gradient(#f8e7b0, #dcb25a 55%, #b98a34); border-color: #fff3cf; color: #2a1a04; }
+.btn.red { background: linear-gradient(#e0566a, #9a1c36); }
+.btn.ghost { background: rgba(255, 255, 255, .04); border: 1px solid rgba(207, 216, 240, .35); box-shadow: none; }
+
+/* ----- barre du bas : icônes plates et lumineuses ----- */
+.nav { align-items: stretch; background: linear-gradient(rgba(6, 10, 34, .94), #03050f); border-top: 1px solid var(--fil); box-shadow: 0 -10px 24px rgba(0, 0, 0, .45); padding: 0 6px var(--safe-b); }
+.nav-b { gap: 3px; padding: 10px 0 7px; color: #8794c4; border: 0; box-shadow: none; background: none; }
+.nav-b .ic, .nav-b.mid .ic { width: 26px; height: 26px; padding: 0; margin: 0; border: 0; border-radius: 0; background: none; box-shadow: none; color: inherit; filter: none; transition: transform .2s, filter .2s; }
+.nav-b.mid:not(.on) .ic { filter: none; }
+.nav-b small { font-size: 9px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; -webkit-text-stroke: 0; opacity: .7; }
+.nav-b.on { margin-top: 0; border-radius: 0; background: none; box-shadow: none; color: #ffe39a; }
+.nav-b.on::before { display: block; top: -1px; left: 34%; right: 34%; height: 2px; border-radius: 0 0 2px 2px; background: var(--or); box-shadow: 0 0 10px 1px rgba(255, 220, 130, .9); }
+.nav-b.on .ic { transform: scale(1.16); filter: drop-shadow(0 0 7px rgba(255, 215, 120, .95)); }
+.nav-b.on small { color: #ffe39a; -webkit-text-stroke: 0; opacity: 1; }
+
+/* ----- Royaume : mêmes liserés fins ----- */
+.k-stage { box-shadow: 0 0 0 1px var(--fil), 0 10px 26px rgba(0, 0, 0, .55); }
+.k-res span { background: rgba(7, 12, 44, .78); border: 1px solid rgba(233, 200, 119, .3); }
+.k-collect { color: #2a1a04; background: linear-gradient(#f8e7b0, #dcb25a 55%, #b98a34); border: 1px solid #fff3cf; box-shadow: 0 6px 16px rgba(0, 0, 0, .5); }
+.kc { background: linear-gradient(135deg, rgba(20, 32, 104, .8), rgba(8, 13, 46, .85)); border: 1px solid rgba(233, 200, 119, .3); box-shadow: none; }
+.kc:active { transform: scale(.98); box-shadow: none; } .kc.empty { background: rgba(8, 13, 46, .6); }
+.kc.ok { border-color: var(--cy); box-shadow: 0 0 14px rgba(127, 233, 255, .25); }
+.kc-txt b { -webkit-text-stroke: 0; color: #fff; } .kc-txt small { color: var(--or); }
+.k-cta { background: linear-gradient(rgba(255, 255, 255, .2), transparent 40%), linear-gradient(#3f72e6, #1b3894); border: 1px solid var(--or); box-shadow: 0 6px 18px rgba(0, 0, 0, .5), 0 0 16px rgba(70, 140, 255, .35); }
+.k-cta small { text-shadow: none; color: #cfe2ff; } .k-cta b { -webkit-text-stroke: 0; text-shadow: 0 2px 3px rgba(4, 8, 40, .7); color: #f6e7b8; letter-spacing: 2px; }
+.k-cta:active { transform: scale(.97); }
+
+@media (prefers-reduced-motion: reduce) { .cosmos i, .home-3d, .tb-gem i, .btn-battle .seal { animation: none; } }
+/* bouton « Installer le jeu » assorti (plus de vert plastique) */
+#inst { background: linear-gradient(#24388a, #101c58); color: #f6e7b8; border: 1px solid var(--or); box-shadow: 0 6px 18px rgba(0, 0, 0, .55), 0 0 14px rgba(127, 233, 255, .3); font-weight: 800; font-size: 14px; }
+#inst button { background: rgba(255, 255, 255, .1); color: var(--lune); }

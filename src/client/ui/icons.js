@@ -27,6 +27,12 @@ const P = {
   shield: '<path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z" fill="currentColor"/>',
   sound: '<path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8a5 5 0 010 8M18.5 5.5a8.5 8.5 0 010 13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>',
   share: '<circle cx="18" cy="5" r="3" fill="currentColor"/><circle cx="6" cy="12" r="3" fill="currentColor"/><circle cx="18" cy="19" r="3" fill="currentColor"/><path d="M8.6 10.6l6.8-4M8.6 13.4l6.8 4" stroke="currentColor" stroke-width="2"/>',
+  // icônes plates et lumineuses de la barre du bas (une seule couleur : currentColor)
+  n_star: '<path d="M12 1.5c.9 5.6 3 7.7 9 9.5-6 1.8-8.1 3.9-9 9.5-.9-5.6-3-7.7-9-9.5 6-1.8 8.1-3.9 9-9.5z" fill="currentColor"/><circle cx="19" cy="4.5" r="1.2" fill="currentColor" opacity=".7"/><circle cx="5" cy="19" r="1" fill="currentColor" opacity=".6"/>',
+  n_gem: '<path d="M12 2l7 9-7 11-7-11z" fill="currentColor" opacity=".45"/><path d="M12 2l7 9-7 11-7-11z M5 11h14 M12 2l-3 9 3 11 3-11z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>',
+  n_hero: '<path d="M12 2.5c-4.4 0-7.5 3.3-7.5 7.8V19l4.5 2.5v-7l-2-1.5v-2.5h10V13l-2 1.5v7l4.5-2.5v-8.7c0-4.5-3.1-7.8-7.5-7.8z" fill="currentColor"/><path d="M12 1v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+  n_crown: '<path d="M3 8l4.5 4L12 4l4.5 8L21 8l-1.8 10H4.8z" fill="currentColor"/><path d="M5 20.5h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="3" r="1.3" fill="currentColor"/><circle cx="2.8" cy="7" r="1.2" fill="currentColor"/><circle cx="21.2" cy="7" r="1.2" fill="currentColor"/>',
+  n_shield: '<path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z" fill="currentColor" opacity=".4"/><path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 7l1.3 2.7 3 .4-2.2 2 .6 3-2.7-1.5-2.7 1.5.6-3-2.2-2 3-.4z" fill="currentColor"/>',
   install: '<path d="M12 3v12M7 10l5 5 5-5" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M4 17v3h16v-3" stroke="currentColor" stroke-width="2.4" fill="none"/>',
 };
 const DEFS = '<defs><linearGradient id="gE" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4d0ff"/><stop offset="1" stop-color="#8a2fe0"/></linearGradient>' +

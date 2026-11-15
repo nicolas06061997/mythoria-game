@@ -11,7 +11,7 @@ import { HERO, RARITIES } from '../../shared/content.js';
 
 // ---------- Vitrine ----------
 export class Showcase {
-  constructor(canvas, { world = 'aurore', heroId = 'ecuyer', star = 1, mode = 'hero', skin = null } = {}) {
+  constructor(canvas, { world = 'aurore', heroId = 'ecuyer', star = 1, mode = 'hero', skin = null, cosmic = false } = {}) {
     this.skin = skin;
     this.cv = canvas; this.mode = mode;
     this.r = createRenderer(canvas);
@@ -20,7 +20,8 @@ export class Showcase {
     this.t = 0; this.rotY = 0.5; this.spin = 0.25; this.dead = false;
     const T = THEMES[world] || THEMES.aurore;
     const HS = { aurore: ['#1f5fd8', '#6fb0f0'], sylve: ['#14584a', '#5fb894'], arcane: ['#1e1068', '#6a48d0'], braise: ['#3a0a08', '#c8501e'], givre: ['#1f5aa8', '#90c8ee'], ombre: ['#0c0620', '#42226e'] }[world] || ['#1f5fd8', '#6fb0f0'];
-    this.sky = skyDome(mode === 'home' ? { skyTop: HS[0], skyBot: HS[1] } : { skyTop: '#2a1a5a', skyBot: '#0d0820' }); this.sky.scale.setScalar(0.25); this.scene.add(this.sky);
+    // cosmic : ciel de nuit bleu profond (les aurores, étoiles et rochers sont dessinés en CSS par-dessus)
+    this.sky = skyDome(cosmic ? { skyTop: '#050a26', skyBot: '#1a2f7e' } : mode === 'home' ? { skyTop: HS[0], skyBot: HS[1] } : { skyTop: '#2a1a5a', skyBot: '#0d0820' }); this.sky.scale.setScalar(0.25); this.scene.add(this.sky);
     this.post = createComposer(this.r, this.scene, this.cam, { bloom: quality().bloom, strength: 0.45, threshold: 1.1, radius: 0.5, samples: quality().msaa });
     this.scene.add(new THREE.HemisphereLight(T.hemiSky, T.hemiGround, 1.3));
     const sun = new THREE.DirectionalLight(T.sun, 2.4); sun.position.set(-3, 6, 4); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024);
@@ -28,17 +29,17 @@ export class Showcase {
     const rim = new THREE.DirectionalLight(new THREE.Color(T.skyBot), 1.8); rim.position.set(3, 3, -4); this.scene.add(rim);
     // socle
     this.base = new THREE.Group(); this.scene.add(this.base);
-    const top = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.6, 0.3, 32), new THREE.MeshStandardMaterial({ color: T.ground, flatShading: true })); top.position.y = -0.15; top.receiveShadow = true; this.base.add(top);
-    const rimR = new THREE.Mesh(new THREE.CylinderGeometry(1.62, 1.5, 0.5, 32), new THREE.MeshStandardMaterial({ color: T.rock, flatShading: true })); rimR.position.y = -0.5; this.base.add(rimR);
-    const under = new THREE.Mesh(new THREE.ConeGeometry(1.5, 2.2, 9), new THREE.MeshStandardMaterial({ color: T.rock2, flatShading: true })); under.rotation.x = Math.PI; under.position.y = -1.8; this.base.add(under);
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.6, 0.3, 32), new THREE.MeshStandardMaterial({ color: cosmic ? '#5b6cb4' : T.ground, flatShading: true })); top.position.y = -0.15; top.receiveShadow = true; this.base.add(top);
+    const rimR = new THREE.Mesh(new THREE.CylinderGeometry(1.62, 1.5, 0.5, 32), new THREE.MeshStandardMaterial({ color: cosmic ? '#39468c' : T.rock, flatShading: true })); rimR.position.y = -0.5; this.base.add(rimR);
+    const under = new THREE.Mesh(new THREE.ConeGeometry(1.5, 2.2, 9), new THREE.MeshStandardMaterial({ color: cosmic ? '#222a66' : T.rock2, flatShading: true })); under.rotation.x = Math.PI; under.position.y = -1.8; this.base.add(under);
     this.ring = new THREE.Mesh(new THREE.RingGeometry(1.15, 1.3, 48), new THREE.MeshBasicMaterial({ color: '#ffd166', transparent: true, opacity: 0.7, side: THREE.DoubleSide, depthWrite: false }));
     this.ring.rotation.x = -Math.PI / 2; this.ring.position.y = 0.02; this.base.add(this.ring);
     if (mode === 'home') {
       const add = async (n, x, z, s) => { try { const o = await prop(n, { scale: s }); o.position.set(x, 0, z); this.base.add(o); } catch (e) {} };
       // décor derrière le héros seulement (il ne passe plus devant)
-      add(T.props[0][0], -1.25, -1.05, 0.42); add(T.props[Math.min(2, T.props.length - 1)][0], 1.3, -0.95, 0.45);
+      if (!cosmic) add(T.props[0][0], -1.25, -1.05, 0.42); if (!cosmic) add(T.props[Math.min(2, T.props.length - 1)][0], 1.3, -0.95, 0.45);
       this.altar(T);
-      this.backdrop(T, world);
+      if (!cosmic) this.backdrop(T, world);
     }
     this.glow = glowSprite(0xffffff, 3); this.glow.position.y = 0.9; this.glow.material.opacity = 0.25; this.scene.add(this.glow);
     this.resize();

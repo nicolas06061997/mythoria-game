@@ -79,19 +79,22 @@ function portraitImg(id, cls = 'pt') {
 
 function topBar() {
   const need = xpNeed(P.lvl);
+  // Barre « astrale » : avatar, capsule fine (trophées · cristal central · or + gemmes), nom + niveau dessous, réglages
   return h('header', { class: 'topbar' },
-    h('button', { class: 'me', onclick: openProfile },
-      h('div', { class: 'avatar' }, portraitImg(P.avatar, 'av-img')),
-      h('div', { class: 'me-txt' }, h('b', {}, P.name),
+    h('button', { class: 'me', onclick: openProfile, 'aria-label': 'Profil' },
+      h('div', { class: 'avatar' }, portraitImg(P.avatar, 'av-img'))),
+    h('div', { class: 'tb-core' },
+      h('div', { class: 'res' },
+        h('span', { class: 'pill p-tro' }, icon('n_star'), P.trophies),
+        h('button', { class: 'tb-gem', onclick: () => { sfx('click'); tab = 'shop'; swapIn = null; render(); }, 'aria-label': 'Boutique' }, h('i', {}), h('i', {})),
+        h('span', { class: 'pill p-gold' }, icon('coin'), P.gold),
+        h('span', { class: 'pill p-gems' }, icon('gem'), P.gems)),
+      h('button', { class: 'me-txt', onclick: openProfile }, h('b', {}, P.name),
         h('div', { class: 'xp' }, h('span', { class: 'lvl' }, P.lvl), h('div', { class: 'xpbar' }, h('i', { style: { width: (P.xp / need * 100) + '%' } }))))),
-    h('div', { class: 'res' },
-      h('span', { class: 'pill' }, icon('trophy'), P.trophies),
-      h('span', { class: 'pill' }, icon('coin'), P.gold),
-      h('span', { class: 'pill' }, icon('gem'), P.gems)),
     h('button', { class: 'gear', onclick: openSettings, 'aria-label': 'Réglages' }, icon('gear')));
 }
 
-const TABS = [['shop', 'shop', 'Boutique'], ['heroes', 'heroes', 'Héros'], ['battle', 'swords', 'Combat'], ['kingdom', 'castle', 'Royaume'], ['clan', 'clan', 'Clan']];
+const TABS = [['shop', 'n_gem', 'Boutique'], ['heroes', 'n_hero', 'Héros'], ['battle', 'n_star', 'Combat'], ['kingdom', 'n_crown', 'Royaume'], ['clan', 'n_shield', 'Clan']];
 function navBar() {
   return h('nav', { class: 'nav' }, TABS.map(([id, ic, nm]) =>
     h('button', { class: 'nav-b' + (tab === id ? ' on' : '') + (id === 'battle' ? ' mid' : ''), onclick: () => { sfx('click'); tab = id; swapIn = null; render(); } },
@@ -124,6 +127,9 @@ function homeScreen() {
   const el = h('section', { class: 'home' },
     h('div', { class: 'home-stage', style: { '--sky1': T.skyTop, '--sky2': T.skyBot } },
       cv,
+      // décor vivant (CSS) : aurores qui ondulent, étoiles qui scintillent, rochers qui lévitent
+      h('div', { class: 'cosmos', 'aria-hidden': 'true' }, h('i', { class: 'au a1' }), h('i', { class: 'au a2' }), h('i', { class: 'au a3' }), h('i', { class: 'st s1' }), h('i', { class: 'st s2' }),
+        [1, 2, 3, 4, 5, 6, 7].map(n => h('i', { class: 'rk r' + n }))),
       h('div', { class: 'home-world' }, h('small', {}, 'Monde ' + (w.id + 1) + ' / ' + WORLDS.length), h('b', {}, w.name)),
       h('button', { class: 'home-hero', onclick: () => openHero(fav.id) },
         h('span', { class: 'rar', style: { '--rc': RARITIES[fav.rar].color } }, RARITIES[fav.rar].name),
@@ -131,7 +137,7 @@ function homeScreen() {
       h('div', { class: 'home-prog' },
         next ? [h('div', { class: 'tbar' }, h('i', { style: { width: prog * 100 + '%' } })), h('small', {}, icon('trophy'), P.trophies + ' / ' + next.trophies + ' → ' + next.name)]
           : h('small', {}, 'Tu as atteint le dernier monde !'))),
-    h('button', { class: 'btn-battle', onclick: openModes }, h('span', { class: 'seal' }, icon('swords')), h('b', {}, 'COMBATTRE'), h('small', {}, 'Mode Arène · ' + AI_LEVELS[botLevelFor(P)].name)),
+    h('button', { class: 'btn-battle', onclick: openModes }, h('span', { class: 'seal' }, icon('swords')), h('i', { class: 'bb-l' }), h('i', { class: 'bb-r' }), h('b', {}, 'COMBATTRE'), h('small', {}, 'Mode Arène · ' + AI_LEVELS[botLevelFor(P)].name)),
     chestRow(),
     h('div', { class: 'home-row' },
       tile('map', 'Mondes', WORLDS.filter(x => P.trophies >= x.trophies).length + ' / 6', openWorlds),
@@ -139,7 +145,7 @@ function homeScreen() {
       missionsButton(),
       tile('book', 'Règles', 'Comment jouer', openHowTo)),
     h('p', { class: 'muted center small' }, 'Progression sauvegardée sur ce téléphone · vrais adversaires en ligne : phase 3'));
-  requestAnimationFrame(() => { if (cv.isConnected) stage = new Showcase(cv, { world: w.key, heroId: fav.id, mode: 'home', skin: P.skins.eq[fav.id] }); });
+  requestAnimationFrame(() => { if (cv.isConnected) stage = new Showcase(cv, { world: w.key, heroId: fav.id, mode: 'home', cosmic: true, skin: P.skins.eq[fav.id] }); });
   return el;
 }
 function tile(ic, title, sub, fn) { return h('button', { class: 'tile', onclick: () => { sfx('click'); fn(); } }, icon(ic), h('b', {}, title), h('small', {}, sub)); }

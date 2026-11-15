@@ -16,6 +16,7 @@ import { THEMES } from '../three/world.js';
 import { h, toast, sheet, confirmBox } from './dom.js';
 import { icon } from './icons.js';
 import { sfx, setSound, unlockAudio } from '../audio.js';
+import { playIntro } from '../intro.js';
 
 let P, root, tab = 'battle', swapIn = null, filter = 'all', stage = null;
 export const APP = { version: '' };
@@ -27,8 +28,11 @@ export function startApp(el, version) {
   initProgress({ P: () => P, render: () => render(), portraitImg });
   initKingdom({ P: () => P, render: () => render() });
   initModes({ P: () => P, render: () => render(), play: (m, l, w, x) => play(m, l, w, x) });
-  render();
-  if (P.named) setTimeout(loginPopup, 900); else setTimeout(() => openWelcome(() => setTimeout(loginPopup, 500)), 700);
+  // Saison 1 : la cinématique d'ouverture passe une fois (nouveaux et anciens joueurs), puis l'accueil
+  playIntro().catch(() => {}).then(shown => {
+    render();
+    if (P.named) setTimeout(loginPopup, shown ? 500 : 900); else setTimeout(() => openWelcome(() => setTimeout(loginPopup, 500)), shown ? 300 : 700);
+  });
   // prépare les portraits en arrière-plan
   setTimeout(() => P.deck.forEach(id => portrait(id)), 600);
 }
@@ -416,6 +420,7 @@ function openSettings() {
     h('h4', {}, '⚙️ Général'),
     h('button', { class: 'btn ghost wide', onclick: install }, icon('install'), ' Installer le jeu sur l’écran d’accueil'),
     h('button', { class: 'btn ghost wide', onclick: share }, icon('share'), ' Partager le jeu'),
+    h('button', { class: 'btn ghost wide', onclick: () => { s.close(); if (stage) { stage.dispose(); stage = null; } playIntro({ force: true }).then(() => render()); } }, icon('play'), ' Revoir l’introduction (Saison 1)'),
     h('button', { class: 'btn ghost wide', onclick: openRoadmap }, icon('map'), ' Le plan du jeu'),
     h('button', { class: 'btn ghost wide', onclick: () => window.__checkUpdate && window.__checkUpdate(true) }, icon('summon'), ' Chercher une mise à jour'),
     h('button', { class: 'btn red wide', onclick: async () => { if (await confirmBox('Effacer toute ta progression sur ce téléphone ?', 'Tout effacer')) { resetProfile(); P = loadProfile(); s.close(); render(); toast('Progression effacée'); } } }, 'Recommencer à zéro'),

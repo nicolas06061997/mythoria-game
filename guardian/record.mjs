@@ -134,7 +134,7 @@ async function controle() {
     for (const P of resolved) event(D, 'resolu', 'Problème résolu : ' + P.title, `${P.where} — n'apparaît plus au contrôle (${trig}).`);
     if (!opened.length && !resolved.length) event(D, R.ok ? 'controle' : 'probleme', R.ok ? 'Contrôle réussi' : 'Problème(s) toujours présent(s)', `${stepsOk}/${stepsTotal} étapes · ${trig} · version ${R.version || '?'}`, { quiet: true });
     D.state.status = R.ok ? 'ok' : 'probleme';
-    D.state.lastCheck = { ...run, devices: R.devices.map(d => ({ id: d.device, label: d.label, metrics: d.metrics, steps: d.steps.map(s => ({ name: s.name, ok: s.ok, warn: s.warn || null, ms: s.ms, notes: s.notes, shots: [s.shot, s.shot2, s.shotStory].filter(Boolean).map(x => x.file.replace('.png', '.jpg')) })) })), static: R.static };
+    D.state.lastCheck = { ...run, devices: R.devices.map(d => ({ id: d.device, label: d.label, metrics: d.metrics, steps: d.steps.map(s => ({ name: s.name, ok: s.ok, warn: s.warn || null, ms: s.ms, notes: s.notes, shots: [s.shotIntro, s.shot, s.shot2, s.shotStory].filter(Boolean).map(x => x.file.replace('.png', '.jpg')) })) })), static: R.static };
     if (R.version) D.state.liveVersion = R.version;
     // captures du jeu publié (seulement la dernière série, pour rester léger)
     const out = join(ROOT, 'guardian', 'out');

@@ -116,7 +116,7 @@ async function runDevice(browser, base, dev) {
   await doStep('Chargement du jeu', async S => {
     const t0 = Date.now();
     await page.goto(base + q, { waitUntil: 'domcontentloaded', timeout: 60000 });
-    await page.waitForFunction(() => !document.getElementById('splash') && document.querySelector('#app > *'), null, { timeout: LIMITS.loadFail + 10000 });
+    await page.waitForFunction(() => !document.getElementById('splash') && (document.querySelector('#app > *') || document.querySelector('.intro')), null, { timeout: LIMITS.loadFail + 10000 });
     const ms = Date.now() - t0; R.metrics.loadMs = ms;
     S.notes.push(`Jeu ouvert en ${(ms / 1000).toFixed(1)} s (dont 3,6 s minimum d'écran de chargement voulu).`);
     if (ms > LIMITS.loadFail) throw new Error('chargement beaucoup trop long');
@@ -125,8 +125,20 @@ async function runDevice(browser, base, dev) {
   if (!R.steps[0].ok && !R.metrics.loadMs) { await ctx.close(); return R; }
 
   await doStep('Premier lancement (nom + récompense)', async S => {
+    // cinématique d'ouverture (Saison 1) : on la lance quelques secondes, capture, puis « Passer »
+    if (await page.locator('.intro .in-play').count()) {
+      await page.locator('.intro .in-play').click();
+      await page.waitForSelector('.intro .in-cv', { timeout: 20000 });
+      await sleep(2500);
+      await page.evaluate(() => window.__intro && window.__intro.seek(5.5)); await sleep(1500);
+      S.shotIntro = await shot('intro');
+      // appui direct : sans carte graphique, la scène est trop lourde pour que l'outil attende un écran « stable »
+      await page.evaluate(() => document.querySelector('.intro .in-skip')?.click()); // (ou déjà finie toute seule)
+      await page.waitForSelector('.intro', { state: 'detached', timeout: 15000 });
+      S.notes.push('Cinématique d’ouverture lancée puis passée.');
+    }
     const inp = page.locator('.welcome input');
-    await inp.waitFor({ timeout: 8000 });
+    await inp.waitFor({ timeout: 20000 });
     S.shot = await shot('bienvenue');
     await inp.fill('Gardien'); await inp.press('Enter');
     await page.waitForSelector('.welcome', { state: 'detached', timeout: 20000 });

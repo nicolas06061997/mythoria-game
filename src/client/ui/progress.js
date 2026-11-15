@@ -9,14 +9,12 @@ import { sfx } from '../audio.js';
 let C; // contexte : { P(), render(), portraitImg(id) }
 export function initProgress(ctx) { C = ctx; }
 
+const CHEST_ART = { bois: 'c1', argent: 'c3', or: 'c2', magique: 'c4', legendaire: 'c4' };
 export function chestIcon(type, cls = '') {
   const s = h('span', { class: 'chest-ic ' + cls, style: { '--cc': CHESTS[type].color } });
-  // coffre « astral » : couleur de la rareté, nuit étoilée, ferrures dorées, gemme cyan
-  s.innerHTML = '<svg viewBox="0 0 48 40"><path d="M5 17h38v18a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3z" fill="var(--cc)"/><path d="M5 17h38v18a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3z" fill="#0a1040" opacity=".38"/>' +
-    '<path d="M5 17c0-8.5 6-13.5 19-13.5S43 8.5 43 17z" fill="var(--cc)"/><path d="M5 17c0-8.5 6-13.5 19-13.5S43 8.5 43 17z" fill="#1a2a8a" opacity=".28"/>' +
-    '<g fill="#fff"><circle cx="13" cy="10" r=".9"/><circle cx="19" cy="7" r=".6"/><circle cx="31" cy="8" r=".9"/><circle cx="36" cy="12" r=".6"/><circle cx="12" cy="27" r=".7"/><circle cx="17" cy="32" r=".5"/><circle cx="34" cy="29" r=".8"/><circle cx="30" cy="33" r=".5"/><path d="M27 11l.5 1.5 1.5.5-1.5.5-.5 1.5-.5-1.5-1.5-.5 1.5-.5z" opacity=".9"/></g>' +
-    '<g fill="none" stroke="#e9c877" stroke-width="1.7" stroke-linejoin="round"><path d="M5 17h38v18a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3z"/><path d="M5 17c0-8.5 6-13.5 19-13.5S43 8.5 43 17z"/><path d="M5 20.5h38"/><path d="M10 6.5V38M38 6.5V38" opacity=".75"/></g>' +
-    '<path d="M24 12.5l5 6.5-5 6.5-5-6.5z" fill="#8fe9ff" stroke="#e9c877" stroke-width="1.4"/><path d="M24 12.5l1.800 6.5-1.800 6.5" fill="#fff" opacity=".55"/></svg>';
+  // coffres peints (découpés dans la maquette de l'utilisateur) : assets/ui/chest-c1..c4.webp
+  const im = h('img', { alt: '', draggable: false, src: 'assets/ui/chest-' + (CHEST_ART[type] || 'c1') + '.webp' });
+  s.classList.add('ci-' + type); s.append(im);
   return s;
 }
 const fmt = sec => { sec = Math.max(0, Math.ceil(sec)); const hh = Math.floor(sec / 3600), mm = Math.floor(sec % 3600 / 60), ss = sec % 60; return hh ? hh + ' h ' + String(mm).padStart(2, '0') : mm ? mm + ' min ' + String(ss).padStart(2, '0') : ss + ' s'; };

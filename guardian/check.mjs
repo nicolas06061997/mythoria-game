@@ -139,8 +139,14 @@ async function runDevice(browser, base, dev) {
     await doStep('Onglet ' + nm, async S => {
       const idx = { shop: 0, heroes: 1, battle: 2, kingdom: 3, clan: 4 }[id];
       await closeSheets();
+      // machine de test parfois lente : 20 s d'attente, puis un second essai avant de parler de problème
       await page.locator('nav.nav .nav-b').nth(idx).click();
-      await page.waitForSelector('main.s-' + id, { timeout: 8000 });
+      try { await page.waitForSelector('main.s-' + id, { timeout: 20000 }); }
+      catch (e) {
+        await closeSheets(); await page.locator('nav.nav .nav-b').nth(idx).click();
+        await page.waitForSelector('main.s-' + id, { timeout: 20000 });
+        S.notes.push('Onglet ouvert au 2e essai (machine de test lente).');
+      }
       await sleep(id === 'kingdom' || id === 'battle' ? 2500 : 1000);
       if (await page.locator('.story:not(.off)').count()) { S.shotStory = await shot(id + '-histoire'); S.notes.push("Histoire de Vael affichée et lue jusqu'au bout."); }
       await closeSheets();

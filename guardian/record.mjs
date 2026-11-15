@@ -177,20 +177,23 @@ async function publication() {
   const D = await load();
   const etat = opt('--etat'), v = opt('--version') || '?';
   if (etat === 'publie') {
-    D.state.counters.publications++; D.state.liveVersion = v; D.state.lastPublication = { at: NOW, version: v, sha: SHA, url: RUN_URL };
+    D.state.counters.publications++; D.state.liveVersion = v; D.state.lastPublication = { at: NOW, version: v, sha: SHA, prev: opt('--prev') || null, url: RUN_URL };
     event(D, 'publication', 'Nouvelle version publiée et vérifiée en ligne', `Version ${v}${SHA ? ' (' + SHA + ')' : ''}.`);
     agentDone(D, 'gardien', 'Version ' + v + ' publiée et vérifiée');
     await notify('🚀 MYTHORIA mis à jour', `La version ${v} est en ligne et a passé le contrôle.`, { tags: ['rocket'] });
   } else if (etat === 'retour') {
-    D.state.counters.rollbacks++;
-    event(D, 'retour', 'Retour arrière automatique', `La version ${v} était cassée une fois en ligne : la version précédente a été remise.`);
-    agentDone(D, 'gardien', 'Retour arrière (version ' + v + ' cassée)');
-    await notify('↩️ Retour arrière automatique', `La version ${v} ne fonctionnait pas en ligne : l'ancienne version a été remise automatiquement. Ton jeu reste jouable.`, { priority: 5, tags: ['rotating_light'], urgent: true });
+    D.state.counters.rollbacks++; D.state.lastPublication = null; // on ne revient pas deux fois en arrière sur la même publication
+    const voulu = opt('--raison') === 'demande'; // demandé par le propriétaire depuis l'appli Guardian
+    event(D, 'retour', voulu ? 'Retour arrière demandé depuis l’appli' : 'Retour arrière automatique', voulu ? `La version ${v} a été retirée à ta demande : la version précédente est remise en ligne.` : `La version ${v} était cassée une fois en ligne : la version précédente a été remise.`);
+    agentDone(D, 'gardien', 'Retour arrière (version ' + v + (voulu ? ' retirée à ta demande)' : ' cassée)'));
+    if (voulu) await notify('↩️ Retour arrière effectué', `La version ${v} a été retirée à ta demande. La version précédente est remise en ligne.`, { priority: 3, tags: ['leftwards_arrow_with_hook'] });
+    else await notify('↩️ Retour arrière automatique', `La version ${v} ne fonctionnait pas en ligne : l'ancienne version a été remise automatiquement. Ton jeu reste jouable.`, { priority: 5, tags: ['rotating_light'], urgent: true });
   } else if (etat === 'pas-en-ligne') {
     event(D, 'surveillance', 'Publication lente', `La version ${v} a été envoyée mais GitHub Pages ne l'affichait pas encore après 10 min.`);
     agentDone(D, 'gardien', 'Publication envoyée, mise en ligne lente');
   } else if (etat === 'bloque') {
-    event(D, 'bloque', 'Publication refusée', opt('--raison', 'La branche d\'essai n\'était pas à jour avec main.'));
+    // « branch » sert à l'appli Guardian : bouton « Publier » quand GitHub exige une publication à la main
+    event(D, 'bloque', 'Publication refusée', opt('--raison', 'La branche d\'essai n\'était pas à jour avec main.'), { branch: BRANCH, sha: SHA });
     agentDone(D, 'gardien', 'Publication refusée');
   }
   return save(D);

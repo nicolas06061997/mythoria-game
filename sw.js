@@ -2,7 +2,7 @@
 // La version vient de index.html (data-version), passée dans l'adresse : sw.js?v=…
 const VERSION = new URL(self.location.href).searchParams.get('v') || 'dev';
 const CACHE = 'mythoria-' + VERSION;
-const FILES = ['./', './index.html', './styles.css', './manifest.webmanifest', './icons/icon.svg', './assets/loading/bg.webp', './assets/loading/fly.webp', './assets/arenas/aurore.webp', './assets/ui/battle.webp', './assets/ui/medal.webp', './assets/ui/isle-l.webp', './assets/ui/isle-r.webp', './assets/ui/chest-c1.webp', './assets/ui/chest-c2.webp', './assets/ui/chest-c3.webp', './assets/ui/chest-c4.webp', './assets/ui/chest-empty.webp',
+const FILES = ['./', './index.html', './styles.css', './manifest.webmanifest', './icons/icon.svg', './assets/loading/bg.webp', './assets/loading/fly.webp', './assets/arenas/aurore.webp',
   './vendor/three.module.min.js', './vendor/addons/loaders/GLTFLoader.js', './vendor/addons/utils/SkeletonUtils.js', './vendor/addons/utils/BufferGeometryUtils.js',
   './src/client/main.js', './src/client/install.js', './src/client/ui/app.js', './src/client/ui/dom.js', './src/client/ui/icons.js', './src/client/battle.js',
   './src/client/store.js', './src/client/audio.js', './src/client/three/assets.js', './src/client/three/procedural.js', './src/client/three/world.js',
@@ -10,7 +10,7 @@ const FILES = ['./', './index.html', './styles.css', './manifest.webmanifest', '
   './vendor/addons/postprocessing/EffectComposer.js', './vendor/addons/postprocessing/RenderPass.js', './vendor/addons/postprocessing/UnrealBloomPass.js', './vendor/addons/postprocessing/ShaderPass.js', './vendor/addons/postprocessing/OutputPass.js', './vendor/addons/postprocessing/Pass.js', './vendor/addons/postprocessing/MaskPass.js',
   './vendor/addons/shaders/CopyShader.js', './vendor/addons/shaders/LuminosityHighPassShader.js', './vendor/addons/shaders/OutputShader.js',
   './src/shared/content.js', './src/shared/economy.js', './src/shared/kingdom.js', './src/shared/campaign.js',
-  './src/client/ui/progress.js', './src/client/ui/kingdom.js', './src/client/ui/modes.js', './src/client/ui/story.js', './src/client/three/kingdomview.js', './src/client/three/kingdomlife.js', './src/client/three/kingdompainted.js', './assets/kingdom/island.webp', './src/client/heromode.js', './src/shared/sim.js', './src/shared/ai.js', './src/shared/rng.js'];
+  './src/client/ui/progress.js', './src/client/ui/art.js', './src/client/ui/kingdom.js', './src/client/ui/modes.js', './src/client/ui/story.js', './src/client/three/kingdomview.js', './src/client/three/kingdomlife.js', './src/client/three/kingdompainted.js', './assets/kingdom/island.webp', './src/client/heromode.js', './src/shared/sim.js', './src/shared/ai.js', './src/shared/rng.js'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE)

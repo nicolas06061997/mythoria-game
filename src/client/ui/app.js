@@ -2,6 +2,7 @@
 import { HERO, PLAYABLE, SPELL, SPELLS, RARITIES, FACTIONS, WORLDS, UNLOCKS, SPELL_UNLOCKS, DECK_SIZE, STAR_MULT, deckSynergies, worldFor } from '../../shared/content.js';
 import { AI_LEVELS } from '../../shared/ai.js';
 import { loadProfile, saveProfile, resetProfile, owned, ownedSpells, worldOf, botLevelFor, botDeck, botSpell, botLevels, applyResult, xpNeed, heroLevel, canUpgrade, CHESTS } from '../store.js';
+import { battleSVG, medalSVG, isleSVG, sparkSVG } from './art.js';
 import { initProgress, chestRow, missionsButton, loginPopup, shopScreen, heroProgress, chestIcon } from './progress.js';
 import { initKingdom, kingdomScreen, leaveKingdom } from './kingdom.js';
 import { story } from './story.js';
@@ -79,19 +80,20 @@ function portraitImg(id, cls = 'pt') {
 
 function topBar() {
   const need = xpNeed(P.lvl);
-  // Barre « astrale » : avatar, capsule fine (trophées · cristal central · or + gemmes), nom + niveau dessous, réglages
+  // Barre « astrale » (maquette) : capsule à pointes (trophées · cristal central · or + gemmes) et bandeau dessous (profil, niveau, réglages)
   return h('header', { class: 'topbar' },
-    h('button', { class: 'me', onclick: openProfile, 'aria-label': 'Profil' },
-      h('div', { class: 'avatar' }, portraitImg(P.avatar, 'av-img'))),
     h('div', { class: 'tb-core' },
       h('div', { class: 'res' },
         h('span', { class: 'pill p-tro' }, icon('n_star'), P.trophies),
-        h('button', { class: 'tb-gem', onclick: () => { sfx('click'); tab = 'shop'; swapIn = null; render(); }, 'aria-label': 'Boutique' }, h('i', {}), h('i', {})),
+        h('button', { class: 'tb-gem', onclick: () => { sfx('click'); tab = 'shop'; swapIn = null; render(); }, 'aria-label': 'Boutique' }, svgEl('md', medalSVG()), h('i', {})),
         h('span', { class: 'pill p-gold' }, icon('coin'), P.gold),
         h('span', { class: 'pill p-gems' }, icon('gem'), P.gems)),
-      h('button', { class: 'me-txt', onclick: openProfile }, h('b', {}, P.name),
-        h('div', { class: 'xp' }, h('span', { class: 'lvl' }, P.lvl), h('div', { class: 'xpbar' }, h('i', { style: { width: (P.xp / need * 100) + '%' } }))))),
-    h('button', { class: 'gear', onclick: openSettings, 'aria-label': 'Réglages' }, icon('gear')));
+      h('div', { class: 'tb-sub' },
+        h('button', { class: 'me', onclick: openProfile, 'aria-label': 'Profil' },
+          h('div', { class: 'avatar' }, portraitImg(P.avatar, 'av-img')),
+          h('div', { class: 'me-txt' }, h('b', {}, P.name))),
+        h('div', { class: 'xp' }, h('span', { class: 'lvl' }, P.lvl), h('div', { class: 'xpbar' }, h('i', { style: { width: (P.xp / need * 100) + '%' } }))),
+        h('button', { class: 'gear', onclick: openSettings, 'aria-label': 'Réglages' }, icon('gear')))));
 }
 
 const TABS = [['shop', 'n_gem', 'Boutique'], ['heroes', 'n_hero', 'Héros'], ['battle', 'n_star', 'Combat'], ['kingdom', 'n_crown', 'Royaume'], ['clan', 'n_shield', 'Clan']];
@@ -126,10 +128,7 @@ function homeScreen() {
   const T = THEMES[w.key];
   const el = h('section', { class: 'home' },
     h('div', { class: 'home-stage', style: { '--sky1': T.skyTop, '--sky2': T.skyBot } },
-      cv,
-      // décor vivant (CSS) : aurores qui ondulent, étoiles qui scintillent, rochers qui lévitent
-      h('div', { class: 'cosmos', 'aria-hidden': 'true' }, h('i', { class: 'au a1' }), h('i', { class: 'au a2' }), h('i', { class: 'au a3' }), h('i', { class: 'st s1' }), h('i', { class: 'st s2' }),
-        [1, 2, 3, 4, 5, 6, 7].map(n => h('i', { class: 'rk r' + n }))),
+      cosmosBack(), cv, cosmosFront(),
       h('div', { class: 'home-world' }, h('small', {}, 'Monde ' + (w.id + 1) + ' / ' + WORLDS.length), h('b', {}, w.name)),
       h('button', { class: 'home-hero', onclick: () => openHero(fav.id) },
         h('span', { class: 'rar', style: { '--rc': RARITIES[fav.rar].color } }, RARITIES[fav.rar].name),
@@ -137,7 +136,7 @@ function homeScreen() {
       h('div', { class: 'home-prog' },
         next ? [h('div', { class: 'tbar' }, h('i', { style: { width: prog * 100 + '%' } })), h('small', {}, icon('trophy'), P.trophies + ' / ' + next.trophies + ' → ' + next.name)]
           : h('small', {}, 'Tu as atteint le dernier monde !'))),
-    h('button', { class: 'btn-battle', onclick: openModes }, h('span', { class: 'seal' }, icon('swords')), h('i', { class: 'bb-l' }), h('i', { class: 'bb-r' }), h('b', {}, 'COMBATTRE'), h('small', {}, 'Mode Arène · ' + AI_LEVELS[botLevelFor(P)].name)),
+    h('button', { class: 'btn-battle', onclick: openModes }, svgEl('bb-art', battleSVG()), h('i', { class: 'bb-glow' }), h('i', { class: 'bb-shine' }), h('b', {}, 'COMBATTRE'), h('small', {}, 'Mode Arène · ' + AI_LEVELS[botLevelFor(P)].name)),
     chestRow(),
     h('div', { class: 'home-row' },
       tile('map', 'Mondes', WORLDS.filter(x => P.trophies >= x.trophies).length + ' / 6', openWorlds),
@@ -147,6 +146,28 @@ function homeScreen() {
     h('p', { class: 'muted center small' }, 'Progression sauvegardée sur ce téléphone · vrais adversaires en ligne : phase 3'));
   requestAnimationFrame(() => { if (cv.isConnected) stage = new Showcase(cv, { world: w.key, heroId: fav.id, mode: 'home', cosmic: true, skin: P.skins.eq[fav.id] }); });
   return el;
+}
+// ---------- Décor vivant de l'accueil (calques CSS autour du héros 3D, voir « Décor cosmique » dans styles.css) ----------
+function svgEl(cls, svg, style) { const e = h('span', { class: cls, style: style || {} }); e.innerHTML = svg; return e; }
+const rnd = (a, b) => a + Math.random() * (b - a);
+function cosmosBack() {
+  const stars = [], N = 46;
+  for (let i = 0; i < N; i++) { const z = rnd(1, 2.6); stars.push(h('i', { class: 'star', style: { left: rnd(1, 99) + '%', top: rnd(1, 92) + '%', width: z + 'px', height: z + 'px', animationDuration: rnd(1.6, 4.5) + 's', animationDelay: -rnd(0, 4) + 's' } })); }
+  const big = [[12, 9], [86, 16], [70, 5], [30, 47], [93, 58], [6, 70], [56, 12]].map(([x, y], i) => svgEl('bstar', sparkSVG(), { left: x + '%', top: y + '%', animationDuration: (2.2 + i * .45) + 's', animationDelay: -i * .7 + 's' }));
+  const au = n => h('div', { class: 'au a' + n }, h('i', {}));
+  return h('div', { class: 'cosmos', 'aria-hidden': 'true' },
+    h('i', { class: 'neb n1' }), h('i', { class: 'neb n2' }), h('i', { class: 'neb n3' }), stars, big,
+    au(1), au(2), au(3), au(4),
+    h('i', { class: 'shoot sh1' }), h('i', { class: 'shoot sh2' }),
+    svgEl('isl far f1', isleSVG('a')), svgEl('isl far f2', isleSVG('c')), svgEl('isl far f3', isleSVG('b')), svgEl('isl far f4', isleSVG('c')),
+    svgEl('isl i1', isleSVG('a')), svgEl('isl i2', isleSVG('b')),
+    [1, 2, 3, 4, 5, 6].map(n => svgEl('isl sh s' + n, isleSVG('c'))),
+    h('i', { class: 'halo' }), h('i', { class: 'rays' }));
+}
+function cosmosFront() {
+  const motes = [];
+  for (let i = 0; i < 9; i++) { const z = rnd(1.5, 3); motes.push(h('i', { class: 'mote', style: { left: rnd(4, 96) + '%', width: z + 'px', height: z + 'px', animationDuration: rnd(6, 13) + 's', animationDelay: -rnd(0, 13) + 's', '--dx': rnd(-26, 26) + 'px' } })); }
+  return h('div', { class: 'cosmos front', 'aria-hidden': 'true' }, motes, svgEl('isl sh g1', isleSVG('c')), svgEl('isl sh g2', isleSVG('c')));
 }
 function tile(ic, title, sub, fn) { return h('button', { class: 'tile', onclick: () => { sfx('click'); fn(); } }, icon(ic), h('b', {}, title), h('small', {}, sub)); }
 

@@ -14,14 +14,14 @@ export class Showcase {
   constructor(canvas, { world = 'aurore', heroId = 'ecuyer', star = 1, mode = 'hero', skin = null, cosmic = false } = {}) {
     this.skin = skin;
     this.cv = canvas; this.mode = mode;
-    this.r = createRenderer(canvas);
+    this.cosmic = cosmic; // accueil : fond transparent, le décor animé est en CSS derrière le héros
+    this.r = createRenderer(canvas, { alpha: cosmic }); if (cosmic) this.r.setClearColor(0x000000, 0);
     this.scene = new THREE.Scene();
     this.cam = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
     this.t = 0; this.rotY = 0.5; this.spin = 0.25; this.dead = false;
     const T = THEMES[world] || THEMES.aurore;
     const HS = { aurore: ['#1f5fd8', '#6fb0f0'], sylve: ['#14584a', '#5fb894'], arcane: ['#1e1068', '#6a48d0'], braise: ['#3a0a08', '#c8501e'], givre: ['#1f5aa8', '#90c8ee'], ombre: ['#0c0620', '#42226e'] }[world] || ['#1f5fd8', '#6fb0f0'];
-    // cosmic : ciel de nuit bleu profond (les aurores, étoiles et rochers sont dessinés en CSS par-dessus)
-    this.sky = skyDome(cosmic ? { skyTop: '#050a26', skyBot: '#1a2f7e' } : mode === 'home' ? { skyTop: HS[0], skyBot: HS[1] } : { skyTop: '#2a1a5a', skyBot: '#0d0820' }); this.sky.scale.setScalar(0.25); this.scene.add(this.sky);
+    this.sky = skyDome(mode === 'home' ? { skyTop: HS[0], skyBot: HS[1] } : { skyTop: '#2a1a5a', skyBot: '#0d0820' }); this.sky.scale.setScalar(0.25); if (!cosmic) this.scene.add(this.sky);
     this.post = createComposer(this.r, this.scene, this.cam, { bloom: quality().bloom, strength: 0.45, threshold: 1.1, radius: 0.5, samples: quality().msaa });
     this.scene.add(new THREE.HemisphereLight(T.hemiSky, T.hemiGround, 1.3));
     const sun = new THREE.DirectionalLight(T.sun, 2.4); sun.position.set(-3, 6, 4); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024);
@@ -38,7 +38,7 @@ export class Showcase {
       const add = async (n, x, z, s) => { try { const o = await prop(n, { scale: s }); o.position.set(x, 0, z); this.base.add(o); } catch (e) {} };
       // décor derrière le héros seulement (il ne passe plus devant)
       if (!cosmic) add(T.props[0][0], -1.25, -1.05, 0.42); if (!cosmic) add(T.props[Math.min(2, T.props.length - 1)][0], 1.3, -0.95, 0.45);
-      this.altar(T);
+      if (cosmic) { top.visible = rimR.visible = under.visible = this.ring.visible = false; this.rockIsle(); } else this.altar(T);
       if (!cosmic) this.backdrop(T, world);
     }
     this.glow = glowSprite(0xffffff, 3); this.glow.position.y = 0.9; this.glow.material.opacity = 0.25; this.scene.add(this.glow);
@@ -47,6 +47,18 @@ export class Showcase {
     this.bindDrag();
     this.loop = this.loop.bind(this); this.last = 0; this.raf = requestAnimationFrame(this.loop);
     this.ro = new ResizeObserver(() => this.resize()); this.ro.observe(canvas);
+  }
+  // Accueil cosmique : île de roche fendue (dalles irrégulières + pointes dessous), lumière cyan
+  rockIsle() {
+    const g = this.base, mat = c => new THREE.MeshStandardMaterial({ color: c, flatShading: true, roughness: 0.95 });
+    const slab = (x, z, r, hgt, y, rot, seg, c) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 0.86, hgt, seg), mat(c)); m.position.set(x, y - hgt / 2, z); m.rotation.y = rot; m.receiveShadow = true; g.add(m); };
+    slab(0, 0, 1.28, 0.36, 0, 0.3, 7, '#8794dc');
+    slab(-1.3, 0.2, 0.78, 0.3, -0.13, 0.9, 5, '#7986d0'); slab(1.25, -0.15, 0.72, 0.32, -0.2, 0.2, 6, '#7380cc');
+    slab(0.25, -1.05, 0.82, 0.3, -0.08, 1.4, 5, '#6f7cc8'); slab(-0.45, 1.0, 0.62, 0.28, -0.24, 0.5, 5, '#8490d8');
+    const spike = (x, z, r, len, y, c) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 0.18, len, 5), mat(c)); m.position.set(x, y - len / 2, z); m.rotation.y = x * 2 + z; g.add(m); };
+    spike(0, 0, 1.18, 2.5, -0.34, '#3d4796'); spike(-1.05, 0.25, 0.62, 1.5, -0.4, '#4a55a8'); spike(1.0, -0.1, 0.6, 1.8, -0.48, '#343d88');
+    spike(0.2, 0.85, 0.5, 1.3, -0.45, '#525db0'); spike(0.2, -0.9, 0.6, 1.6, -0.36, '#2b3378');
+    const l = new THREE.PointLight('#8fe9ff', 7, 7); l.position.set(0, 2.6, -1.6); this.scene.add(l);
   }
   // Autel magique sous le héros : cercle de runes lumineuses, cristaux qui tournent, colonne de lumière, cascade
   altar(T) {
@@ -62,7 +74,7 @@ export class Showcase {
     for (let i = 0; i < 6; i++) { x.save(); x.rotate(i / 6 * Math.PI * 2); x.beginPath(); x.moveTo(0, -200); x.lineTo(0, -120); x.stroke(); x.restore(); }
     x.beginPath(); for (let i = 0; i <= 6; i++) { const a = i / 6 * Math.PI * 2 * 2; x.lineTo(Math.sin(a) * 200, -Math.cos(a) * 200); } x.stroke();
     const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
-    const runeCol = new THREE.Color(T.partCol || '#ffd88a');
+    const runeCol = new THREE.Color(this.cosmic ? '#8fe9ff' : T.partCol || '#ffd88a');
     const rune = new THREE.Mesh(new THREE.CircleGeometry(1.45, 48), new THREE.MeshBasicMaterial({ map: tex, color: runeCol, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false }));
     rune.rotation.x = -Math.PI / 2; rune.position.y = 0.025; g.add(rune);
     this.ring.visible = false;
@@ -184,7 +196,7 @@ export class Showcase {
     this.ring.rotation.z += dt * 0.5;
     if (this.actor) this.actor.update(dt);
     if (this.ups) for (const u of this.ups) u(dt, this.t);
-    this.post.render();
+    if (this.cosmic) this.r.render(this.scene, this.cam); else this.post.render();
   }
   dispose() {
     this.dead = true; cancelAnimationFrame(this.raf); this.ro.disconnect();

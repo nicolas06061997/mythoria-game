@@ -69,6 +69,14 @@ jamais bloquant** : ils ne peuvent ni empêcher une publication ni déclencher u
 - Changer la charte après une évolution voulue du style : `node guardian/check.mjs --quick --charte` (réenregistre les couleurs vues), puis envoyer `charte.json`.
 - Le Watchdog (surveille le Guardian lui-même) vit dans le dépôt `mythoria-guardian` : `watchdog/`.
 
+## Réveil instantané des agents (15/11) — `.github/workflows/reveil.yml`
+
+Un message du propriétaire dans l'issue #1 (hors messages `<!-- guardian`) lance tout de suite la tâche planifiée
+« passage horaire des agents » par son déclencheur API (`/fire`), au lieu d'attendre HH:42. Secrets du dépôt :
+`GUARDIAN_FIRE_URL`, `GUARDIAN_FIRE_TOKEN` (créés sur claude.ai/code/routines → la tâche → Edit → Trigger + → API).
+40 s d'attente et un seul réveil pour plusieurs messages d'affilée ; limite de Claude : 30 réveils par heure.
+Sans secrets : rien ne se passe, les agents répondent au passage horaire.
+
 ## Lancer à la main
 
 ```

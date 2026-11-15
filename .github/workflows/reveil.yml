@@ -1,0 +1,51 @@
+# MYTHORIA GUARDIAN — réveil instantané des agents.
+# Dès que le propriétaire écrit dans la discussion (issue n°1, depuis l'appli Guardian), on lance tout de suite
+# le passage des agents Claude au lieu d'attendre le passage de l'heure. Réponse en quelques minutes.
+#
+# Réglage (une seule fois) : sur claude.ai/code/routines, tâche « passage horaire des agents » → Edit → Trigger « + » →
+# API → copier « Fire URL » et générer un token. Les ranger dans les secrets du dépôt :
+#   GUARDIAN_FIRE_URL   et   GUARDIAN_FIRE_TOKEN
+# Sans ces secrets, ce fichier ne fait rien (les agents répondent au passage horaire, comme avant).
+name: Réveil des agents
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  issues: read
+
+# plusieurs messages d'affilée (« oui D-1 », « oui D-2 »…) = un seul réveil : le dernier message annule l'attente des précédents
+concurrency:
+  group: reveil-agents
+  cancel-in-progress: true
+
+jobs:
+  reveil:
+    name: Prévenir les agents
+    # seulement la discussion du Guardian, seulement le propriétaire, jamais les messages des agents eux-mêmes
+    if: github.event.issue.number == 1 && github.event.comment.user.login == github.repository_owner && !contains(github.event.comment.body, '<!-- guardian')
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Attendre un instant (d'autres messages arrivent peut-être)
+        run: sleep 40
+      - name: Lancer le passage des agents
+        env:
+          FIRE_URL: ${{ secrets.GUARDIAN_FIRE_URL }}
+          FIRE_TOKEN: ${{ secrets.GUARDIAN_FIRE_TOKEN }}
+        run: |
+          if [ -z "$FIRE_URL" ] || [ -z "$FIRE_TOKEN" ]; then
+            echo "::notice::Réveil instantané pas encore réglé (secrets GUARDIAN_FIRE_URL / GUARDIAN_FIRE_TOKEN) : les agents répondront au passage horaire."
+            exit 0
+          fi
+          case "$FIRE_URL" in https://api.anthropic.com/v1/claude_code/routines/*/fire) ;; *) echo "::error::GUARDIAN_FIRE_URL n'est pas une adresse « Fire URL » de tâche planifiée."; exit 1 ;; esac
+          CODE=$(curl -sS -o /tmp/reponse.json -w '%{http_code}' -X POST "$FIRE_URL" \
+            -H "Authorization: Bearer $FIRE_TOKEN" \
+            -H "anthropic-beta: experimental-cc-routine-2026-04-01" \
+            -H "anthropic-version: 2023-06-01" \
+            -H "Content-Type: application/json" \
+            -d '{"text": "Réveil : le propriétaire vient d’écrire dans la discussion (issue n°1). Applique ta routine habituelle."}')
+          if [ "$CODE" = "200" ] || [ "$CODE" = "201" ] || [ "$CODE" = "202" ]; then echo "Agents réveillés (HTTP $CODE)."; exit 0; fi
+          if [ "$CODE" = "429" ]; then echo "::warning::Trop de réveils cette heure-ci (limite de Claude) : les agents répondront au passage horaire."; exit 0; fi
+          echo "::error::Le réveil a été refusé (HTTP $CODE). Si c'est 401 : le token a changé, il faut le régénérer."; exit 1

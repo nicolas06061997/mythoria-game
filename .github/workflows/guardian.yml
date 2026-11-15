@@ -21,7 +21,7 @@ on:
       action:
         description: 'Que faire ?'
         type: choice
-        options: ['controle complet', 'controle rapide', 'rapport du jour']
+        options: ['controle complet', 'controle rapide', 'rapport du jour', 'retour arriere']
         default: 'controle complet'
 
 permissions:
@@ -35,11 +35,13 @@ concurrency:
 env:
   PLAYWRIGHT_VERSION: '1.63.0'
   NTFY_TOPIC: 'mythoria-guardian-3c7943c185c1'
+  # webhook d'urgence Discord (facultatif) : secret du dépôt ; vide = alertes par ntfy seulement
+  DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
 
 jobs:
   controle:
     name: Contrôle du jeu
-    if: github.event.schedule != '45 18 * * *' && inputs.action != 'rapport du jour'
+    if: github.event.schedule != '45 18 * * *' && inputs.action != 'rapport du jour' && inputs.action != 'retour arriere'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -150,7 +152,7 @@ jobs:
         run: node guardian/check.mjs --url "${{ steps.live.outputs.url }}" --quick
       - name: Enregistrer la publication
         if: steps.verif.outcome == 'success'
-        run: bash guardian/save-data.sh publication --etat publie --version "${{ steps.pub.outputs.version }}" || true
+        run: bash guardian/save-data.sh publication --etat publie --version "${{ steps.pub.outputs.version }}" --prev "${{ steps.pub.outputs.prev }}" || true
       - name: Retour arrière automatique si le site en ligne est cassé
         if: failure() && steps.verif.outcome == 'failure'
         run: |
@@ -184,3 +186,37 @@ jobs:
       - name: Écrire et envoyer le rapport du jour
         env: { GH_TOKEN: '${{ github.token }}' }
         run: bash guardian/save-data.sh rapport
+
+  retour:
+    # Demandé par le propriétaire depuis l'appli Guardian (bouton « Revenir à la version précédente »).
+    name: Retour arrière demandé
+    if: github.event_name == 'workflow_dispatch' && inputs.action == 'retour arriere' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency: { group: guardian-publication, cancel-in-progress: false }
+    env: { GH_TOKEN: '${{ github.token }}' }
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - name: Remettre la version d'avant la dernière publication
+        run: |
+          git fetch -q origin guardian-data
+          PREV=$(git show FETCH_HEAD:state.json | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{console.log((JSON.parse(s).lastPublication||{}).prev||'')}catch(e){console.log('')}})")
+          if [ -z "$PREV" ] || ! git merge-base --is-ancestor "$PREV" HEAD || [ "$PREV" = "$(git rev-parse HEAD)" ]; then
+            echo "::error::Aucune publication récente sur laquelle revenir (ou retour arrière déjà fait)."; exit 1
+          fi
+          if git diff --name-only "$PREV" HEAD | grep -q '^\.github/workflows/'; then
+            echo "::error::La dernière publication changeait les règles du Guardian : GitHub interdit de l'annuler automatiquement."; exit 1
+          fi
+          VERSION=$(node -p "require('./version.json').v")
+          git config user.name "MYTHORIA Guardian"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git revert --no-commit "$PREV..HEAD"
+          git commit -m "Guardian : retour arrière demandé par le propriétaire (version $VERSION retirée)"
+          git push origin HEAD:main
+          gh api -X POST "repos/${{ github.repository }}/pages/builds" || true
+          git checkout -q "${{ github.sha }}" -- guardian/ 2>/dev/null || true
+          bash guardian/save-data.sh publication --etat retour --version "$VERSION" --raison demande || true
+

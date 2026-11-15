@@ -51,7 +51,8 @@ export async function cheatSave(ctx, open) {
   page.on('pageerror', e => errors.push(String(e.message || e).slice(0, 200)));
   const hack = { v: 3, name: '<img src=x onerror=alert(1)>', gold: 1e15, gems: -500, crystals: 'beaucoup', stone: null, xp: NaN, lvl: 999, trophies: 1e9,
     deck: ['inconnu', 'inconnu', 42, null], spell: 'triche', avatar: 'personne', levels: { inconnu: 99 }, chests: 'x', login: 7, stats: 'x', skins: [], campaign: null, records: 3, kingdom: { faux: true } };
-  await page.addInitScript(v => { try { localStorage.setItem('myt_profile_v2', v); } catch (e) {} }, JSON.stringify(hack));
+  // cinématique d'ouverture déjà vue : ce test porte sur la sauvegarde, pas sur l'introduction
+  await page.addInitScript(v => { try { localStorage.setItem('myt_profile_v2', v); localStorage.setItem('myt_intro_s1', '1'); } catch (e) {} }, JSON.stringify(hack));
   const T = [];
   try {
     await open(page);

@@ -188,7 +188,8 @@ async function runDevice(browser, base, dev) {
   return R;
 }
 
-// L'appli MYTHORIA Guardian (tableau de bord) : s'ouvre, lit les données, aucune erreur, installable.
+// L'appli MYTHORIA Guardian (tableau de bord, dépôt séparé « mythoria-guardian ») : s'ouvre, lit les données, aucune erreur, installable.
+const DASH_URL = `https://${(process.env.GITHUB_REPOSITORY_OWNER || 'nicolas06061997').toLowerCase()}.github.io/mythoria-guardian/`;
 async function runDashboard(browser, base) {
   const R = { device: 'guardian', label: 'Appli Guardian (téléphone)', steps: [], errors: [], warnings: 0, failedRequests: [], metrics: {} };
   const ctx = await browser.newContext({ viewport: { width: 412, height: 915 }, isMobile: true, hasTouch: true, locale: 'fr-FR' });
@@ -197,7 +198,7 @@ async function runDashboard(browser, base) {
   page.on('console', m => { if (m.type() === 'error' && !/api\.github\.com|rate limit|403/i.test(m.text())) R.errors.push({ kind: 'console', step: 'Appli Guardian', text: m.text().slice(0, 400) }); });
   const S = { name: 'Ouverture du tableau de bord', ok: true, ms: 0, notes: [] }; const t = Date.now();
   try {
-    const url = base + 'guardian/';
+    const url = DASH_URL; // appli séparée, toujours contrôlée en ligne
     const rsp = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
     if (!rsp || !rsp.ok()) throw new Error('page introuvable (HTTP ' + (rsp && rsp.status()) + ')');
     await page.waitForSelector('.status', { timeout: 20000 });
@@ -229,7 +230,7 @@ async function main() {
   if (!base) { srv = await serve(); base = `http://127.0.0.1:${srv.address().port}/`; }
   const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--autoplay-policy=no-user-gesture-required'] });
   const devices = [];
-  try { for (const d of DEVICES) devices.push(await runDevice(browser, base, d)); devices.push(await runDashboard(browser, base)); }
+  try { for (const d of DEVICES) devices.push(await runDevice(browser, base, d)); if (process.env.GITHUB_ACTIONS || args.includes('--dash')) devices.push(await runDashboard(browser, base)); }
   finally { await browser.close(); if (srv) srv.close(); }
 
   // Liste des problèmes, triés par gravité : bloquant (le jeu est cassé) / à surveiller.

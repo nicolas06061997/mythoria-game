@@ -60,16 +60,14 @@ node guardian/check.mjs --url https://nicolas06061997.github.io/mythoria-game/ -
 
 ## L'application MYTHORIA Guardian
 
-- Adresse : https://nicolas06061997.github.io/mythoria-game/guardian/ (bouton « Installer » / menu Chrome ⋮ → Installer).
-- Fichiers : `guardian/index.html`, `app.js`, `app.css`, `sw.js` (hors ligne), `manifest.webmanifest`, `icons/`.
-  Le service worker du jeu ignore `/guardian/` (chaque appli a le sien).
-- Données : branche `guardian-data` (un seul commit, réécrit à chaque fois ; l'historique est dans les JSON),
+- Dépôt séparé **`mythoria-guardian`** → https://nicolas06061997.github.io/mythoria-guardian/ (pastille verte « Installer l'appli »,
+  comme les autres jeux). Déménagée le 15/11 : rangée dans l'adresse du jeu (`…/mythoria-game/guardian/`), Chrome ne créait
+  qu'un raccourci qui s'ouvrait avec la barre d'adresse. `guardian/index.html` ici = redirection, `guardian/sw.js` se retire seul.
+- Données : branche `guardian-data` de ce dépôt (un seul commit, réécrit à chaque fois ; l'historique est dans les JSON),
   lue via raw.githubusercontent.com : `state.json`, `runs.json` (400 derniers contrôles), `events.json` (journal),
   `problems.json` (ouverts + résolus des 60 derniers jours), `reports/AAAA-MM-JJ.json`, `shots/*.jpg` (dernière série).
   Écrites par `guardian/record.mjs` via `guardian/save-data.sh` (5 essais si deux écritures en même temps).
-- « Contrôle en cours » : API publique de GitHub (sans compte, toutes les 2 min).
-- Test local : `python3 -m http.server 8000` puis `http://localhost:8000/guardian/?data=out/demo-data/`
-  (fabriquer des données avec `GUARDIAN_NO_NOTIFY=1 node guardian/record.mjs controle --data guardian/out/demo-data`).
+- Le contrôleur vérifie l'appli en ligne à chaque contrôle sur GitHub (`runDashboard`, ou `--dash` en local).
 
 ## Notifications (ntfy, gratuit)
 

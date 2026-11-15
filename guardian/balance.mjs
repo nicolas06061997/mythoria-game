@@ -58,10 +58,18 @@ const res = {
   draws, firstPlayerWinRate: +((firstWins + draws / 2) / N * 100).toFixed(1), avgMatchS: Math.round(totalTicks / N / TICK_RATE),
   heroes, rarityAverage: rarAvg, spells: spellRes, tooStrong: outliers.filter(h => h.ecart > 0).map(h => h.id), tooWeak: outliers.filter(h => h.ecart < 0).map(h => h.id),
 };
+// Alerte du Guardian : un héros ou un sort dont les decks gagnent plus de 75 % ou moins de 25 % des combats
+// (marge d'erreur comprise, pour ne pas alerter sur un simple coup de chance).
+const SEUILS = { haut: 75, bas: 25 };
+res.seuils = SEUILS;
+res.alertes = [...heroes.map(h => ({ ...h, quoi: 'Héros' })), ...spellRes.map(s => ({ ...s, name: s.id, quoi: 'Sort' }))]
+  .filter(x => x.games >= 60 && (x.rate - x.marge > SEUILS.haut || x.rate + x.marge < SEUILS.bas))
+  .map(x => ({ id: x.id, rate: x.rate, title: `${x.quoi} ${x.rate > 50 ? 'trop fort' : 'trop faible'} : ${x.name}`, detail: `${x.rate} % de victoires (±${x.marge}) sur ${x.games} combats IA contre IA ; seuils ${SEUILS.bas}-${SEUILS.haut} %.` }));
 await mkdir(join(ROOT, 'guardian', 'out'), { recursive: true });
 await writeFile(join(ROOT, 'guardian', 'out', 'balance.json'), JSON.stringify(res, null, 1));
 console.log(`Équilibrage : ${N} combats IA (niveau ${LEVEL}) en ${res.seconds} s · durée moyenne ${res.avgMatchS} s · égalités ${draws} · joueur du bas gagne ${res.firstPlayerWinRate} %`);
 console.log('Moyenne par rareté : ' + Object.entries(rarAvg).map(([k, v]) => `${k} ${v} %`).join(' · '));
 console.log('Héros (taux de victoire des decks qui le contiennent, ± marge, écart à sa rareté) :');
 for (const h of heroes) console.log(`  ${h.rate.toFixed(1).padStart(5)} % ±${String(h.marge).padStart(4)}  (${h.ecart >= 0 ? '+' : ''}${h.ecart})  ${h.name} [${h.rar}]${res.tooStrong.includes(h.id) ? '  ⬆ trop fort ?' : res.tooWeak.includes(h.id) ? '  ⬇ trop faible ?' : ''}`);
+console.log(res.alertes.length ? 'ALERTES : ' + res.alertes.map(a => a.title).join(' · ') : `Aucune alerte (tous entre ${SEUILS.bas} et ${SEUILS.haut} %).`);
 console.log('Sorts : ' + spellRes.map(s => `${s.id} ${s.rate} %`).join(' · '));

@@ -50,6 +50,25 @@ Sur un écran de téléphone (412×915, tactile) et d'ordinateur (1366×768) :
 Limite connue : les tests tournent sans carte graphique (SwiftShader) ; les FPS mesurés (≈ 3-4) ne
 reflètent pas un vrai téléphone. Ils servent à repérer un effondrement, pas à juger la fluidité réelle.
 
+## Les bots du contrôleur (15/11) — `guardian/bots/`, `guardian/lib/`
+
+Tous branchés sur le même parcours (une seule ouverture du jeu par appareil). **Ce qu'ils trouvent est « à surveiller »,
+jamais bloquant** : ils ne peuvent ni empêcher une publication ni déclencher un retour arrière.
+
+| Bot | Fichier | Ce qu'il fait |
+|---|---|---|
+| Directeur Artistique | `bots/art.mjs` + `bots/charte.json` | Couleurs réelles (fond, texte, bordure, icône) des boutons, cartes et pastilles de chaque onglet, comparées à la charte = variables CSS du jeu + `charte.json` (tolérance 12). Ne voit pas la scène 3D. |
+| Inspecteur UX / Lisibilité | `bots/ux.mjs` | Boîtes de délimitation : texte hors de l'écran, texte coupé (hors « … » voulu), contraste texte/fond < 3 (fonds image/3D ignorés, texte à contour ignoré), boutons recouverts. |
+| Traqueur de Performances | `bots/perf.mjs` | FPS (requestAnimationFrame), mémoire JS (heap), poids des fichiers et des images. Seuil 30 FPS seulement si une vraie carte graphique est détectée ; sinon effondrement (< 2 FPS). Images > 500 Ko (ou PNG/JPEG > 200 Ko) signalées. |
+| Équilibreur | `balance.mjs` | 600 combats IA contre IA à chaque contrôle complet (~15 s, sans écran). Alerte si un héros ou un sort dépasse 75 % ou tombe sous 25 % de victoires (marge d'erreur comprise). |
+| Anti-Triche | `bots/cheat.mjs` | Règles (`sim.js`) : 15 tentatives (actions interdites, valeurs trafiquées) ; navigateur (contrôle complet, téléphone) : sauvegarde trafiquée. Limites connues sans serveur notées « ℹ️ », pas comptées comme problèmes. Pas de WebSocket/API à tester avant la phase 3. |
+| Testeur Multi-écrans | `bots/responsive.mjs` | Parcours rapide en plus sur Galaxy Fold plié (280×653), très petit écran (320×480), téléphone couché (915×412). Dossier local seulement (pas après publication). `--no-extreme` pour s'en passer. |
+| Preuve visuelle | `lib/proof.mjs` | Toute étape qui échoue (ex. `waitForSelector` hors délai) : capture immédiate `<appareil>-erreur-<n>.jpg` + type d'erreur, élément attendu, écran affiché. Le problème porte `shot` ; l'appli l'affiche dans « Problèmes ». `record.mjs` garde l'image tant que le problème est ouvert. |
+| Alertes d'urgence | `lib/alert.mjs` | ntfy toujours ; en plus webhook Discord pour : nouveau problème bloquant, modification bloquée, retour arrière, contrôleur planté. Nécessite le secret GitHub `DISCORD_WEBHOOK` (et la ligne `env` correspondante dans `guardian.yml`). Sans secret : ntfy seul. |
+
+- Changer la charte après une évolution voulue du style : `node guardian/check.mjs --quick --charte` (réenregistre les couleurs vues), puis envoyer `charte.json`.
+- Le Watchdog (surveille le Guardian lui-même) vit dans le dépôt `mythoria-guardian` : `watchdog/`.
+
 ## Lancer à la main
 
 ```

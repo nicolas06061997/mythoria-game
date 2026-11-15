@@ -9,6 +9,7 @@
 import { readFile, writeFile, mkdir, readdir, copyFile, rm } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { alert } from './lib/alert.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -43,22 +44,20 @@ const AGENTS = [
   { id: 'chef', name: 'Guardian (chef)', role: 'Discute avec toi et répartit le travail.', soon: true },
   { id: 'reparateur', name: 'Réparateur', role: 'Corrige les bugs détectés puis relance les tests.', soon: true },
   { id: 'graphiste', name: 'Graphiste', role: 'Repère ce qui est visuellement faible et propose des améliorations avant/après.', soon: true },
-  { id: 'equilibreur', name: 'Équilibreur', role: 'Simule des milliers de combats pour repérer les héros trop forts ou trop faibles.', soon: true },
+  { id: 'equilibreur', name: 'Équilibreur', role: 'Simule des centaines de combats IA contre IA à chaque contrôle complet ; alerte si un héros dépasse 75 % ou tombe sous 25 % de victoires.' },
+  { id: 'artiste', name: 'Directeur Artistique', role: 'Compare les couleurs des boutons, bordures et icônes des menus à la charte graphique.' },
+  { id: 'ux', name: 'Inspecteur Lisibilité', role: 'Cherche les textes coupés, hors de l’écran ou trop peu contrastés.' },
+  { id: 'perf', name: 'Traqueur de Performances', role: 'Mesure la fluidité, la mémoire et le poids des images.' },
+  { id: 'triche', name: 'Anti-Triche', role: 'Tente des actions interdites et une sauvegarde trafiquée : le jeu doit les refuser.' },
+  { id: 'ecrans', name: 'Testeur Multi-écrans', role: 'Rejoue le parcours sur Galaxy Fold plié, très petit écran et téléphone couché.' },
 ];
 
 // Empreinte stable d'un problème (sans nombres variables : ports, durées…)
 const fingerprint = p => [p.level, p.where, p.title, String(p.detail || '').replace(/https?:\/\/[^/\s]+/g, '').replace(/\d+(\.\d+)?/g, '#').slice(0, 160)].join('|');
 
-async function notify(title, message, { priority = 3, tags = [] } = {}) {
-  if (env.GUARDIAN_NO_NOTIFY) { console.log('[notification non envoyée]', title, '—', message); return; }
-  try {
-    const r = await fetch('https://ntfy.sh/', {
-      method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ topic: NTFY_TOPIC, title, message: message.slice(0, 3500), priority, tags, click: DASH_URL }),
-    });
-    console.log('Notification', r.ok ? 'envoyée' : 'refusée (' + r.status + ')', ':', title);
-  } catch (e) { console.log('Notification impossible :', e.message); }
-}
+// ntfy toujours ; « urgent » = aussi le webhook d'urgence Discord (si le secret DISCORD_WEBHOOK est fourni).
+const notify = (title, message, { priority = 3, tags = [], urgent = false } = {}) =>
+  alert({ topic: NTFY_TOPIC, title, message, priority, tags, click: DASH_URL, urgent });
 
 async function load() {
   await mkdir(join(DATA, 'reports'), { recursive: true });
@@ -95,7 +94,7 @@ async function controle() {
     event(D, 'erreur', "Le contrôleur n'a pas pu terminer", `Contrôle (${trig}, branche ${BRANCH}) interrompu avant la fin.`);
     agentDone(D, 'testeur', 'Contrôle interrompu');
     const prev = D.runs[1];
-    if (!prev || !prev.crashed) await notify('⚠️ MYTHORIA Guardian', `Le contrôle (${trig}) n'a pas pu se terminer. Le jeu n'est peut-être pas en cause : détails dans le tableau de bord.`, { priority: 4, tags: ['warning'] });
+    if (!prev || !prev.crashed) await notify('⚠️ MYTHORIA Guardian', `Le contrôle (${trig}) n'a pas pu se terminer. Le jeu n'est peut-être pas en cause : détails dans le tableau de bord.`, { priority: 4, tags: ['warning'], urgent: true });
     return save(D);
   }
 
@@ -117,16 +116,19 @@ async function controle() {
       const id = fingerprint(p); if (seen.has(id)) continue; seen.add(id);
       let P = D.problems.find(x => x.id === id);
       if (!P || P.status === 'résolu') {
-        P = { id, level: p.level, where: p.where, title: p.title, detail: p.detail, firstSeen: NOW, lastSeen: NOW, seenCount: 1, status: 'ouvert', url: RUN_URL };
+        P = { id, level: p.level, where: p.where, title: p.title, detail: p.detail, firstSeen: NOW, lastSeen: NOW, seenCount: 1, status: 'ouvert', url: RUN_URL, bot: p.bot, shot: p.shot };
         D.problems = D.problems.filter(x => x.id !== id); D.problems.unshift(P); opened.push(P);
         if (p.level === 'bloquant') D.state.counters.problemsDetected++;
-      } else { P.lastSeen = NOW; P.seenCount++; P.detail = p.detail; P.url = RUN_URL; }
+      } else { P.lastSeen = NOW; P.seenCount++; P.detail = p.detail; P.url = RUN_URL; if (p.shot) P.shot = p.shot; }
     }
     // un contrôle rapide ne joue pas de combat : il ne peut pas déclarer résolu un problème de combat
     const coveredSteps = new Set(R.devices.flatMap(d => d.steps.map(s => s.name)));
     for (const P of D.problems) {
       if (P.status !== 'ouvert' || seen.has(P.id)) continue;
       if (R.quick && /Combat|Mode Héros/.test(P.title + P.detail) && ![...coveredSteps].some(n => /Combat|Mode Héros/.test(n))) continue;
+      // même règle pour les bots : un appareil non contrôlé cette fois, ou un bot qui ne tourne qu'en contrôle complet
+      if (P.where !== 'code' && !R.devices.some(d => d.label === P.where)) continue;
+      if (R.quick && (P.bot === 'balance' || P.bot === 'perf' || /sauvegarde trafiquée/.test(P.title))) continue;
       P.status = 'résolu'; P.resolvedAt = NOW; resolved.push(P);
       if (P.level === 'bloquant') D.state.counters.problemsResolved++;
     }
@@ -134,18 +136,28 @@ async function controle() {
     for (const P of resolved) event(D, 'resolu', 'Problème résolu : ' + P.title, `${P.where} — n'apparaît plus au contrôle (${trig}).`);
     if (!opened.length && !resolved.length) event(D, R.ok ? 'controle' : 'probleme', R.ok ? 'Contrôle réussi' : 'Problème(s) toujours présent(s)', `${stepsOk}/${stepsTotal} étapes · ${trig} · version ${R.version || '?'}`, { quiet: true });
     D.state.status = R.ok ? 'ok' : 'probleme';
-    D.state.lastCheck = { ...run, devices: R.devices.map(d => ({ id: d.device, label: d.label, metrics: d.metrics, steps: d.steps.map(s => ({ name: s.name, ok: s.ok, warn: s.warn || null, ms: s.ms, notes: s.notes, shots: [s.shotIntro, s.shot, s.shot2, s.shotStory].filter(Boolean).map(x => x.file.replace('.png', '.jpg')) })) })), static: R.static };
+    D.state.lastCheck = { ...run, devices: R.devices.map(d => ({ id: d.device, label: d.label, metrics: d.metrics, steps: d.steps.map(s => ({ name: s.name, ok: s.ok, warn: s.warn || null, ms: s.ms, notes: s.notes, shots: [...[s.shotIntro, s.shot, s.shot2, s.shotStory].filter(Boolean).map(x => x.file.replace('.png', '.jpg')), ...(s.proof && s.proof.shot ? [s.proof.shot] : [])] })) })), static: R.static };
+    // ce que chaque bot a fait pendant ce contrôle (affiché dans l'équipe du tableau de bord)
+    const F = R.devices.flatMap(d => (d.findings || []).map(f => ({ ...f, where: d.label }))), nb = b => F.filter(f => f.bot === b).length, M = Object.fromEntries(R.devices.map(d => [d.device, d.metrics || {}]));
+    const said = (id, bot, okText) => agentDone(D, id, nb(bot) ? `${nb(bot)} point(s) à surveiller` : okText);
+    said('artiste', 'art', 'Couleurs conformes à la charte'); said('ux', 'ux', 'Textes lisibles, rien ne dépasse'); said('perf', 'perf', `Rien d'anormal${M.telephone && M.telephone.heapMo ? ' · mémoire ' + M.telephone.heapMo + ' Mo' : ''}`);
+    if (M.bots) said('triche', 'cheat', `${M.bots.cheatRefused}/${M.bots.cheatTests} tentatives repoussées`);
+    if (M.bots && M.bots.balance) said('equilibreur', 'balance', `${M.bots.balance.matches} combats · aucun héros hors des seuils`);
+    const ext = R.devices.filter(d => d.extreme);
+    if (ext.length) agentDone(D, 'ecrans', `${ext.length} écrans extrêmes · ${ext.reduce((n, d) => n + d.steps.filter(s => !s.ok).length + (d.findings || []).length, 0)} point(s) à surveiller`);
     if (R.version) D.state.liveVersion = R.version;
     // captures du jeu publié (seulement la dernière série, pour rester léger)
     const out = join(ROOT, 'guardian', 'out');
     const jpgs = (await readdir(out).catch(() => [])).filter(f => f.endsWith('.jpg'));
     if (jpgs.length) {
-      for (const f of await readdir(join(DATA, 'shots')).catch(() => [])) await rm(join(DATA, 'shots', f));
+      // on garde les preuves visuelles des problèmes encore ouverts que ce contrôle n'a pas revus (ex. contrôle rapide)
+      const keep = new Set(D.problems.filter(p => p.status === 'ouvert' && p.shot).map(p => p.shot));
+      for (const f of await readdir(join(DATA, 'shots')).catch(() => [])) if (!keep.has(f) || jpgs.includes(f)) await rm(join(DATA, 'shots', f));
       for (const f of jpgs) await copyFile(join(out, f), join(DATA, 'shots', f));
       D.state.shotsAt = NOW;
     }
     const newBlocking = opened.filter(p => p.level === 'bloquant');
-    if (newBlocking.length) await notify(`⚠️ ${newBlocking.length} nouveau${newBlocking.length > 1 ? 'x' : ''} problème${newBlocking.length > 1 ? 's' : ''} dans MYTHORIA`, newBlocking.map(p => `• ${p.title} (${p.where})`).join('\n'), { priority: 4, tags: ['warning'] });
+    if (newBlocking.length) await notify(`⚠️ ${newBlocking.length} nouveau${newBlocking.length > 1 ? 'x' : ''} problème${newBlocking.length > 1 ? 's' : ''} dans MYTHORIA`, newBlocking.map(p => `• ${p.title} (${p.where})`).join('\n'), { priority: 4, tags: ['warning'], urgent: true });
     const stillOpen = D.problems.filter(p => p.status === 'ouvert' && p.level === 'bloquant').length;
     const fixed = resolved.filter(p => p.level === 'bloquant').length;
     if (fixed && !stillOpen) await notify('✅ MYTHORIA va bien', `Plus aucun problème bloquant (${fixed} résolu${fixed > 1 ? 's' : ''}).`, { tags: ['white_check_mark'] });
@@ -155,7 +167,7 @@ async function controle() {
     else {
       D.state.counters.blocked++;
       event(D, 'bloque', 'Modification bloquée : rien n\'a été publié', `Branche ${BRANCH} (${SHA}) · ` + blocking.map(p => p.title).join(' · '));
-      await notify('🛑 Modification bloquée', `Une modification (branche ${BRANCH}) ne passait pas les tests : elle n'a PAS été publiée. Le jeu en ligne n'a pas changé.`, { priority: 3, tags: ['no_entry'] });
+      await notify('🛑 Modification bloquée', `Une modification (branche ${BRANCH}) ne passait pas les tests : elle n'a PAS été publiée. Le jeu en ligne n'a pas changé.`, { priority: 4, tags: ['no_entry'], urgent: true });
     }
   }
   return save(D);
@@ -173,7 +185,7 @@ async function publication() {
     D.state.counters.rollbacks++;
     event(D, 'retour', 'Retour arrière automatique', `La version ${v} était cassée une fois en ligne : la version précédente a été remise.`);
     agentDone(D, 'gardien', 'Retour arrière (version ' + v + ' cassée)');
-    await notify('↩️ Retour arrière automatique', `La version ${v} ne fonctionnait pas en ligne : l'ancienne version a été remise automatiquement. Ton jeu reste jouable.`, { priority: 5, tags: ['rotating_light'] });
+    await notify('↩️ Retour arrière automatique', `La version ${v} ne fonctionnait pas en ligne : l'ancienne version a été remise automatiquement. Ton jeu reste jouable.`, { priority: 5, tags: ['rotating_light'], urgent: true });
   } else if (etat === 'pas-en-ligne') {
     event(D, 'surveillance', 'Publication lente', `La version ${v} a été envoyée mais GitHub Pages ne l'affichait pas encore après 10 min.`);
     agentDone(D, 'gardien', 'Publication envoyée, mise en ligne lente');

@@ -44,7 +44,8 @@ export async function staticChecks(ROOT) {
 
   // 3 bis. scripts du Guardian (l'appli tableau de bord est dans le dépôt mythoria-guardian)
   const gbad = [];
-  for (const f of ['guardian/check.mjs', 'guardian/record.mjs', 'guardian/static.mjs', 'guardian/sw.js', 'guardian/balance.mjs']) {
+  for (const f of ['guardian/check.mjs', 'guardian/record.mjs', 'guardian/static.mjs', 'guardian/sw.js', 'guardian/balance.mjs',
+    'guardian/lib/proof.mjs', 'guardian/lib/alert.mjs', 'guardian/bots/art.mjs', 'guardian/bots/ux.mjs', 'guardian/bots/perf.mjs', 'guardian/bots/cheat.mjs', 'guardian/bots/responsive.mjs']) {
     try { await run(process.execPath, ['--check', join(ROOT, f)]); } catch (e) { gbad.push(f + ' : ' + String(e.stderr || e.message).split('\n').find(l => /Error/.test(l))); }
   }
   add('Aucune faute de syntaxe dans les scripts du Guardian', !gbad.length, gbad.join(' | '));

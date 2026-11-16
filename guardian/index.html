@@ -3,17 +3,27 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>MYTHORIA Guardian a déménagé</title>
-<meta name="theme-color" content="#0f1a4d">
-<meta http-equiv="refresh" content="0; url=https://nicolas06061997.github.io/mythoria-guardian/">
-<style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#070c26;color:#eef0ff;font:16px system-ui,sans-serif;text-align:center;padding:24px}a{color:#ffe39a}</style>
+<title>MYTHORIA</title>
+<meta name="theme-color" content="#1a1433">
+<style>
+body{margin:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:#070c26;color:#eef0ff;font:16px system-ui,sans-serif;text-align:center;padding:24px;box-sizing:border-box}
+a.b{display:block;width:100%;max-width:320px;padding:18px;border-radius:16px;font-weight:700;font-size:20px;text-decoration:none}
+.play{background:linear-gradient(#ffcf5a,#e8941c);color:#2a1600;box-shadow:0 6px 18px #e8941c66}
+.gd{background:#1b2a6b;color:#cfe0ff;font-size:16px!important}
+p{opacity:.75;max-width:320px;margin:0}
+</style>
 </head>
 <body>
-<p>MYTHORIA Guardian a maintenant sa propre application :<br><a href="https://nicolas06061997.github.io/mythoria-guardian/">nicolas06061997.github.io/mythoria-guardian</a></p>
+<a class="b play" href="../">▶ Jouer à MYTHORIA</a>
+<a class="b gd" href="https://nicolas06061997.github.io/mythoria-guardian/">Ouvrir MYTHORIA Guardian</a>
+<p>Cette icône est un ancien raccourci. Pour jouer directement, installe le jeu depuis le bouton vert « Installer le jeu ».</p>
 <script>
-// l'ancien service worker de cette adresse est retiré, puis on part vers la nouvelle appli
+// l'ancien service worker de cette adresse est retiré
 if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => { if (r.scope.includes('/guardian/')) r.unregister(); })).catch(() => {});
-location.replace('https://nicolas06061997.github.io/mythoria-guardian/');
+// Ouvert depuis une icône installée (ancien raccourci, souvent dans l'appli du jeu) : on laisse choisir, « Jouer » en premier.
+// Ouvert dans un onglet normal : on part vers la nouvelle appli Guardian comme avant.
+const installed = ['standalone', 'fullscreen', 'minimal-ui'].some(m => matchMedia(`(display-mode: ${m})`).matches) || navigator.standalone;
+if (!installed) location.replace('https://nicolas06061997.github.io/mythoria-guardian/');
 </script>
 </body>
 </html>

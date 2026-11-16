@@ -99,6 +99,12 @@ Comme le passage horaire, puis en plus (si aucune correction urgente n'est en co
 4. **Sans accord du propriétaire** (passe par une `demande`) : graphismes, gameplay, équilibrage, économie, textes du jeu,
    tout changement de plus de ~80 lignes, toute suppression. **Autorisé sans accord** : corriger un bug (erreur JS, écran
    cassé, fichier manquant, onglet qui ne s'ouvre pas, débordement), une régression de performance, et répondre aux questions.
+   **La nuit, de 21 h à 8 h (heure de Belgique), sans attendre le oui** (décision du propriétaire, 16/11 : « il dort ») :
+   tu peux faire directement tes propres propositions (graphismes, gameplay, équilibrage, textes). Poste quand même la
+   `demande` avec la mention « ✅ faite directement (nuit) », puis `envoi` et `publie` comme d'habitude, pour qu'il voie tout
+   au réveil et puisse dire « annule D-… ». Restent interdits sans accord, même la nuit : toute suppression de
+   fonctionnalité, l'économie (prix, récompenses, coffres), et tout ce que les autres règles absolues interdisent. Toutes les
+   vérifications (tests, contrôle complet, captures) restent obligatoires.
 5. Avant d'envoyer : `npm test` vert ET `node guardian/check.mjs` sans problème bloquant (contrôle complet si tu as touché
    au combat ou au Mode Héros). Pour un changement visuel : captures avant/après regardées avec Read. Sinon, n'envoie rien
    et poste un `echec`.

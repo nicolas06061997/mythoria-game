@@ -387,8 +387,9 @@ function shellMat(F, k, len, tex) {
   m.customProgramCacheKey = () => 'hairshell';
   return m;
 }
-function hairMat(base) { // cheveux lisses : MÊME couleur que les cheveux d'origine (palette, teinte, lueur du héros) + mèches en relief + reflet satiné
+function hairMat(base, fancy = true) { // cheveux lisses : MÊME couleur que les cheveux d'origine (palette, teinte, lueur du héros) + mèches en relief + reflet satiné
   const m = base.clone(); m.envMap = envTex(); m.envMapIntensity = Math.min(m.envMapIntensity ?? 1, 0.3);
+  if (!fancy) return m; // en combat : même programme que le reste du héros (pas de pause de préparation)
   m.onBeforeCompile = sh => {
     sh.vertexShader = 'attribute vec2 aHair; varying vec2 vHair;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vHair = aHair;');
     sh.fragmentShader = 'varying vec2 vHair;\n' + sh.fragmentShader.replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n roughnessFactor = 0.4;').replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\n metalnessFactor = 0.0;').replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
@@ -414,13 +415,14 @@ function applyFace(a, F, opts = {}) {
     }
     const S = splitFace(o.geometry, img, F);
     o.geometry = S.base;
-    const add = (geo, m) => { const sm = new THREE.SkinnedMesh(geo, m); sm.bind(o.skeleton, o.bindMatrix); sm.castShadow = true; sm.frustumCulled = false; o.parent.add(sm); sm.position.copy(o.position); sm.quaternion.copy(o.quaternion); sm.scale.copy(o.scale); m.userData.baseEmissive = new THREE.Color(0); m.userData.baseEI = 0; a.mats.push(m); };
+    const add = (geo, m) => { const sm = new THREE.SkinnedMesh(geo, m); sm.bind(o.skeleton, o.bindMatrix); sm.castShadow = true; sm.frustumCulled = o.frustumCulled; o.parent.add(sm); sm.position.copy(o.position); sm.quaternion.copy(o.quaternion); sm.scale.copy(o.scale); m.userData.baseEmissive = new THREE.Color(0); m.userData.baseEI = 0; a.mats.push(m); };
     if (S.eye) add(S.eye, new THREE.MeshStandardMaterial({ map: faceTex('eye', F), roughness: 0.25, metalness: 0, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
     if (S.hair) {
       const tex = faceTex('hair', F);
       if (!S.hairLen) { S.hair.computeBoundingBox(); const b = S.hair.boundingBox; S.hairLen = Math.max(b.max.x - b.min.x, b.max.y - b.min.y, b.max.z - b.min.z); }
-      const sm = new THREE.SkinnedMesh(S.hair, hairMat(mat)); sm.bind(o.skeleton, o.bindMatrix);
-      sm.frustumCulled = false; sm.castShadow = true; o.parent.add(sm); sm.position.copy(o.position); sm.quaternion.copy(o.quaternion); sm.scale.copy(o.scale);
+      const hm = hairMat(mat, !!opts.detail); if (!opts.detail) a.mats.push(hm); // en combat : mêmes effets (lueur, flash) et même programme que la tête
+      const sm = new THREE.SkinnedMesh(S.hair, hm); sm.bind(o.skeleton, o.bindMatrix);
+      sm.frustumCulled = o.frustumCulled; sm.castShadow = true; o.parent.add(sm); sm.position.copy(o.position); sm.quaternion.copy(o.quaternion); sm.scale.copy(o.scale);
     }
   }
 }
@@ -518,7 +520,8 @@ export async function makeHero(id, opts = {}) {
   const rimCol = m.glow || (m.proc ? '#ffe0b0' : '#cfe0ff');
   const rimK = m.glow ? 0.32 : 0.24;
   // grain / rayures : seulement dans la fiche du héros (opts.detail) ; en combat c'était trop lourd (contrôle Guardian n°69)
-  if (!opts.detail) a.root.traverse(o => { if (o.isMesh) for (const mt of Array.isArray(o.material) ? o.material : [o.material]) if (mt && mt.userData) mt.userData.detail = false; });
+  // en combat : ni grain ni reflets du ciel (envMap) — trop lourds sur les machines sans carte graphique (contrôles n°69-70)
+  if (!opts.detail) a.root.traverse(o => { if (o.isMesh) for (const mt of Array.isArray(o.material) ? o.material : [o.material]) if (mt && mt.userData) { mt.userData.detail = false; if (mt.envMap) { mt.envMap = null; mt.needsUpdate = true; } } });
   for (const mat of a.mats) if (mat.isMeshStandardMaterial && !mat.transparent) addRim(mat, rimCol, rimK, 3.2);
   const LKo = lookOf(m);
   if (opts.outline !== false && !(LKo && LKo.noOutline)) addOutline(a.root, m.proc ? 0.035 : 0.03);

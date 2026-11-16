@@ -112,7 +112,7 @@ export const HEROES = [
 
   // ----- Clan de la Braise -----
   { id: 'follets', name: 'Feux-Follets', title: 'Étincelles vivantes', fac: 'braise', rar: 'commun', type: 'unit',
-    hp: 110, dmg: 150, hit: 0.5, spd: 2.4, range: 0.5, tgt: 'any', count: 3, r: 0.3, fly: true, kamikaze: true,
+    hp: 180, dmg: 200, hit: 0.5, spd: 2.4, range: 0.5, tgt: 'any', count: 3, r: 0.3, fly: true, kamikaze: true,
     model: { proc: 'wisp', scale: 1 },
     lore: 'Des braises échappées du nid d’Ignar. Elles adorent exploser sur les gens.',
     ability: ['Kamikaze', 'Trois flammes volantes qui explosent au contact.'] },
@@ -185,7 +185,7 @@ export const HEROES = [
 
   // ----- Neutre -----
   { id: 'belier', name: 'Fracas', title: 'Bélier de Siège', fac: 'neutre', rar: 'rare', type: 'unit',
-    hp: 2000, dmg: 320, hit: 1.8, spd: 1.8, range: 0.9, tgt: 'buildings', count: 1, r: 0.65,
+    hp: 1700, dmg: 320, hit: 1.8, spd: 1.8, range: 0.9, tgt: 'buildings', count: 1, r: 0.65,
     model: { proc: 'ram', scale: 1 },
     lore: 'Construit par les nains des Forges pour ouvrir n’importe quelle porte. Surtout celles des autres.',
     ability: ['Siège', 'Fonce droit sur le Sanctuaire ennemi et ignore les troupes.'] },

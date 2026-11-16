@@ -5,6 +5,7 @@ import { saveProfile, owned, heroLevel, canUpgrade, upgradeHero, chestState, sta
 import { h, toast, sheet } from './dom.js';
 import { icon } from './icons.js';
 import { sfx } from '../audio.js';
+import { sparkSVG } from './art.js';
 
 let C; // contexte : { P(), render(), portraitImg(id) }
 export function initProgress(ctx) { C = ctx; }
@@ -41,7 +42,16 @@ export function chestRow() {
     if (st === 'opening') { const t = setInterval(() => { if (!b.isConnected) return clearInterval(t); upd(); if (chestState(P.chests[i]) === 'ready') { clearInterval(t); C.render(); } }, 1000); }
     return b;
   }));
+  row.append(chestLife());
   return row;
+}
+// Coffres vivants (comme la maquette) : étoiles qui scintillent au-dessus, poussières dorées qui montent de l'étagère
+const CH_STARS = [[25, 3, 16], [51, 9, 13], [65, 2, 18], [88, 5, 15], [6, 30, 10], [42, 26, 9], [96, 34, 9], [31, 47, 7], [80, 44, 8]];
+function chestLife() {
+  const fx = h('div', { class: 'ch-fx', 'aria-hidden': 'true' });
+  CH_STARS.forEach(([x, y, z], i) => { const e = h('span', { class: 'ch-star', style: { left: x + '%', top: y + '%', width: z + 'px', height: z + 'px', animationDuration: (1.6 + (i * 37 % 11) / 10) + 's', animationDelay: -(i * 7 % 13) / 5 + 's' } }); e.innerHTML = sparkSVG(); fx.append(e); });
+  for (let i = 0; i < 10; i++) fx.append(h('i', { class: 'ch-mote', style: { left: (4 + i * 9.6) + '%', animationDuration: (3 + (i * 7 % 5) * .5) + 's', animationDelay: -(i * 11 % 9) * .45 + 's' } }));
+  return fx;
 }
 function chestTap(i) {
   const P = C.P(), c = P.chests[i], st = chestState(c), T = CHESTS[c.type];

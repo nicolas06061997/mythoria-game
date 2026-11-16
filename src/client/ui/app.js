@@ -128,11 +128,10 @@ function homeScreen() {
   const w = worldOf(P), next = WORLDS[w.id + 1];
   const prog = next ? (P.trophies - w.trophies) / (next.trophies - w.trophies) : 1;
   const fav = HERO[P.avatar] || HERO.ecuyer;
-  const cv = h('canvas', { class: 'home-3d' });
   const T = THEMES[w.key];
   const el = h('section', { class: 'home' },
     h('div', { class: 'home-stage', style: { '--sky1': T.skyTop, '--sky2': T.skyBot } },
-      cosmosBack(), cv, cosmosFront(),
+      cosmosBack(), h('img', { class: 'home-art', src: 'assets/ui/home-scene.webp', alt: '', draggable: 'false' }), cosmosFront(),
       h('div', { class: 'home-world' }, h('small', {}, 'Monde ' + (w.id + 1) + ' / ' + WORLDS.length), h('b', {}, w.name)),
       h('button', { class: 'home-hero', onclick: () => openHero(fav.id) },
         h('span', { class: 'rar', style: { '--rc': RARITIES[fav.rar].color } }, RARITIES[fav.rar].name),
@@ -140,7 +139,7 @@ function homeScreen() {
       h('div', { class: 'home-prog' },
         next ? [h('div', { class: 'tbar' }, h('i', { style: { width: prog * 100 + '%' } })), h('small', {}, icon('trophy'), P.trophies + ' / ' + next.trophies + ' → ' + next.name)]
           : h('small', {}, 'Tu as atteint le dernier monde !'))),
-    h('button', { class: 'btn-battle', onclick: openModes }, h('i', { class: 'bb-aura' }), h('i', { class: 'bb-rays' }), svgEl('bb-art', battleSVG()), h('i', { class: 'bb-glow' }), h('i', { class: 'bb-shine' }), battleSparks(), h('b', {}, 'COMBATTRE'), h('small', {}, 'Mode Arène · ' + AI_LEVELS[botLevelFor(P)].name)),
+    h('button', { class: 'btn-battle', onclick: openModes }, h('i', { class: 'bb-aura' }), h('i', { class: 'bb-rays' }), svgEl('bb-art', battleSVG()), h('i', { class: 'bb-glow' }), h('i', { class: 'bb-shine' }), battleSparks(), h('b', {}, 'COMBATTRE'), h('small', {}, 'Mode Arène • ' + AI_LEVELS[botLevelFor(P)].name)),
     chestRow(),
     h('div', { class: 'home-row' },
       tile('map', 'Mondes', WORLDS.filter(x => P.trophies >= x.trophies).length + ' / 6', openWorlds),
@@ -148,7 +147,7 @@ function homeScreen() {
       missionsButton(),
       tile('book', 'Règles', 'Comment jouer', openHowTo)),
     h('p', { class: 'muted center small' }, 'Progression sauvegardée sur ce téléphone · vrais adversaires en ligne : phase 3'));
-  requestAnimationFrame(() => { if (cv.isConnected) stage = new Showcase(cv, { world: w.key, heroId: fav.id, mode: 'home', cosmic: true, skin: P.skins.eq[fav.id] }); });
+  // scène peinte de la maquette de l'utilisateur (assets/ui/home-scene.webp, agrandie ×4 et rendue nette) à la place du héros 3D
   return el;
 }
 // ---------- Décor vivant de l'accueil (calques CSS autour du héros 3D, voir « Décor cosmique » dans styles.css) ----------

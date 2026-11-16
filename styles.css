@@ -934,3 +934,33 @@ body::after { background: radial-gradient(60% 22% at 30% 16%, rgba(80, 255, 190,
 .bb-shine::after { width: 10%; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .4) 50%, transparent); }
 @keyframes shine { 0%, 45% { transform: translateX(-160%) skewX(-22deg); } 100% { transform: translateX(1100%) skewX(-22deg); } }
 .bb-spark { scale: 1.35; }
+
+/* ===== Accueil peint (16/11) : scène de la maquette de l'utilisateur, agrandie ×4 (nette), fondue en haut et en bas ===== */
+.home-art { position: absolute; left: 0; width: 100%; bottom: 56px; height: auto; z-index: 1; pointer-events: none; user-select: none; -webkit-user-drag: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 12%, #000 93%, transparent 100%); mask-image: linear-gradient(to bottom, transparent 0, #000 12%, #000 93%, transparent 100%); }
+.home-stage .cosmos .isl, .home-stage .cosmos .au, .home-stage .cosmos .halo, .home-stage .cosmos .rays { display: none; }
+.home-stage .cosmos.front { z-index: 2; }
+/* Accueil = maquette : coffres juste au-dessus de la barre du bas (la scène prend la place libre ; tuiles Mondes/Héros/Missions/Règles en faisant défiler) */
+.home-stage { height: max(min(48dvh, 430px), calc(100dvh - 411px)); }
+.btn-battle small { color: #e9d7a8; font-weight: 800; }
+.cslot .cname { color: #b9c5e8; }
+.cslot.opening .ctime { color: #8fc6ff; }
+/* Bouton COMBATTRE : lueur dorée chaude autour du cadre (maquette) */
+.bb-aura { background: radial-gradient(closest-side, rgba(255, 214, 130, .55), rgba(255, 170, 70, .22) 55%, transparent); }
+.btn-battle .bb-art { filter: drop-shadow(0 0 7px rgba(255, 205, 110, .55)) drop-shadow(0 0 2px rgba(255, 220, 150, .6)); }
+/* Coffres vivants : halo derrière chaque coffre, étoiles, poussières dorées, coffre qui s'ouvre = anneau doré */
+.chests { position: relative; }
+.cslot { position: relative; isolation: isolate; }
+.cslot:not(.empty)::before { content: ''; position: absolute; z-index: 1; mix-blend-mode: screen; left: 4%; right: 4%; top: 0; height: calc(var(--th) * .66); border-radius: 50%; background: radial-gradient(closest-side, rgba(170, 210, 255, .42), rgba(110, 160, 255, .14) 60%, transparent); animation: chhalo 3.2s ease-in-out infinite; pointer-events: none; }
+.cslot:nth-child(2)::before { animation-delay: -.8s; } .cslot:nth-child(3)::before { animation-delay: -1.6s; } .cslot:nth-child(4)::before { animation-delay: -2.4s; }
+.cslot.opening::before, .cslot.ready::before { background: radial-gradient(closest-side, rgba(255, 240, 200, .55), rgba(255, 200, 110, .2) 60%, transparent); }
+.cslot:first-child:not(.empty)::before { background: radial-gradient(closest-side, rgba(255, 245, 215, .75), rgba(170, 200, 255, .25) 60%, transparent); }
+.cslot.opening::after { content: ''; position: absolute; z-index: 2; left: 6%; right: 6%; top: calc(var(--th) * .6); height: calc(var(--th) * .2); border-radius: 50%; border: 2px solid rgba(255, 222, 140, .95); background: radial-gradient(closest-side, transparent 60%, rgba(255, 200, 90, .35)); box-shadow: 0 0 12px rgba(255, 200, 90, .7); animation: chhalo 1.6s ease-in-out infinite; pointer-events: none; }
+@keyframes chhalo { 0%, 100% { opacity: .65; transform: scale(.94); } 50% { opacity: 1; transform: scale(1.06); } }
+.ch-fx { position: absolute; inset: 0; z-index: 3; pointer-events: none; overflow: visible; }
+.ch-star { position: absolute; transform: translate(-50%, -50%); filter: drop-shadow(0 0 4px rgba(200, 230, 255, .9)); animation: chtw 2s ease-in-out infinite; }
+.ch-star svg { display: block; width: 100%; height: 100%; }
+@keyframes chtw { 0%, 100% { opacity: .15; transform: translate(-50%, -50%) scale(.5) rotate(0); } 50% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(25deg); } }
+.ch-mote { position: absolute; top: 58%; width: 3px; height: 3px; border-radius: 50%; background: #ffe7a8; box-shadow: 0 0 6px 1px rgba(255, 215, 120, .85); opacity: 0; animation: chmote 3.4s ease-in infinite; }
+@keyframes chmote { 0% { opacity: 0; transform: translateY(0); } 20% { opacity: 1; } 100% { opacity: 0; transform: translateY(-46px); } }
+@media (prefers-reduced-motion: reduce) { .ch-star, .ch-mote, .cslot::before, .cslot::after { animation: none !important; } }

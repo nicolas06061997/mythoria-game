@@ -58,7 +58,7 @@ ${lock}</svg>`.replace(/(\d)\.(\d)00\b/g, '$1.$2');
 export function battleSVG() {
   const fl = 'M0 0C8 -1 13 -6 12 -12C11 -17 5 -17 5 -12C5 -9 9 -9 9 -12M0 0C8 1 13 6 12 12C11 17 5 17 5 12C5 9 9 9 9 12M0 0H22M22 0C17 -3 16 -8 20 -11M22 0C17 3 16 8 20 11M-10 0L-4 -4 2 0 -4 4z';
   return `<svg viewBox="0 0 360 156" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"><defs>
-<linearGradient id="btG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffaea"/><stop offset=".3" stop-color="#e8d19a"/><stop offset=".62" stop-color="#a88a4c"/><stop offset=".85" stop-color="#efdcab"/><stop offset="1" stop-color="#94763a"/></linearGradient>
+<linearGradient id="btG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff3c4"/><stop offset=".3" stop-color="#eec46a"/><stop offset=".62" stop-color="#a8762a"/><stop offset=".85" stop-color="#f0c968"/><stop offset="1" stop-color="#7f5418"/></linearGradient>
 <linearGradient id="btB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a62c4"/><stop offset=".46" stop-color="#1f3a92"/><stop offset=".54" stop-color="#14256c"/><stop offset="1" stop-color="#1c3688"/></linearGradient>
 <radialGradient id="btL" cx=".5" cy="1" r=".6"><stop offset="0" stop-color="#7fe9ff" stop-opacity=".75"/><stop offset="1" stop-color="#7fe9ff" stop-opacity="0"/></radialGradient>
 <linearGradient id="btC" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".45" stop-color="#8fe9ff"/><stop offset="1" stop-color="#1f6ee0"/></linearGradient></defs>

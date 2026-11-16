@@ -247,6 +247,19 @@ function playHero(id) {
 }
 
 // ---------- Résultat ----------
+// Explique comment le combat s'est fini (D-20261116-1) : au chrono, c'est le Sanctuaire le moins abîmé qui gagne.
+function endWhy(r) {
+  if (r.result !== 'win' && r.result !== 'loss' && r.result !== 'draw') return '';
+  const a = r.myHp * 100, b = r.oppHp * 100;
+  let pa = Math.round(a), pb = Math.round(b);
+  if (pa === pb && a !== b) { pa = a.toFixed(1).replace('.', ','); pb = b.toFixed(1).replace('.', ','); }
+  const cmp = 'ton Sanctuaire ' + pa + ' % contre ' + pb + ' %';
+  if (r.reason === 'sanct') return r.result === 'win' ? 'Sanctuaire ennemi détruit !' : 'Ton Sanctuaire a été détruit.';
+  if (r.reason === 'time') return 'Fin du temps : ' + cmp + '. Le Sanctuaire le moins abîmé gagne.';
+  if (r.reason === 'overtime') return 'Prolongation : ' + cmp + '. Le premier qui prend l’avantage gagne.';
+  if (r.reason === 'draw') return 'Fin de la prolongation : les deux Sanctuaires sont à égalité.';
+  return '';
+}
 function showResult(r) {
   const rew = applyResult(P, r);
   const title = r.result === 'survival' || r.result === 'hero' ? 'Vague ' + (r.wave || 0) : r.result === 'win' ? 'Victoire !' : r.result === 'loss' ? 'Défaite' : 'Égalité';
@@ -256,6 +269,7 @@ function showResult(r) {
     h('div', { class: 'rvs' },
       r.result === 'hero' ? h('div', {}, h('b', {}, P.name), h('small', {}, 'Vagues'), h('b', {}, r.wave)) : h('div', {}, h('b', {}, P.name), h('small', {}, 'Ton Sanctuaire'), bar(r.myHp, 'blue')),
       r.result === 'survival' || r.result === 'hero' ? h('div', {}, h('b', {}, r.result === 'hero' ? 'Mode Héros' : 'Survie'), h('small', {}, 'Record'), h('b', {}, 'Vague ' + (r.result === 'hero' ? P.records.hero : P.records.survival || 0))) : h('div', {}, h('b', {}, '🤖 ' + r.opp), h('small', {}, 'Sanctuaire ennemi'), bar(r.oppHp, 'red'))),
+    endWhy(r) ? h('p', { class: 'rwhy' }, endWhy(r)) : null,
     r.note ? h('div', { class: 'banner-good' }, r.note) : null,
     rew.extra ? h('div', { class: 'rchips' }, Object.entries(rew.extra).filter(([k, v]) => v).map(([k, v]) => h('span', { class: 'rchip' }, k === 'gold' ? icon('coin') : k === 'gems' ? icon('gem') : k === 'crystals' ? icon('crystal') : k === 'chest' ? chestIcon(v, 'xs') : '', k === 'chest' ? CHESTS[v].name : '+' + v))) : null,
     r.reason === 'forfeit' ? h('p', { class: 'muted' }, 'Abandon') : r.heart ? h('p', { class: 'muted' }, '✦ Tu tenais le Cœur de Mythe à la fin : +10 or') : null,

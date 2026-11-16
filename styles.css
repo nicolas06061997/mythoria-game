@@ -964,3 +964,5 @@ body::after { background: radial-gradient(60% 22% at 30% 16%, rgba(80, 255, 190,
 .ch-mote { position: absolute; top: 58%; width: 3px; height: 3px; border-radius: 50%; background: #ffe7a8; box-shadow: 0 0 6px 1px rgba(255, 215, 120, .85); opacity: 0; animation: chmote 3.4s ease-in infinite; }
 @keyframes chmote { 0% { opacity: 0; transform: translateY(0); } 20% { opacity: 1; } 100% { opacity: 0; transform: translateY(-46px); } }
 @media (prefers-reduced-motion: reduce) { .ch-star, .ch-mote, .cslot::before, .cslot::after { animation: none !important; } }
+/* Fin de combat expliquée (D-20261116-1) */
+.result .rwhy { margin: -4px 0 0; max-width: 340px; font-size: 14px; font-weight: 800; color: var(--lune, #e8ecff); opacity: .92; line-height: 1.35; }

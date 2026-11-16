@@ -211,7 +211,7 @@ export class Battle {
       else if (e.type === 'wave') { this.banner('Vague ' + e.n + ' !', e.n % 5 === 0 ? 'bad' : 'go'); sfx('tick'); setTimeout(() => !this.ended && this.banner(''), 1400); }
       else if (e.type === 'boss') { this.banner('☠ ' + e.name, 'bad'); sfx('tower'); setTimeout(() => !this.ended && this.banner(''), 1800); }
       else if (e.type === 'bossSkill') sfx(e.k === 'freeze' ? 'freeze' : e.k === 'heal' ? 'heal' : 'boom', 200);
-      else if (e.type === 'bossDown') { this.banner('Boss vaincu !', 'good'); sfx('win'); setTimeout(() => !this.ended && this.banner(''), 1600); }
+      else if (e.type === 'bossDown') { this.banner('Boss vaincu ! Détruis le Sanctuaire', 'good'); sfx('boom'); setTimeout(() => !this.ended && this.banner(''), 1600); }
       else if (e.type === 'overtime') { this.banner('Prolongation !', 'go'); setTimeout(() => !this.ended && this.banner(''), 1800); }
     }
     if (!this.dbl && this.s.t >= DOUBLE_AT) { this.dbl = true; this.banner('Éther ×2 !', 'go'); setTimeout(() => !this.ended && this.banner(''), 1500); }

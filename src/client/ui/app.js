@@ -140,7 +140,7 @@ function homeScreen() {
       h('div', { class: 'home-prog' },
         next ? [h('div', { class: 'tbar' }, h('i', { style: { width: prog * 100 + '%' } })), h('small', {}, icon('trophy'), P.trophies + ' / ' + next.trophies + ' → ' + next.name)]
           : h('small', {}, 'Tu as atteint le dernier monde !'))),
-    h('button', { class: 'btn-battle', onclick: openModes }, svgEl('bb-art', battleSVG()), h('i', { class: 'bb-glow' }), h('i', { class: 'bb-shine' }), h('b', {}, 'COMBATTRE'), h('small', {}, 'Mode Arène · ' + AI_LEVELS[botLevelFor(P)].name)),
+    h('button', { class: 'btn-battle', onclick: openModes }, h('i', { class: 'bb-aura' }), h('i', { class: 'bb-rays' }), svgEl('bb-art', battleSVG()), h('i', { class: 'bb-glow' }), h('i', { class: 'bb-shine' }), battleSparks(), h('b', {}, 'COMBATTRE'), h('small', {}, 'Mode Arène · ' + AI_LEVELS[botLevelFor(P)].name)),
     chestRow(),
     h('div', { class: 'home-row' },
       tile('map', 'Mondes', WORLDS.filter(x => P.trophies >= x.trophies).length + ' / 6', openWorlds),
@@ -167,6 +167,14 @@ function cosmosBack() {
     svgEl('isl i1', isleSVG('a')), svgEl('isl i2', isleSVG('b')),
     [1, 2, 3, 4, 5, 6].map(n => svgEl('isl sh s' + n, isleSVG('c'))),
     h('i', { class: 'halo' }), h('i', { class: 'rays' }));
+}
+// Bouton COMBATTRE vivant : étincelles qui s'allument tour à tour sur le cadre, éclat du cristal, poussières qui montent
+const BB_SPARKS = [[12, 30, 11], [30, 27, 9], [70, 27, 10], [88, 31, 12], [96.5, 54, 10], [86, 79, 9], [64, 81, 11], [36, 81, 9], [14, 79, 11], [3.5, 54, 10], [7.2, 54, 15], [92.8, 54, 15], [41, 17, 9], [59, 17, 9], [50, 88, 12]];
+function battleSparks() {
+  const out = BB_SPARKS.map(([x, y, z], i) => svgEl('bb-spark', sparkSVG(), { left: x + '%', top: y + '%', width: z + 'px', height: z + 'px', animationDuration: (1.7 + (i * 37 % 13) / 10) + 's', animationDelay: -(i * 53 % 29) / 10 + 's' }));
+  out.push(h('i', { class: 'bb-flare' }));
+  for (let i = 0; i < 7; i++) out.push(h('i', { class: 'bb-mote', style: { left: (12 + i * 12.5) + '%', animationDuration: (2.6 + (i * 7 % 5) * .45) + 's', animationDelay: -(i * 11 % 9) * .4 + 's' } }));
+  return out;
 }
 function cosmosFront() {
   const motes = [];

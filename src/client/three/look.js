@@ -13,6 +13,7 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 // ---------- Lumière de contour (ajoutée au matériau standard) ----------
 export function addRim(mat, color = '#ffffff', strength = 0.55, power = 2.6) {
   mat.userData.rim = { color: { value: new THREE.Color(color) }, k: { value: strength }, p: { value: power } };
+  const det = !!mat.userData.detail;
   mat.onBeforeCompile = sh => {
     sh.uniforms.rimColor = mat.userData.rim.color; sh.uniforms.rimK = mat.userData.rim.k; sh.uniforms.rimP = mat.userData.rim.p;
     sh.fragmentShader = 'uniform vec3 rimColor; uniform float rimK; uniform float rimP;\n' + sh.fragmentShader.replace(
@@ -20,8 +21,22 @@ export function addRim(mat, color = '#ffffff', strength = 0.55, power = 2.6) {
       `#include <emissivemap_fragment>
        float rimF = pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), rimP);
        totalEmissiveRadiance += rimColor * rimF * rimK;`);
+    if (det) { // détails réalistes (16/11) : grain du cuir / tissu, métal usé et rayé (bruit dans l'espace de l'objet)
+      sh.vertexShader = 'varying vec3 vOP;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vOP = position;');
+      sh.fragmentShader = `varying vec3 vOP;
+        float h3(vec3 p) { return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
+        float vn(vec3 p) { vec3 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+          return mix(mix(mix(h3(i), h3(i + vec3(1,0,0)), f.x), mix(h3(i + vec3(0,1,0)), h3(i + vec3(1,1,0)), f.x), f.y),
+                     mix(mix(h3(i + vec3(0,0,1)), h3(i + vec3(1,0,1)), f.x), mix(h3(i + vec3(0,1,1)), h3(i + vec3(1,1,1)), f.x), f.y), f.z); }
+        ` + sh.fragmentShader.replace('#include <metalnessmap_fragment>', `#include <metalnessmap_fragment>
+        float dn1 = vn(vOP * 18.0), dn2 = vn(vOP * 70.0), dn3 = vn(vOP * 160.0);
+        float scr = smoothstep(0.86, 0.99, vn(vOP * vec3(140.0, 9.0, 140.0))) * metalnessFactor;
+        float grain = (dn1 - 0.5) * 0.16 + (dn2 - 0.5) * 0.12 + (dn3 - 0.5) * 0.08 * (1.0 - metalnessFactor);
+        diffuseColor.rgb *= 1.0 + grain + scr * 0.35;
+        roughnessFactor = clamp(roughnessFactor + (dn2 - 0.5) * 0.3 - scr * 0.25 + (1.0 - dn1) * 0.08, 0.08, 1.0);`);
+    }
   };
-  mat.customProgramCacheKey = () => 'rim';
+  mat.customProgramCacheKey = () => det ? 'rimd' : 'rim';
   mat.needsUpdate = true;
 }
 export function setRim(mat, color, k) { const r = mat.userData.rim; if (!r) return; if (color) r.color.value.set(color); if (k !== undefined) r.k.value = k; }

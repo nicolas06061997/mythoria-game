@@ -406,7 +406,8 @@ function applyFace(a, F, opts = {}) {
     if (F.auto && !F.hair1) { // couleur des cheveux = celle de la palette du héros (case des cheveux)
       const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height; const cg = cv.getContext('2d'); cg.drawImage(img, 0, 0);
       const q = cg.getImageData(Math.floor((F.hairCell[0] + .5) * img.width / 8), Math.floor(img.height / 4 * .45), 1, 1).data;
-      const hex = k => '#' + [0, 1, 2].map(i => Math.min(255, Math.round(q[i] * k)).toString(16).padStart(2, '0')).join(''); // sRGB direct (pas de conversion)
+      const tc = F.tint ? [1, 3, 5].map(i => parseInt(F.tint.slice(i, i + 2), 16) / 255) : [1, 1, 1]; // teinte propre du héros (comme ses cheveux d'origine)
+      const hex = k => '#' + [0, 1, 2].map(i => Math.min(255, Math.round(q[i] * tc[i] * k)).toString(16).padStart(2, '0')).join(''); // sRGB direct (pas de conversion)
       F = { ...F, hair1: hex(1), hair0: hex(.6), hair2: hex(1.2) };
     }
     const S = splitFace(o.geometry, img, F);
@@ -434,7 +435,7 @@ export function lookOf(m) {
     const iris = m.glow ? '#' + new THREE.Color(m.glow).multiplyScalar(.55).getHexString() : '#5e3518', iris2 = m.glow || '#a8743a';
     const show = m.show || [], helmet = show.some(n => /Helmet/.test(n)), hat = show.some(n => /Hat/.test(n)) || /Hooded/.test(m.glb);
     const hair = helmet ? { shells: 0 } : hat ? { hairLen: 0.04, shells: 12 } : {}; // sous un casque : pas de mèches qui dépassent
-    return { auto: true, noOutline: true, env: 1.15, rough: .6, face: { auto: true, mesh: 'auto', eyeCell: [2, 0], hairCell: [1, 0], eyeScale: 1.35, iris, iris2, ...hair } };
+    return { auto: true, noOutline: true, env: 1.15, rough: .6, face: { auto: true, mesh: 'auto', eyeCell: [2, 0], hairCell: [1, 0], eyeScale: 1.35, iris, iris2, tint: m.tint || null, ...hair } };
   }
   if (m.glb) return { auto: true, noOutline: true, env: 1.1, rough: .6 };
   if (m.beast) return { noOutline: true, noTex: true, soft: true };

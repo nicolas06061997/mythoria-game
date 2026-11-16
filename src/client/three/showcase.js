@@ -196,7 +196,7 @@ export class Showcase {
   async setHero(id, star = 1) {
     const my = (this.req = (this.req || 0) + 1); this.heroId = id;
     await preload([id]);
-    const a = await makeHero(id, { star, skin: this.skin });
+    const a = await makeHero(id, { star, skin: this.skin, detail: this.mode === 'hero' });
     if (my !== this.req || this.dead) { a.dispose(); return; }
     if (this.actor) { this.base.remove(this.actor.holder); this.actor.dispose(); }
     this.actor = a; a.play('idle'); a.back = 'idle'; this.base.add(a.holder); a.holder.add(blobShadow(1.4));

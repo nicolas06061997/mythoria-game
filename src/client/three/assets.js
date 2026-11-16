@@ -193,6 +193,9 @@ function autoMetal(img) { // cases grises peu saturées de la palette = métal
   }
   AUTO_METAL.set(k, out); return out;
 }
+// texture d'origine de chaque matériau : PAS dans userData (Material.clone copie userData en JSON → toDataURL de toute
+// l'image à chaque héros invoqué : combat figé 10-30 s sur les machines lentes, contrôles Guardian n°69-70)
+const BASE_MAP = new WeakMap();
 function applyLook(a, key, look) {
   if (look.auto) { let img = null; a.root.traverse(o => { if (!img && o.isMesh && o.material && o.material.map) img = o.material.map.image; }); if (img) look = { ...look, metal: autoMetal(img) }; }
   a.root.traverse(o => {
@@ -200,8 +203,8 @@ function applyLook(a, key, look) {
     const part = look.mesh && look.mesh[o.name], L = part ? { ...look, ...part } : look;
     for (const mat of Array.isArray(o.material) ? o.material : [o.material]) {
       if (!mat.map || !mat.map.image) continue;
-      const T = lookTextures(key + ':' + (part ? o.name : '') + ':' + mat.map.uuid, mat.userData.baseMap || mat.map, L);
-      mat.userData.baseMap = mat.userData.baseMap || mat.map;
+      const T = lookTextures(key + ':' + (part ? o.name : '') + ':' + mat.map.uuid, BASE_MAP.get(mat) || mat.map, L);
+      if (!BASE_MAP.has(mat)) BASE_MAP.set(mat, mat.map);
       mat.map = T.map; mat.metalnessMap = T.mr; mat.roughnessMap = T.mr;
       mat.metalness = 1; mat.roughness = 1; mat.envMap = envTex(); mat.envMapIntensity = L.env ?? 1; mat.userData.detail = true;
       mat.needsUpdate = true;
@@ -260,11 +263,14 @@ function smoothHair(g, F) {
     for (let t = 0; t < tris.length; t += 3) { const a = tris[t], b = tris[t + 1], c = tris[t + 2], ab = m(a, b), bc = m(b, c), ca = m(c, a); out.push(a, ab, ca, ab, b, bc, ca, bc, c, ab, bc, ca); }
     tris = out;
   }
-  const N = pos.length / 3, nb = Array.from({ length: N }, () => new Set()), edge = new Map();
-  for (let t = 0; t < tris.length; t += 3) for (let k = 0; k < 3; k++) { const a = tris[t + k], b = tris[t + (k + 1) % 3]; nb[a].add(b); nb[b].add(a); const e = a < b ? a + '_' + b : b + '_' + a; edge.set(e, (edge.get(e) || 0) + 1); }
-  const fixed = new Uint8Array(N); for (const [e, c] of edge) if (c === 1) { const [a, b] = e.split('_'); fixed[+a] = fixed[+b] = 1; }
+  const N = pos.length / 3, nbs = Array.from({ length: N }, () => new Set()), edge = new Map();
+  for (let t = 0; t < tris.length; t += 3) for (let k = 0; k < 3; k++) { const a = tris[t + k], b = tris[t + (k + 1) % 3]; nbs[a].add(b); nbs[b].add(a); const e = a < b ? a * N + b : b * N + a; edge.set(e, (edge.get(e) || 0) + 1); }
+  const fixed = new Uint8Array(N); for (const [e, c] of edge) if (c === 1) { fixed[Math.floor(e / N)] = fixed[e % N] = 1; }
+  // voisins à plat (rapide) : off[i]..off[i+1] dans nl
+  const off = new Uint32Array(N + 1); for (let i = 0; i < N; i++) off[i + 1] = off[i] + nbs[i].size;
+  const nl = new Uint32Array(off[N]); for (let i = 0; i < N; i++) { let k = off[i]; for (const j of nbs[i]) nl[k++] = j; }
   const P2 = Float32Array.from(pos), tmp = new Float32Array(P2.length);
-  const pass = f => { for (let i = 0; i < N; i++) { if (fixed[i] || !nb[i].size) { tmp.set(P2.subarray(i * 3, i * 3 + 3), i * 3); continue; } let x = 0, y = 0, z = 0; for (const j of nb[i]) { x += P2[j * 3]; y += P2[j * 3 + 1]; z += P2[j * 3 + 2]; } const c = nb[i].size; tmp[i * 3] = P2[i * 3] + f * (x / c - P2[i * 3]); tmp[i * 3 + 1] = P2[i * 3 + 1] + f * (y / c - P2[i * 3 + 1]); tmp[i * 3 + 2] = P2[i * 3 + 2] + f * (z / c - P2[i * 3 + 2]); } P2.set(tmp); };
+  const pass = f => { for (let i = 0; i < N; i++) { const i3 = i * 3, c = off[i + 1] - off[i]; if (fixed[i] || !c) { tmp[i3] = P2[i3]; tmp[i3 + 1] = P2[i3 + 1]; tmp[i3 + 2] = P2[i3 + 2]; continue; } let x = 0, y = 0, z = 0; for (let k = off[i]; k < off[i + 1]; k++) { const j = nl[k] * 3; x += P2[j]; y += P2[j + 1]; z += P2[j + 2]; } tmp[i3] = P2[i3] + f * (x / c - P2[i3]); tmp[i3 + 1] = P2[i3 + 1] + f * (y / c - P2[i3 + 1]); tmp[i3 + 2] = P2[i3 + 2] + f * (z / c - P2[i3 + 2]); } P2.set(tmp); };
   for (let it = 0; it < (F.hairSmooth ?? 10); it++) { pass(0.55); pass(-0.58); }
   const out = new THREE.BufferGeometry(); out.setAttribute('position', new THREE.BufferAttribute(P2, 3)); out.setIndex(tris); out.computeVertexNormals();
   const NN = out.attributes.normal; out.computeBoundingBox(); const bb = out.boundingBox, sz = Math.max(bb.max.x - bb.min.x, bb.max.y - bb.min.y, bb.max.z - bb.min.z) * (F.hairPuff ?? 0.025);
@@ -402,13 +408,15 @@ function hairMat(base, fancy = true) { // cheveux lisses : MÊME couleur que les
   m.customProgramCacheKey = () => 'hairsmooth';
   return m;
 }
+const HAIR_PX = new WeakMap();
 function applyFace(a, F, opts = {}) {
   const heads = []; a.root.traverse(o => { if (o.isSkinnedMesh && (o.name === F.mesh || (F.mesh === 'auto' && /Head/i.test(o.name)))) heads.push(o); });
   for (const o of heads) {
-    const mat = o.material, img = (mat.userData.baseMap || mat.map)?.image; if (!img) continue;
-    if (F.auto && !F.hair1) { // couleur des cheveux = celle de la palette du héros (case des cheveux)
-      const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height; const cg = cv.getContext('2d'); cg.drawImage(img, 0, 0);
-      const q = cg.getImageData(Math.floor((F.hairCell[0] + .5) * img.width / 8), Math.floor(img.height / 4 * .45), 1, 1).data;
+    const mat = o.material, img = (BASE_MAP.get(mat) || mat.map)?.image; if (!img) continue;
+    if (F.auto && !F.hair1) { // couleur des cheveux = celle de la palette du héros (case des cheveux), lue UNE fois par image
+      // (lire les pixels à chaque héros invoqué figeait le combat 10-30 s sur les machines sans carte graphique : contrôles n°69-70)
+      let q = HAIR_PX.get(img);
+      if (!q) { const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height; const cg = cv.getContext('2d', { willReadFrequently: true }); cg.drawImage(img, 0, 0); q = cg.getImageData(Math.floor((F.hairCell[0] + .5) * img.width / 8), Math.floor(img.height / 4 * .45), 1, 1).data; HAIR_PX.set(img, q); }
       const tc = F.tint ? [1, 3, 5].map(i => parseInt(F.tint.slice(i, i + 2), 16) / 255) : [1, 1, 1]; // teinte propre du héros (comme ses cheveux d'origine)
       const hex = k => '#' + [0, 1, 2].map(i => Math.min(255, Math.round(q[i] * tc[i] * k)).toString(16).padStart(2, '0')).join(''); // sRGB direct (pas de conversion)
       F = { ...F, hair1: hex(1), hair0: hex(.6), hair2: hex(1.2) };
@@ -420,7 +428,7 @@ function applyFace(a, F, opts = {}) {
     if (S.hair) {
       const tex = faceTex('hair', F);
       if (!S.hairLen) { S.hair.computeBoundingBox(); const b = S.hair.boundingBox; S.hairLen = Math.max(b.max.x - b.min.x, b.max.y - b.min.y, b.max.z - b.min.z); }
-      const hm = hairMat(mat, !!opts.detail); if (!opts.detail) a.mats.push(hm); // en combat : mêmes effets (lueur, flash) et même programme que la tête
+      const hm = hairMat(mat, true); // en combat : mêmes effets (lueur, flash) et même programme que la tête
       const sm = new THREE.SkinnedMesh(S.hair, hm); sm.bind(o.skeleton, o.bindMatrix);
       sm.frustumCulled = o.frustumCulled; sm.castShadow = true; o.parent.add(sm); sm.position.copy(o.position); sm.quaternion.copy(o.quaternion); sm.scale.copy(o.scale);
     }
@@ -519,9 +527,8 @@ export async function makeHero(id, opts = {}) {
   const c = HERO[id], m = opts.skin && SKINS[opts.skin] ? { ...c.model, glow: SKINS[opts.skin].glow } : c.model;
   const rimCol = m.glow || (m.proc ? '#ffe0b0' : '#cfe0ff');
   const rimK = m.glow ? 0.32 : 0.24;
-  // grain / rayures : seulement dans la fiche du héros (opts.detail) ; en combat c'était trop lourd (contrôle Guardian n°69)
-  // en combat : ni grain ni reflets du ciel (envMap) — trop lourds sur les machines sans carte graphique (contrôles n°69-70)
-  if (!opts.detail) a.root.traverse(o => { if (o.isMesh) for (const mt of Array.isArray(o.material) ? o.material : [o.material]) if (mt && mt.userData) { mt.userData.detail = false; if (mt.envMap) { mt.envMap = null; mt.needsUpdate = true; } } });
+  // grain / rayures seulement dans la fiche (opts.detail) : inutile en combat où les héros sont petits
+  if (!opts.detail) a.root.traverse(o => { if (o.isMesh) for (const mt of Array.isArray(o.material) ? o.material : [o.material]) if (mt && mt.userData) mt.userData.detail = false; });
   for (const mat of a.mats) if (mat.isMeshStandardMaterial && !mat.transparent) addRim(mat, rimCol, rimK, 3.2);
   const LKo = lookOf(m);
   if (opts.outline !== false && !(LKo && LKo.noOutline)) addOutline(a.root, m.proc ? 0.035 : 0.03);

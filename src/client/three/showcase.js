@@ -280,6 +280,8 @@ export function portrait(id) {
   if (PORTRAITS.has(id)) return Promise.resolve(PORTRAITS.get(id));
   if (waiting.has(id)) return waiting.get(id);
   const p = (queue = queue.then(async () => {
+    // jamais pendant un combat (sur les machines lentes, ça figeait le combat : contrôles Guardian n°69-70)
+    while (typeof document !== 'undefined' && document.body.classList.contains('in-battle')) await new Promise(r => setTimeout(r, 1500));
     const { cv, r, scene, cam } = portraitRig();
     await preload([id]);
     const a = await makeHero(id, { star: 1 });

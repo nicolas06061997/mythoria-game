@@ -445,6 +445,7 @@ body::after { /* brume colorée qui dérive */
 /* ---------- Barres de vie sur les Sanctuaires ---------- */
 .b-top { justify-content: center; }
 .b-top .b-quit { position: absolute; right: 10px; top: calc(8px + var(--safe-t)); }
+.hero-mode .b-top { padding-right: 52px; } /* Mode Héros : le bouton × ne recouvre plus le compteur de vagues */
 .tplate { position: absolute; left: 0; top: 0; width: 158px; pointer-events: none; will-change: transform; z-index: 2; filter: drop-shadow(0 3px 6px rgba(0, 0, 0, .55)); }
 .tp-head { display: flex; align-items: center; gap: 5px; margin: 0 4px 3px; font-size: 11.5px; line-height: 1; text-shadow: 0 1px 3px #000, 0 0 6px rgba(0, 0, 0, .8); }
 .tp-tag { flex: none; font-size: 9px; font-weight: 900; padding: 2px 5px; border-radius: 5px; color: #fff; letter-spacing: .3px; }

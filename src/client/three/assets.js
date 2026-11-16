@@ -517,6 +517,8 @@ export async function makeHero(id, opts = {}) {
   const c = HERO[id], m = opts.skin && SKINS[opts.skin] ? { ...c.model, glow: SKINS[opts.skin].glow } : c.model;
   const rimCol = m.glow || (m.proc ? '#ffe0b0' : '#cfe0ff');
   const rimK = m.glow ? 0.32 : 0.24;
+  // grain / rayures : seulement dans la fiche du héros (opts.detail) ; en combat c'était trop lourd (contrôle Guardian n°69)
+  if (!opts.detail) a.root.traverse(o => { if (o.isMesh) for (const mt of Array.isArray(o.material) ? o.material : [o.material]) if (mt && mt.userData) mt.userData.detail = false; });
   for (const mat of a.mats) if (mat.isMeshStandardMaterial && !mat.transparent) addRim(mat, rimCol, rimK, 3.2);
   const LKo = lookOf(m);
   if (opts.outline !== false && !(LKo && LKo.noOutline)) addOutline(a.root, m.proc ? 0.035 : 0.03);

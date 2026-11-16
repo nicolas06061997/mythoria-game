@@ -46,7 +46,7 @@ export const HEROES = [
   // ----- Ordre de l'Aube -----
   { id: 'ecuyer', name: 'Aldric', title: "Écuyer de l'Aube", fac: 'aube', rar: 'commun', type: 'unit',
     hp: 560, dmg: 85, hit: 1.1, spd: 1.2, range: 0.8, tgt: 'ground', count: 1, r: 0.45,
-    model: { glb: 'Knight', show: ['1H_Sword', 'Round_Shield'], scale: 0.92, atk: ['1H_Melee_Attack_Slice_Diagonal', '1H_Melee_Attack_Chop'] },
+    model: { glb: 'Knight', show: ['1H_Sword', 'Round_Shield'], scale: 0.92, look: { noOutline: true, env: 1.3, rough: .6, face: { mesh: 'Knight_Head', eyeCell: [2, 0], hairCell: [1, 0], eyeScale: 1.45, iris: '#5e3518', iris2: '#a8743a' }, recolor: [[[3, 0], '#c4d6c2', 1.18], [[4, 0], '#9caf9d', 1.1], [[7, 0], '#a9baa9', 1.05], [[7, 1], '#86978a'], [[5, 0], '#8a5a34', .95], [[6, 0], '#6a3e22'], [[3, 1], '#d6dde0'], [[2, 0], '#5a3520', 1.6], [[1, 0], '#e2d39e', .78]], metal: [[[3, 0], .2, .32], [[4, 0], .2, .36], [[7, 0], .28, .3], [[7, 1], .25, .38], [[3, 1], .5, .2], [[2, 1], .4, .35], [[4, 1], .6, .28]], mesh: { Round_Shield: { recolor: [[[3, 1], '#7a4e2e', .95], [[7, 0], '#8c9b8d']], metal: [[[3, 1], .05, .7], [[7, 0], .55, .3]] } } }, atk: ['1H_Melee_Attack_Slice_Diagonal', '1H_Melee_Attack_Chop'] },
     lore: 'Fils de forgeron, Aldric a juré de protéger le Royaume d’Aurore avant même de savoir tenir une épée.',
     ability: ['Courage', 'Rien de spécial : solide, fiable et pas cher à fusionner.'] },
   { id: 'frere', name: 'Godric', title: 'Frère-Bouclier', fac: 'aube', rar: 'rare', type: 'unit',

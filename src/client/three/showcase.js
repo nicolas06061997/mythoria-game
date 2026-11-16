@@ -41,12 +41,52 @@ export class Showcase {
       if (cosmic) { top.visible = rimR.visible = under.visible = this.ring.visible = false; this.rockIsle(); } else this.altar(T);
       if (!cosmic) this.backdrop(T, world);
     }
-    this.glow = glowSprite(0xffffff, 3); this.glow.position.y = 0.9; this.glow.material.opacity = 0.25; this.scene.add(this.glow);
+    if (mode === 'hero') this.heroPedestal(top, rimR);
+    this.glow = glowSprite(0xffffff, 3); this.glow.position.y = 0.9; this.glow.material.opacity = mode === 'hero' ? 0.1 : 0.25; this.scene.add(this.glow);
     this.resize();
     this.setHero(heroId, star);
     this.bindDrag();
     this.loop = this.loop.bind(this); this.last = 0; this.raf = requestAnimationFrame(this.loop);
     this.ro = new ResizeObserver(() => this.resize()); this.ro.observe(canvas);
+  }
+  // Fiche d'un héros : socle d'herbe (brins en 3D), anneau blanc lumineux, lucioles (d'après une image de l'utilisateur)
+  heroPedestal(top, rimR) {
+    top.material.color.set('#3f8f3c'); rimR.material.color.set('#4f9a44');
+    this.ring.geometry.dispose(); this.ring.geometry = new THREE.RingGeometry(1.08, 1.2, 64);
+    Object.assign(this.ring.material, { opacity: 1, toneMapped: false, blending: THREE.AdditiveBlending });
+    this.ringGlow = new THREE.Mesh(new THREE.RingGeometry(0.98, 1.32, 64), new THREE.MeshBasicMaterial({ color: '#d8ffd0', transparent: true, opacity: 0.28, toneMapped: false, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+    this.ringGlow.rotation.x = -Math.PI / 2; this.ringGlow.position.y = 0.021; this.base.add(this.ringGlow);
+    // brins d'herbe
+    const N = 700, blade = new THREE.ConeGeometry(0.022, 0.1, 3); blade.translate(0, 0.05, 0);
+    const grass = new THREE.InstancedMesh(blade, new THREE.MeshStandardMaterial({ roughness: 0.9, flatShading: true }), N);
+    const M = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), sc = new THREE.Vector3(), col = new THREE.Color();
+    let k = 0;
+    for (let i = 0; k < N && i < N * 4; i++) {
+      const r = Math.sqrt(Math.random()) * 1.45, a = Math.random() * Math.PI * 2;
+      if (r < 0.32 || (r > 1.02 && r < 1.26)) continue; // pas sous les pieds ni sur l'anneau
+      const clump = Math.random() < 0.35 ? 1.6 : 1;
+      v.set(Math.cos(a) * r, 0, Math.sin(a) * r);
+      q.setFromEuler(e.set((Math.random() - 0.5) * 0.7, Math.random() * 6.3, (Math.random() - 0.5) * 0.7));
+      const hh = (0.45 + Math.random() * 0.8) * clump; sc.set(1, hh, 1);
+      grass.setMatrixAt(k, M.compose(v, q, sc));
+      grass.setColorAt(k, col.setHSL(0.26 + Math.random() * 0.07, 0.5 + Math.random() * 0.2, 0.22 + Math.random() * 0.18));
+      k++;
+    }
+    grass.count = k; grass.receiveShadow = true; this.base.add(grass);
+    // lucioles
+    const F = 30, fp = new Float32Array(F * 3), seed = [];
+    for (let i = 0; i < F; i++) { seed.push([Math.random() * 6.3, 0.75 + Math.random() * 0.75, 0.25 + Math.random() * 1.5, Math.random() * 6.3]); }
+    const fg = new THREE.BufferGeometry(); fg.setAttribute('position', new THREE.BufferAttribute(fp, 3));
+    const fc = document.createElement('canvas'); fc.width = fc.height = 32; const x = fc.getContext('2d'), gr = x.createRadialGradient(16, 16, 0, 16, 16, 16);
+    gr.addColorStop(0, 'rgba(255,255,230,1)'); gr.addColorStop(0.3, 'rgba(220,255,140,.8)'); gr.addColorStop(1, 'rgba(160,255,90,0)'); x.fillStyle = gr; x.fillRect(0, 0, 32, 32);
+    const flies = new THREE.Points(fg, new THREE.PointsMaterial({ size: 0.2, map: new THREE.CanvasTexture(fc), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }));
+    this.scene.add(flies);
+    (this.ups = this.ups || []).push((dt, t) => {
+      for (let i = 0; i < F; i++) { const [a, r, y, ph] = seed[i], aa = a + t * 0.12 * (i % 2 ? 1 : -1); fp[i * 3] = Math.cos(aa) * r * 1.2; fp[i * 3 + 1] = y + Math.sin(t * 0.8 + ph) * 0.25; fp[i * 3 + 2] = Math.sin(aa) * r * 0.9; }
+      fg.attributes.position.needsUpdate = true;
+      flies.material.opacity = 0.75 + Math.sin(t * 3) * 0.2;
+      this.ringGlow.material.opacity = 0.22 + Math.sin(t * 2) * 0.08;
+    });
   }
   // Accueil cosmique : île de roche fendue (dalles irrégulières + pointes dessous), lumière cyan
   rockIsle() {
@@ -162,7 +202,7 @@ export class Showcase {
     this.actor = a; a.play('idle'); a.back = 'idle'; this.base.add(a.holder); a.holder.add(blobShadow(1.4));
     const c = HERO[id];
     if (this.mode !== 'home') { const R = new THREE.Color(RARITIES[c.rar].color); this.sky.material.uniforms.top.value.copy(R.clone().multiplyScalar(0.45)); }
-    this.ring.material.color.set(RARITIES[c.rar].color);
+    this.ring.material.color.set(this.mode === 'hero' ? new THREE.Color('#ffffff').lerp(new THREE.Color(RARITIES[c.rar].color), 0.25).multiplyScalar(1.6) : RARITIES[c.rar].color);
     this.glow.material.color.set(c.model.glow || RARITIES[c.rar].color);
     this.frame();
   }

@@ -269,7 +269,7 @@ function smoothHair(g, F) {
   const out = new THREE.BufferGeometry(); out.setAttribute('position', new THREE.BufferAttribute(P2, 3)); out.setIndex(tris); out.computeVertexNormals();
   const NN = out.attributes.normal; out.computeBoundingBox(); const bb = out.boundingBox, sz = Math.max(bb.max.x - bb.min.x, bb.max.y - bb.min.y, bb.max.z - bb.min.z) * (F.hairPuff ?? 0.025);
   for (let i = 0; i < N; i++) if (!fixed[i]) { P2[i * 3] += NN.getX(i) * sz; P2[i * 3 + 1] += NN.getY(i) * sz; P2[i * 3 + 2] += NN.getZ(i) * sz; }
-  for (const name of ['skinIndex', 'skinWeight']) { const a = g.attributes[name]; if (!a) continue; const arr = new (a.array.constructor)(N * a.itemSize); for (let i = 0; i < N; i++) for (let c = 0; c < a.itemSize; c++) arr[i * a.itemSize + c] = a.array[src[i] * a.itemSize + c]; out.setAttribute(name, new THREE.BufferAttribute(arr, a.itemSize)); }
+  for (const name of ['skinIndex', 'skinWeight', 'uv']) { const a = g.attributes[name]; if (!a) continue; const arr = new (a.array.constructor)(N * a.itemSize); for (let i = 0; i < N; i++) for (let c = 0; c < a.itemSize; c++) arr[i * a.itemSize + c] = a.array[src[i] * a.itemSize + c]; out.setAttribute(name, new THREE.BufferAttribute(arr, a.itemSize)); }
   out.computeVertexNormals();
   return out.toNonIndexed ? out : out;
 }
@@ -335,7 +335,7 @@ function splitFace(geo, img, F) {
     cen.divideScalar(p.count);
     const uv = new Float32Array(p.count * 2);
     for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i).sub(cen); uv[i * 2] = (Math.atan2(v.x, v.z) / (Math.PI * 2) + .5) * 3; uv[i * 2 + 1] = 1 - (v.y + cen.y - y0) / (y1 - y0 || 1); }
-    g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+    g.setAttribute('aHair', new THREE.BufferAttribute(uv, 2)); // coordonnées « autour de la tête » pour les mèches ; uv = palette d'origine
     res.hair = g;
   }
   res.base = sub(groups.base);
@@ -387,14 +387,16 @@ function shellMat(F, k, len, tex) {
   m.customProgramCacheKey = () => 'hairshell';
   return m;
 }
-function hairMat(tex) { // cheveux lisses : dégradé racines → pointes (texture), mèches larges en relief, reflet satiné
-  const m = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.38, metalness: 0, envMap: envTex(), envMapIntensity: 0.18 });
+function hairMat(base) { // cheveux lisses : MÊME couleur que les cheveux d'origine (palette, teinte, lueur du héros) + mèches en relief + reflet satiné
+  const m = base.clone(); m.envMap = envTex(); m.envMapIntensity = Math.min(m.envMapIntensity ?? 1, 0.3);
   m.onBeforeCompile = sh => {
-    sh.fragmentShader = sh.fragmentShader.replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
-       float gr = sin(vMapUv.x * 95.0 + sin(vMapUv.y * 7.0) * 1.6) * 0.5 + sin(vMapUv.x * 230.0 + vMapUv.y * 3.0) * 0.18;
+    sh.vertexShader = 'attribute vec2 aHair; varying vec2 vHair;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vHair = aHair;');
+    sh.fragmentShader = 'varying vec2 vHair;\n' + sh.fragmentShader.replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\n roughnessFactor = 0.4;').replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\n metalnessFactor = 0.0;').replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+       float gr = sin(vHair.x * 95.0 + sin(vHair.y * 7.0) * 1.6) * 0.5 + sin(vHair.x * 230.0 + vHair.y * 3.0) * 0.18;
        normal = normalize(normal + vec3(gr * 0.12, 0.0, 0.0));`).replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
        float hb = exp(-pow((normal.y - 0.38 + gr * 0.05) * 4.2, 2.0));
-       totalEmissiveRadiance += diffuseColor.rgb * hb * 0.42;`);
+       totalEmissiveRadiance += diffuseColor.rgb * hb * 0.35;
+       diffuseColor.rgb *= mix(1.06, 0.8, clamp(vHair.y, 0.0, 1.0));`);
   };
   m.customProgramCacheKey = () => 'hairsmooth';
   return m;
@@ -417,7 +419,7 @@ function applyFace(a, F, opts = {}) {
     if (S.hair) {
       const tex = faceTex('hair', F);
       if (!S.hairLen) { S.hair.computeBoundingBox(); const b = S.hair.boundingBox; S.hairLen = Math.max(b.max.x - b.min.x, b.max.y - b.min.y, b.max.z - b.min.z); }
-      const sm = new THREE.SkinnedMesh(S.hair, hairMat(tex)); sm.bind(o.skeleton, o.bindMatrix);
+      const sm = new THREE.SkinnedMesh(S.hair, hairMat(mat)); sm.bind(o.skeleton, o.bindMatrix);
       sm.frustumCulled = false; sm.castShadow = true; o.parent.add(sm); sm.position.copy(o.position); sm.quaternion.copy(o.quaternion); sm.scale.copy(o.scale);
     }
   }

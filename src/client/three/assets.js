@@ -159,7 +159,7 @@ function lookTextures(key, base, look) {
   if (LOOK_CACHE.has(key)) return LOOK_CACHE.get(key);
   const img = base.image, W = img.width, H = img.height, cw = W / 8, ch = H / 4;
   const c = document.createElement('canvas'); c.width = W; c.height = H;
-  const g = c.getContext('2d'); g.drawImage(img, 0, 0);
+  const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0);
   const d = g.getImageData(0, 0, W, H), px = d.data;
   const m = document.createElement('canvas'); m.width = W; m.height = H;
   const mg = m.getContext('2d'); mg.fillStyle = 'rgb(0,' + Math.round((look.rough ?? .62) * 255) + ',0)'; mg.fillRect(0, 0, W, H);
@@ -181,7 +181,7 @@ function lookTextures(key, base, look) {
 const AUTO_METAL = new Map();
 function autoMetal(img) { // cases grises peu saturées de la palette = métal
   const k = img.src || img; if (AUTO_METAL.has(k)) return AUTO_METAL.get(k);
-  const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height; const g = cv.getContext('2d'); g.drawImage(img, 0, 0);
+  const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height; const g = cv.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0);
   const out = [], cw = img.width / 8, ch = img.height / 4;
   for (let cy = 0; cy < 4; cy++) for (let cx = 0; cx < 8; cx++) {
     if (cx === 2 && cy === 0) continue; // yeux
@@ -283,7 +283,7 @@ const SPLIT_CACHE = new Map();
 function splitFace(geo, img, F) {
   if (SPLIT_CACHE.has(geo.uuid)) return SPLIT_CACHE.get(geo.uuid);
   const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height;
-  const cg = cv.getContext('2d'); cg.drawImage(img, 0, 0); const px = cg.getImageData(0, 0, img.width, img.height).data;
+  const cg = cv.getContext('2d', { willReadFrequently: true }); cg.drawImage(img, 0, 0); const px = cg.getImageData(0, 0, img.width, img.height).data;
   const P = geo.attributes.position, U = geo.attributes.uv, N = geo.attributes.normal, idx = geo.index;
   const tri = idx ? idx.count / 3 : P.count / 3, vi = (t, k) => idx ? idx.getX(t * 3 + k) : t * 3 + k;
   const cellOf = v => { const x = Math.min(img.width - 1, Math.max(0, Math.floor(U.getX(v) * img.width))), y = Math.min(img.height - 1, Math.max(0, Math.floor(U.getY(v) * img.height))); return [Math.floor(x / (img.width / 8)), Math.floor(y / (img.height / 4)), x, y]; };

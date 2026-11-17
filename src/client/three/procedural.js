@@ -46,49 +46,53 @@ class ProcActor {
 // ---------------- Dragon ----------------
 function dragon({ color = '#ff7a3d', belly = '#ffd27a', horns = false }) {
   const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
+  // dragon LISSE (17/11, demande de l'utilisateur) : éclairage lisse + formes à beaucoup de faces + articulations arrondies
+  const flat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, flatShading: false, roughness: 0.55, metalness: 0, ...o });
   const base = new THREE.Color(color);
   const M = flat(color), B = flat(belly), D = flat(base.clone().multiplyScalar(0.5)), Hn = flat('#f1e6c8'), Cl = flat('#2a2030');
   const W = flat(base.clone().lerp(new THREE.Color('#2a0a10'), 0.35), { side: THREE.DoubleSide });
   body.position.y = 1.25;
   // torse
-  const torso = add(body, new THREE.SphereGeometry(0.5, 14, 10), M); torso.scale.set(0.82, 0.74, 1.3);
-  const chest = add(body, new THREE.SphereGeometry(0.42, 12, 8), M, 0, 0.08, 0.38); chest.scale.set(0.85, 0.85, 0.9);
-  const bel = add(body, new THREE.SphereGeometry(0.4, 12, 8), B, 0, -0.16, 0.12); bel.scale.set(0.72, 0.6, 1.25);
+  const torso = add(body, new THREE.SphereGeometry(0.5, 22, 16), M); torso.scale.set(0.82, 0.74, 1.3);
+  const chest = add(body, new THREE.SphereGeometry(0.42, 22, 16), M, 0, 0.08, 0.38); chest.scale.set(0.85, 0.85, 0.9);
+  const bel = add(body, new THREE.SphereGeometry(0.4, 22, 16), B, 0, -0.16, 0.12); bel.scale.set(0.72, 0.6, 1.25);
   // cou articulé (3 segments)
   const neck = []; let par = body;
   for (let i = 0; i < 3; i++) {
     const n = new THREE.Group(); n.position.set(0, i ? 0.2 : 0.22, i ? 0.12 : 0.55); par.add(n);
-    const seg = add(n, new THREE.CylinderGeometry(0.14 - i * 0.015, 0.2 - i * 0.02, 0.32, 8), M, 0, 0.1, 0.05); seg.rotation.x = 0.55;
-    add(n, new THREE.SphereGeometry(0.12 - i * 0.012, 8, 6), B, 0, 0.06, 0.13).scale.set(0.9, 0.7, 0.6);
-    add(n, new THREE.ConeGeometry(0.05, 0.14, 4), horns ? flat('#ffd166') : D, 0, 0.22, -0.03).rotation.x = -0.5;
+    const seg = add(n, new THREE.CylinderGeometry(0.14 - i * 0.015, 0.2 - i * 0.02, 0.32, 16), M, 0, 0.1, 0.05); seg.rotation.x = 0.55;
+    add(n, new THREE.SphereGeometry(0.15 - i * 0.015, 22, 16), M, 0, 0.02, 0).scale.set(1, 0.8, 1); // jointure lisse
+    add(n, new THREE.SphereGeometry(0.12 - i * 0.012, 22, 16), B, 0, 0.06, 0.13).scale.set(0.9, 0.7, 0.6);
+    add(n, new THREE.ConeGeometry(0.05, 0.14, 14), horns ? flat('#ffd166') : D, 0, 0.22, -0.03).rotation.x = -0.5;
     neck.push(n); par = n;
   }
   // tête
   const head = new THREE.Group(); head.position.set(0, 0.28, 0.12); par.add(head);
-  const skull = add(head, new THREE.SphereGeometry(0.2, 10, 8), M); skull.scale.set(1, 0.85, 1.15);
-  const snout = add(head, new THREE.CylinderGeometry(0.09, 0.17, 0.42, 8), M, 0, -0.02, 0.3); snout.rotation.x = Math.PI / 2; snout.scale.x = 1.15;
+  const skull = add(head, new THREE.SphereGeometry(0.2, 22, 16), M); skull.scale.set(1, 0.85, 1.15);
+  const snout = add(head, new THREE.CylinderGeometry(0.09, 0.17, 0.42, 16), M, 0, -0.02, 0.3); snout.rotation.x = Math.PI / 2; snout.scale.x = 1.15;
   for (const sx of [-1, 1]) {
-    add(head, new THREE.SphereGeometry(0.045, 6, 5), glowMat('#ffe066', { emissiveIntensity: 2 }), sx * 0.12, 0.07, 0.14);
-    const brow = add(head, new THREE.BoxGeometry(0.12, 0.04, 0.12), D, sx * 0.11, 0.13, 0.13); brow.rotation.z = -sx * 0.4;
-    const h1 = add(head, new THREE.ConeGeometry(0.055, horns ? 0.62 : 0.34, 6), Hn, sx * 0.12, 0.16, -0.12); h1.rotation.x = -1.15; h1.rotation.z = -sx * 0.35;
-    if (horns) { const h2 = add(head, new THREE.ConeGeometry(0.035, 0.3, 5), Hn, sx * 0.19, 0.04, -0.06); h2.rotation.x = -1.3; h2.rotation.z = -sx * 0.9; }
-    add(head, new THREE.ConeGeometry(0.02, 0.07, 4), flat('#fff'), sx * 0.06, -0.11, 0.42).rotation.x = Math.PI;
-    add(head, new THREE.SphereGeometry(0.02, 4, 3), Cl, sx * 0.05, 0.02, 0.51);
+    add(head, new THREE.SphereGeometry(0.045, 12, 8), glowMat('#ffe066', { emissiveIntensity: 2, flatShading: false }), sx * 0.12, 0.07, 0.14);
+    const brow = add(head, new THREE.SphereGeometry(0.07, 20, 12), D, sx * 0.11, 0.12, 0.13); brow.scale.set(1.2, 0.4, 1); brow.rotation.z = -sx * 0.4;
+    const h1 = add(head, new THREE.ConeGeometry(0.055, horns ? 0.62 : 0.34, 14), Hn, sx * 0.12, 0.16, -0.12); h1.rotation.x = -1.15; h1.rotation.z = -sx * 0.35;
+    if (horns) { const h2 = add(head, new THREE.ConeGeometry(0.035, 0.3, 14), Hn, sx * 0.19, 0.04, -0.06); h2.rotation.x = -1.3; h2.rotation.z = -sx * 0.9; }
+    add(head, new THREE.ConeGeometry(0.02, 0.07, 8), flat('#fff'), sx * 0.06, -0.11, 0.42).rotation.x = Math.PI;
+    add(head, new THREE.SphereGeometry(0.02, 8, 6), Cl, sx * 0.05, 0.02, 0.51);
   }
+  add(head, new THREE.SphereGeometry(0.1, 24, 16), M, 0, -0.02, 0.5).scale.set(1.15, 0.9, 0.8); // bout du museau arrondi
   const jaw = new THREE.Group(); jaw.position.set(0, -0.1, 0.06); head.add(jaw);
-  const jm = add(jaw, new THREE.CylinderGeometry(0.06, 0.13, 0.4, 8), B, 0, 0, 0.22); jm.rotation.x = Math.PI / 2; jm.scale.y = 1;
+  const jm = add(jaw, new THREE.CylinderGeometry(0.06, 0.13, 0.4, 16), B, 0, 0, 0.22); jm.rotation.x = Math.PI / 2; jm.scale.y = 1;
   const fireGlow = glowSprite(new THREE.Color(belly), 0.01); head.add(fireGlow); fireGlow.position.set(0, -0.05, 0.7);
   // crête dorsale
-  for (let i = 0; i < 6; i++) { const sp = add(body, new THREE.ConeGeometry(0.06, 0.24 - i * 0.02, 4), horns ? flat('#ffd166') : D, 0, 0.38 - i * 0.025, 0.35 - i * 0.2); sp.rotation.x = -0.5; }
+  for (let i = 0; i < 6; i++) { const sp = add(body, new THREE.ConeGeometry(0.06, 0.24 - i * 0.02, 14), horns ? flat('#ffd166') : D, 0, 0.38 - i * 0.025, 0.35 - i * 0.2); sp.rotation.x = -0.5; }
   // ailes (bras + 3 doigts + membrane), en 2 parties pour un battement souple
   const wings = [];
   for (const sx of [-1, 1]) {
     const sh = new THREE.Group(); sh.position.set(sx * 0.3, 0.25, 0.15); body.add(sh);
-    const arm = add(sh, new THREE.CylinderGeometry(0.045, 0.06, 0.75, 6), D, sx * 0.36, 0.1, 0); arm.rotation.z = sx * 1.25;
+    const arm = add(sh, new THREE.CylinderGeometry(0.045, 0.06, 0.75, 16), D, sx * 0.36, 0.1, 0); arm.rotation.z = sx * 1.25;
     const tip = new THREE.Group(); tip.position.set(sx * 0.7, 0.2, 0); sh.add(tip);
     const fingers = [[1.1, 0.25, 0.05], [1.0, -0.05, -0.45], [0.7, -0.15, -0.8]];
     for (const [len, dy, dz] of fingers) {
-      const f = add(tip, new THREE.CylinderGeometry(0.02, 0.035, Math.hypot(len, dy, dz), 5), D, sx * len / 2, dy / 2, dz / 2);
+      const f = add(tip, new THREE.CylinderGeometry(0.02, 0.035, Math.hypot(len, dy, dz), 16), D, sx * len / 2, dy / 2, dz / 2);
       f.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(sx * len, dy, dz).normalize());
     }
     const mk = (pts, idx) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3)); g.setIndex(idx); g.computeVertexNormals(); const m = new THREE.Mesh(g, W); m.castShadow = true; return m; };
@@ -101,19 +105,20 @@ function dragon({ color = '#ff7a3d', belly = '#ffd27a', horns = false }) {
   const tail = []; par = body;
   for (let i = 0; i < 7; i++) {
     const sg = new THREE.Group(); sg.position.set(0, i ? 0 : -0.05, i ? -0.24 : -0.6); par.add(sg);
-    add(sg, new THREE.CylinderGeometry(Math.max(0.03, 0.15 - i * 0.02), Math.max(0.04, 0.17 - i * 0.02), 0.28, 7), M, 0, 0, -0.12).rotation.x = Math.PI / 2;
-    if (i % 2 === 0) add(sg, new THREE.ConeGeometry(0.035, 0.12, 4), D, 0, 0.12 - i * 0.012, -0.1).rotation.x = -0.4;
+    add(sg, new THREE.CylinderGeometry(Math.max(0.03, 0.15 - i * 0.02), Math.max(0.04, 0.17 - i * 0.02), 0.28, 16), M, 0, 0, -0.12).rotation.x = Math.PI / 2;
+    add(sg, new THREE.SphereGeometry(Math.max(0.04, 0.17 - i * 0.02), 24, 16), M, 0, 0, 0); // jointure lisse
+    if (i % 2 === 0) add(sg, new THREE.ConeGeometry(0.035, 0.12, 14), D, 0, 0.12 - i * 0.012, -0.1).rotation.x = -0.4;
     tail.push(sg); par = sg;
   }
-  const spade = add(par, new THREE.OctahedronGeometry(0.14, 0), D, 0, 0, -0.32); spade.scale.set(1.3, 0.3, 1.4);
+  const spade = add(par, new THREE.SphereGeometry(0.14, 24, 16), D, 0, 0, -0.32); spade.scale.set(1.3, 0.3, 1.4);
   // pattes (cuisse + jambe + griffes)
   const legs = [];
   for (const [x, z, fr] of [[-0.24, 0.32, 1], [0.24, 0.32, 1], [-0.27, -0.28, 0], [0.27, -0.28, 0]]) {
     const th = new THREE.Group(); th.position.set(x, -0.25, z); body.add(th);
-    add(th, new THREE.SphereGeometry(fr ? 0.11 : 0.15, 7, 6), M, 0, 0, 0).scale.y = 1.3;
+    add(th, new THREE.SphereGeometry(fr ? 0.11 : 0.15, 22, 16), M, 0, 0, 0).scale.y = 1.3;
     const shin = new THREE.Group(); shin.position.y = -0.2; th.add(shin);
-    add(shin, new THREE.CylinderGeometry(0.05, 0.07, 0.3, 6), D, 0, -0.12, 0);
-    for (const c of [-1, 0, 1]) { const cl = add(shin, new THREE.ConeGeometry(0.025, 0.1, 4), Cl, c * 0.04, -0.28, 0.06); cl.rotation.x = 1.4; }
+    add(shin, new THREE.CylinderGeometry(0.05, 0.07, 0.3, 16), D, 0, -0.12, 0);
+    for (const c of [-1, 0, 1]) { const cl = add(shin, new THREE.ConeGeometry(0.025, 0.1, 8), Cl, c * 0.04, -0.28, 0.06); cl.rotation.x = 1.4; }
     legs.push([th, shin, fr]);
   }
 

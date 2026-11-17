@@ -266,7 +266,7 @@ function portraitRig() {
 // Les portraits ne changent que quand l'apparence des héros change : on les garde tant que PORTRAIT_V ne bouge pas
 // (avant : redessinés au chargement à chaque nouvelle version du jeu, plusieurs fois par jour → chargement bien plus long).
 // ⚠️ Changer PORTRAIT_V à chaque modification visible des héros (modèles, couleurs, yeux, cheveux, apparences).
-export const PORTRAIT_V = '2026-11-16.8';
+export const PORTRAIT_V = '2026-11-17.dragon';
 export async function warmPortraits(ids, version, onProgress) {
   let cache = null, name = 'myt-portraits-' + PORTRAIT_V;
   try { cache = await caches.open(name); (await caches.keys()).filter(k => k.startsWith('myt-portraits-') && k !== name).forEach(k => caches.delete(k)); } catch (e) {}

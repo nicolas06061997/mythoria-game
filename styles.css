@@ -975,3 +975,16 @@ body::after { background: radial-gradient(60% 22% at 30% 16%, rgba(80, 255, 190,
   body:has(#inst.on) .screen { padding-bottom: 0; }
 }
 @media (max-height: 620px) and (max-width: 520px) { #inst { top: calc(var(--safe-t, 0px) + 128px); } } /* petit téléphone droit : sous le titre du monde */
+
+/* Tutoriel guidé du premier combat (D-20261116-3) : bulle de Vael + flèche dorée */
+.tuto { position: absolute; inset: 0; pointer-events: none; z-index: 40; }
+.tu-box { position: absolute; left: 50%; top: calc(var(--safe-t, 0px) + 64px); transform: translateX(-50%); width: min(92%, 380px); pointer-events: auto; padding: 10px 14px 10px; border-radius: 16px; background: linear-gradient(#1f2f78f2, #0f1850f2); border: 1px solid var(--or, #e8c76a); box-shadow: 0 8px 24px rgba(0, 0, 0, .55), 0 0 16px rgba(127, 233, 255, .25); color: #f3f0ff; }
+.tu-box.pop { animation: pop .35s; }
+.tu-who { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+.tu-who b { font-family: var(--deco); color: var(--gold, #ffd36a); font-size: 16px; } .tu-who small { font-size: 11px; opacity: .75; font-weight: 800; }
+.tu-box p { margin: 0; font-size: 14px; line-height: 1.35; font-weight: 700; }
+.tu-btns { display: flex; justify-content: flex-end; gap: 6px; margin-top: 8px; }
+.tu-skip { font-size: 12px; font-weight: 800; padding: 5px 10px; border-radius: 999px; background: rgba(255, 255, 255, .1); color: #f3f0ff; }
+.tu-arrow { position: absolute; left: 0; top: 0; width: 0; height: 0; will-change: transform; }
+.tu-arrow::before { content: ''; position: absolute; left: -14px; top: -46px; width: 28px; height: 34px; background: linear-gradient(#fff2b0, #f0b432); clip-path: polygon(30% 0, 70% 0, 70% 55%, 100% 55%, 50% 100%, 0 55%, 30% 55%); filter: drop-shadow(0 0 8px rgba(255, 210, 90, .9)); animation: tuBob .8s ease-in-out infinite; }
+@keyframes tuBob { 50% { transform: translateY(-10px); } }

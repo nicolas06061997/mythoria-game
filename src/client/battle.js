@@ -6,6 +6,7 @@ import { BattleView } from './three/battleview.js';
 import { h, toast, confirmBox } from './ui/dom.js';
 import { icon } from './ui/icons.js';
 import { sfx } from './audio.js';
+import { Tuto } from './tuto.js';
 
 // ?speed=4 dans l'adresse accélère le combat (sert aux tests automatiques).
 const SPEED = Math.min(8, Math.max(1, Number(new URLSearchParams(location.search).get('speed')) || 1));
@@ -26,6 +27,7 @@ export class Battle {
     this.view = new BattleView(this.cv, this.ovc, opts.world.key, this.me);
     this.view.skins = opts.skins || {};
     window.__battle = this;
+    if (opts.tuto) { this.tuto = new Tuto(this); this.elHint.remove(); this.elHint = h('div', { class: 'b-hint off' }); } // tutoriel guidé (D-20261116-3)
     this.start();
   }
 
@@ -90,6 +92,7 @@ export class Battle {
     };
     setTimeout(tick, 200);
   }
+  rectOf(el) { const r = el.getBoundingClientRect(), o = this.el.getBoundingClientRect(); return { x: r.left - o.left + r.width / 2, y: r.top - o.top }; }
   banner(txt, cls = '') { this.elBanner.textContent = txt; this.elBanner.className = 'b-banner ' + (txt ? 'on ' + cls : ''); }
 
   // ---------- Commandes ----------
@@ -183,7 +186,7 @@ export class Battle {
       this.acc += dt * SPEED;
       while (this.acc >= DT) {
         const cmds = this.pending.splice(0);
-        const bc = this.bot && botThink(this.bot, this.s, DT); if (bc) cmds.push(bc);
+        const bc = this.bot && !(this.tuto && this.tuto.holdBot) && botThink(this.bot, this.s, DT); if (bc) cmds.push(bc);
         const b0 = this.bot0 && botThink(this.bot0, this.s, DT); if (b0) cmds.push(b0);
         step(this.s, cmds);
         this.view.ingest(this.s.ev, this.s);
@@ -193,6 +196,7 @@ export class Battle {
       }
     }
     this.view.sync(this.s, this.started ? this.acc / DT : 1, dt);
+    if (this.tuto) this.tuto.update(dt);
     this.hud();
     const ms = performance.now() - c0, pf = this.perf; pf.n++; pf.sum += ms; if (ms > pf.max) pf.max = ms; if (ms > 33) pf.slow++;
     if (this.bot0) { const np = this.view.r.info.programs.length; if (np > (pf.np || 0)) (pf.spikes = pf.spikes || []).push(Math.round(ms) + 'ms ' + this.view.r.info.programs.slice(pf.np || 0).map(q => q.name + ':' + (q.cacheKey || '').slice(0, 60)).join(' | ')); pf.np = np; }

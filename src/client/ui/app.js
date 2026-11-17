@@ -17,6 +17,7 @@ import { h, toast, sheet, confirmBox } from './dom.js';
 import { icon } from './icons.js';
 import { sfx, setSound, unlockAudio } from '../audio.js';
 import { playIntro } from '../intro.js';
+import { tutoDone } from '../tuto.js';
 
 let P, root, tab = 'battle', swapIn = null, filter = 'all', stage = null;
 export const APP = { version: '' };
@@ -189,7 +190,7 @@ function openModes() {
   const T = P.tourney || { round: 0 };
   const s = sheet(h('div', { class: 'modes' },
     h('h3', {}, 'Choisis ton combat'),
-    mode('sword', 'Arène', 'Contre l’IA ' + AI_LEVELS[lvl].name + ' dans « ' + w.name + ' » · trophées, or et coffres', () => { s.close(); story('arene', () => play('arena', lvl, w)); }),
+    mode('sword', 'Arène', 'Contre l’IA ' + AI_LEVELS[lvl].name + ' dans « ' + w.name + ' » · trophées, or et coffres', () => { s.close(); story('arene', () => (!tutoDone() && !(P.hist && P.hist.length)) ? play('training', 0, w, { tuto: true, title: 'Tutoriel' }) : play('arena', lvl, w)); }),
     mode('map', 'Campagne', 'L’histoire de Mythoria, 30 étapes et 6 boss · étape ' + Math.min(30, P.campaign.done + 1) + '/30', () => { s.close(); story('campagne', openCampaign); }),
     mode('shield', 'Survie · Défense du Royaume', 'Résiste aux vagues de monstres et de boss · record : vague ' + (P.records.survival || 0), () => { s.close(); story('survie', playSurvival); }),
     mode('star', 'Événement : ' + ev.name, ev.desc + ' · ' + eventWinsLeft(P) + ' récompenses restantes aujourd’hui', () => { s.close(); story('evenement', playEvent); }),
@@ -222,7 +223,7 @@ function play(modeId, level, world, extra = {}) {
   new Battle(holder, {
     deck: P.deck.slice(), spell: P.spell, oppDeck, oppSpell: botSpell(tro, seed), botLevel: level, world, myName: P.name, mode: modeId,
     levels: { ...P.levels }, oppLevels: extra.oppLevels || botLevels(oppDeck, tro), skins: { ...P.skins.eq },
-    simMode: extra.simMode, boss: extra.boss, waves: extra.waves, mods: extra.mods, bonus: extra.bonus, title: extra.title,
+    simMode: extra.simMode, tuto: extra.tuto, boss: extra.boss, waves: extra.waves, mods: extra.mods, bonus: extra.bonus, title: extra.title,
     onEnd: r => { holder.remove(); document.body.classList.remove('in-battle'); if (extra.onResult) r = extra.onResult(r) || r; showResult(r); },
   });
 }
@@ -442,6 +443,7 @@ function openSettings() {
     h('button', { class: 'btn ghost wide', onclick: install }, icon('install'), ' Installer le jeu sur l’écran d’accueil'),
     h('button', { class: 'btn ghost wide', onclick: share }, icon('share'), ' Partager le jeu'),
     h('button', { class: 'btn ghost wide', onclick: () => { s.close(); if (stage) { stage.dispose(); stage = null; } playIntro({ force: true }).then(() => render()); } }, icon('play'), ' Revoir l’introduction (Saison 1)'),
+    h('button', { class: 'btn ghost wide', onclick: () => { s.close(); play('training', 0, worldOf(P), { tuto: true, title: 'Tutoriel' }); } }, icon('play'), ' Revoir le tutoriel'),
     h('button', { class: 'btn ghost wide', onclick: openRoadmap }, icon('map'), ' Le plan du jeu'),
     h('button', { class: 'btn ghost wide', onclick: () => window.__checkUpdate && window.__checkUpdate(true) }, icon('summon'), ' Chercher une mise à jour'),
     h('button', { class: 'btn red wide', onclick: async () => { if (await confirmBox('Effacer toute ta progression sur ce téléphone ?', 'Tout effacer')) { resetProfile(); P = loadProfile(); s.close(); render(); toast('Progression effacée'); } } }, 'Recommencer à zéro'),

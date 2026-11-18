@@ -3,7 +3,7 @@ import { HERO, PLAYABLE, SPELL, SPELLS, RARITIES, FACTIONS, WORLDS, UNLOCKS, SPE
 import { AI_LEVELS } from '../../shared/ai.js';
 import { loadProfile, saveProfile, resetProfile, owned, ownedSpells, worldOf, botLevelFor, botDeck, botSpell, botLevels, applyResult, xpNeed, heroLevel, canUpgrade, CHESTS } from '../store.js';
 import { battleSVG, medalSVG, isleSVG, sparkSVG } from './art.js';
-import { modeIcon, modeScene, frameCorner } from './modeart.js';
+import { modeIcon } from './modeart.js';
 import { initProgress, chestRow, missionsButton, loginPopup, shopScreen, heroProgress, chestIcon } from './progress.js';
 import { initKingdom, kingdomScreen, leaveKingdom } from './kingdom.js';
 import { story } from './story.js';
@@ -191,39 +191,47 @@ function openModes() {
   const T = P.tourney || { round: 0 };
   let s;
   const go = fn => () => { s.close(); fn(); };
-  const arena = mode('arena', 'Arène', 'Contre l’IA ' + AI_LEVELS[lvl].name + ' dans « ' + w.name + ' »', go(() => story('arene', () => (!tutoDone() && !(P.hist && P.hist.length)) ? play('training', 0, w, { tuto: true, title: 'Tutoriel' }) : play('arena', lvl, w))),
-    h('div', { class: 'm-badges' }, h('span', {}, icon('trophy'), 'Trophées'), h('span', {}, icon('coin'), 'Or'), h('span', {}, chestIcon('or', 'xs'), 'Coffres')));
-  arena.classList.add('m-star');
-  const ev2 = mode('event', 'Événement : ' + ev.name, ev.desc + ' · ' + eventWinsLeft(P) + ' récompenses restantes aujourd’hui', go(() => story('evenement', playEvent)));
-  const bolts = h('div', { class: 'm-fx' }); for (let i = 0; i < 6; i++) bolts.append(h('i', { style: { left: (50 + i * 8) + '%', top: (10 + (i * 37 % 70)) + '%', animationDelay: -(i * .9) + 's' } }));
-  ev2.append(bolts, h('i', { class: 'm-flash' }));
   const list = h('div', { class: 'mf-list' },
-    arena,
-    mode('camp', 'Campagne', 'L’histoire de Mythoria, 30 étapes et 6 boss · étape ' + Math.min(30, P.campaign.done + 1) + '/30', go(() => story('campagne', openCampaign))),
-    mode('surv', 'Survie · Défense du Royaume', 'Résiste aux vagues de monstres et de boss · record : vague ' + (P.records.survival || 0), go(() => story('survie', playSurvival))),
-    ev2,
-    mode('hero', 'Mode Héros', 'Dirige toi-même un héros (joystick) contre des vagues de monstres · record : vague ' + (P.records.hero || 0), go(() => story('heros', pickHero))),
-    mode('tourney', 'Tournoi (contre l’IA)', '3 manches de plus en plus dures · manche ' + (T.round + 1) + '/3 · tournois gagnés : ' + (P.records.tournament || 0), go(() => story('tournoi', playTourney))),
-    h('div', { class: 'm-train' },
+    mcard('arena', 'Arène', 'Contre l’IA ' + AI_LEVELS[lvl].name + ' dans « ' + w.name + ' » · trophées, or et coffres', go(() => story('arene', () => (!tutoDone() && !(P.hist && P.hist.length)) ? play('training', 0, w, { tuto: true, title: 'Tutoriel' }) : play('arena', lvl, w)))),
+    mcard('camp', 'Campagne', 'L’histoire de Mythoria, 30 étapes et 6 boss · étape ' + Math.min(30, P.campaign.done + 1) + '/30', go(() => story('campagne', openCampaign))),
+    mcard('surv', 'Survie · Défense du Royaume', 'Résiste aux vagues de monstres et de boss · record : vague ' + (P.records.survival || 0), go(() => story('survie', playSurvival))),
+    mcard('event', 'Événement : ' + ev.name, ev.desc + ' · ' + eventWinsLeft(P) + ' récompenses restantes aujourd’hui', go(() => story('evenement', playEvent))),
+    mcard('hero', 'Mode Héros', 'Dirige toi-même un héros (joystick) contre des vagues de monstres · record : vague ' + (P.records.hero || 0), go(() => story('heros', pickHero))),
+    mcard('tourney', 'Tournoi (contre l’IA)', '3 manches de plus en plus dures · manche ' + (T.round + 1) + '/3 · tournois gagnés : ' + (P.records.tournament || 0), go(() => story('tournoi', playTourney))),
+    h('div', { class: 'mc-box mc-train' },
       h('div', { class: 'mt-head' }, svgEl('mt-ic', modeIcon('train')), h('div', {}, h('b', {}, 'Entraînement'), h('small', {}, 'Choisis le niveau de l’IA · sans trophées'))),
       h('div', { class: 'mt-pills' }, AI_LEVELS.map((L, i) => h('button', { class: 'pill-lvl' + (i === lvl ? ' on' : ''), onclick: () => { sfx('click'); s.close(); play('training', i, w); } }, (i + 1) + '. ' + L.name)))),
-    mode('lock', 'Duel en ligne · 2 contre 2', 'Contre de vrais joueurs. Jamais de faux joueurs.', null, h('span', { class: 'm-phase' }, 'Phase 3'), true));
-  const dockTo = t => () => { sfx('click'); s.close(); if (t) { tab = t; swapIn = null; render(); } };
-  const dock = h('nav', { class: 'mf-dock' },
-    [['n_star', 'Combat', null, true], ['n_hero', 'Héros', 'heroes'], ['n_shield', 'Clans', 'clan'], ['trophy', 'Classement', 'clan']].map(([ic, nm, t, on]) =>
-      h('button', { class: 'dk' + (on ? ' on' : ''), onclick: on ? () => sfx('click') : dockTo(t) }, icon(ic), h('small', {}, nm))));
+    h('div', { class: 'mc-box mc-lock' },
+      svgEl('mt-ic', modeIcon('lock')),
+      h('div', { class: 'grow' }, h('b', {}, 'Duel en ligne · 2 contre 2'), h('small', {}, 'Contre de vrais joueurs. Jamais de faux joueurs.')),
+      h('span', { class: 'm-phase' }, 'Phase 3')));
   s = sheet(h('div', { class: 'modes mf' },
-    h('div', { class: 'mf-head' }, h('h3', {}, 'Choisis ton combat'), h('button', { class: 'mf-x', 'aria-label': 'Fermer', onclick: () => s.close() }, icon('close'))),
-    list, dock));
+    h('div', { class: 'mf-head' }, h('h3', {}, 'Choisis Ton Combat'),
+      h('button', { class: 'mf-x', 'aria-label': 'Fermer', onclick: () => { sfx('click'); s.close(); } }, h('img', { src: 'assets/ui/frame-x.webp', alt: '', draggable: 'false' }))),
+    list));
   s.box.classList.add('mframe');
-  s.box.append(h('i', { class: 'mf-line' }), ...['tl', 'tr', 'bl', 'br'].map(c => svgEl('mf-c ' + c, frameCorner())));
+  s.box.append(...['tl', 'tr', 'bl', 'br'].map(c => h('img', { class: 'mf-c ' + c, src: 'assets/ui/frame-' + (c[1] === 'l' ? 'tl' : 'tr') + '.webp', alt: '', draggable: 'false' })));
+  // la barre du bas du jeu reste visible et utilisable (Boutique, Héros, Royaume, Clan) : la fenêtre s'arrête au-dessus
+  const nav = document.querySelector('nav.nav'), back = s.box.parentElement;
+  if (nav && back) { back.style.bottom = nav.offsetHeight + 'px'; nav.addEventListener('click', () => s.close(), { once: true, capture: true }); }
+  requestAnimationFrame(() => list.querySelectorAll('.mc-txt').forEach(fitText));
 }
-function mode(art, title, desc, onPlay, extra, locked) {
-  return h('div', { class: 'mode m-' + art + (locked ? ' locked' : '') },
-    svgEl('m-bg', modeScene(art)),
-    h('div', { class: 'mode-art' }, h('i', { class: 'm-halo' }), svgEl('m-svg', modeIcon(art))),
-    h('div', { class: 'mode-txt' }, h('b', {}, title), h('small', {}, desc), extra || null),
-    onPlay ? h('button', { class: 'btn-jouer', onclick: () => { sfx('click'); onPlay(); } }, 'Jouer') : locked ? h('span', { class: 'm-padlock' }, svgEl('m-svg', modeIcon('lock'))) : null);
+// Cartes des modes = illustrations de la maquette de l'utilisateur (assets/ui/mode-*.webp : texte peint effacé, vrai texte par-dessus).
+// [largeur, hauteur, haut du bouton en %] ; le bouton « Jouer » (mode-play.webp) se pose exactement sur celui de l'image.
+const MC = { arena: [964, 238, 26.47], camp: [964, 238, 26.47], surv: [964, 259, 31.27], event: [964, 299, 32.44], hero: [964, 260, 30.38], tourney: [964, 238, 26.47] };
+function mcard(id, title, desc, onPlay) {
+  const [w, hh, bt] = MC[id];
+  return h('div', { class: 'mc mc-' + id, style: { '--ar': (w / hh).toFixed(4), '--bt': bt + '%' } },
+    h('i', { class: 'mc-halo' }),
+    id === 'tourney' ? svgEl('mc-ic', modeIcon('tourney')) : null,
+    id === 'event' ? h('i', { class: 'mc-flash' }) : null,
+    h('div', { class: 'mc-txt' }, h('b', {}, title), h('small', {}, desc)),
+    h('button', { class: 'mc-play', 'aria-label': 'Jouer : ' + title, onclick: () => { sfx('click'); onPlay(); } }, h('img', { src: 'assets/ui/mode-play.webp', alt: 'Jouer', draggable: 'false' })));
+}
+// rétrécit le texte d'une carte tant qu'il dépasse (noms de monde ou d'événement plus longs)
+function fitText(el) {
+  let k = 1;
+  while (el.scrollHeight > el.clientHeight + 1 && k > .7) { k -= .04; el.style.setProperty('--fk', k.toFixed(2)); }
 }
 
 window.__app = { play: (...a) => play(...a), playHero: id => playHero(id), P: () => P, WORLDS };

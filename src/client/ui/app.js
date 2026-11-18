@@ -3,6 +3,7 @@ import { HERO, PLAYABLE, SPELL, SPELLS, RARITIES, FACTIONS, WORLDS, UNLOCKS, SPE
 import { AI_LEVELS } from '../../shared/ai.js';
 import { loadProfile, saveProfile, resetProfile, owned, ownedSpells, worldOf, botLevelFor, botDeck, botSpell, botLevels, applyResult, xpNeed, heroLevel, canUpgrade, CHESTS } from '../store.js';
 import { battleSVG, medalSVG, isleSVG, sparkSVG } from './art.js';
+import { modeIcon, modeScene, frameCorner } from './modeart.js';
 import { initProgress, chestRow, missionsButton, loginPopup, shopScreen, heroProgress, chestIcon } from './progress.js';
 import { initKingdom, kingdomScreen, leaveKingdom } from './kingdom.js';
 import { story } from './story.js';
@@ -188,27 +189,31 @@ function openModes() {
   sfx('click');
   const lvl = botLevelFor(P), w = worldOf(P), ev = currentEvent();
   const T = P.tourney || { round: 0 };
-  const s = sheet(h('div', { class: 'modes' },
-    h('h3', {}, 'Choisis ton combat'),
-    mode('sword', 'Arène', 'Contre l’IA ' + AI_LEVELS[lvl].name + ' dans « ' + w.name + ' » · trophées, or et coffres', () => { s.close(); story('arene', () => (!tutoDone() && !(P.hist && P.hist.length)) ? play('training', 0, w, { tuto: true, title: 'Tutoriel' }) : play('arena', lvl, w)); }),
-    mode('map', 'Campagne', 'L’histoire de Mythoria, 30 étapes et 6 boss · étape ' + Math.min(30, P.campaign.done + 1) + '/30', () => { s.close(); story('campagne', openCampaign); }),
-    mode('shield', 'Survie · Défense du Royaume', 'Résiste aux vagues de monstres et de boss · record : vague ' + (P.records.survival || 0), () => { s.close(); story('survie', playSurvival); }),
-    mode('star', 'Événement : ' + ev.name, ev.desc + ' · ' + eventWinsLeft(P) + ' récompenses restantes aujourd’hui', () => { s.close(); story('evenement', playEvent); }),
-    mode('heroes', 'Mode Héros', 'Dirige toi-même un héros (joystick) contre des vagues de monstres · record : vague ' + (P.records.hero || 0), () => { s.close(); story('heros', pickHero); }),
-    mode('trophy', 'Tournoi (contre l’IA)', '3 manches de plus en plus dures · manche ' + (T.round + 1) + '/3 · tournois gagnés : ' + (P.records.tournament || 0), () => { s.close(); story('tournoi', playTourney); }),
-    h('div', { class: 'mode' },
-      h('div', { class: 'mode-ic' }, icon('summon')),
-      h('div', { class: 'mode-txt' }, h('b', {}, 'Entraînement'), h('small', {}, 'Choisis le niveau de l’IA. Sans trophées.'),
-        h('div', { class: 'lvls' }, AI_LEVELS.map((L, i) => h('button', { class: 'btn small', onclick: () => { s.close(); play('training', i, w); } }, (i + 1) + '. ' + L.name))))),
+  let s;
+  const list = h('div', { class: 'mf-list' },
+    mode('arena', 'Arène', 'Contre l’IA ' + AI_LEVELS[lvl].name + ' dans « ' + w.name + ' » · trophées, or et coffres', () => { s.close(); story('arene', () => (!tutoDone() && !(P.hist && P.hist.length)) ? play('training', 0, w, { tuto: true, title: 'Tutoriel' }) : play('arena', lvl, w)); }),
+    mode('camp', 'Campagne', 'L’histoire de Mythoria, 30 étapes et 6 boss · étape ' + Math.min(30, P.campaign.done + 1) + '/30', () => { s.close(); story('campagne', openCampaign); }),
+    mode('surv', 'Survie · Défense du Royaume', 'Résiste aux vagues de monstres et de boss · record : vague ' + (P.records.survival || 0), () => { s.close(); story('survie', playSurvival); }),
+    mode('event', 'Événement : ' + ev.name, ev.desc + ' · ' + eventWinsLeft(P) + ' récompenses restantes aujourd’hui', () => { s.close(); story('evenement', playEvent); }),
+    mode('hero', 'Mode Héros', 'Dirige toi-même un héros (joystick) contre des vagues de monstres · record : vague ' + (P.records.hero || 0), () => { s.close(); story('heros', pickHero); }),
+    mode('tourney', 'Tournoi (contre l’IA)', '3 manches de plus en plus dures · manche ' + (T.round + 1) + '/3 · tournois gagnés : ' + (P.records.tournament || 0), () => { s.close(); story('tournoi', playTourney); }),
+    mode('train', 'Entraînement', 'Choisis le niveau de l’IA. Sans trophées.', null,
+      h('div', { class: 'lvls' }, AI_LEVELS.map((L, i) => h('button', { class: 'btn small', onclick: () => { s.close(); play('training', i, w); } }, (i + 1) + '. ' + L.name)))),
     h('h4', {}, 'Avec le serveur (phase 3)'),
-    mode('heroes', 'Duel en ligne · 2 contre 2', 'Contre de vrais joueurs. Jamais de faux joueurs.', null),
-    mode('clan', 'Amis, clans, chat, guerre de clans, classements', 'Ils ont besoin du serveur pour relier les joueurs.', null)));
+    mode('lock', 'Duel en ligne · 2 contre 2', 'Contre de vrais joueurs. Jamais de faux joueurs.', null, null, true),
+    mode('lock', 'Amis, clans, chat, guerre de clans, classements', 'Ils ont besoin du serveur pour relier les joueurs.', null, null, true));
+  s = sheet(h('div', { class: 'modes mf' },
+    h('div', { class: 'mf-head' }, h('h3', {}, 'Choisis ton combat'), h('button', { class: 'mf-x', 'aria-label': 'Fermer', onclick: () => s.close() }, '✕')),
+    list));
+  s.box.classList.add('mframe');
+  s.box.append(...['tl', 'tr', 'bl', 'br'].map(c => svgEl('mf-c ' + c, frameCorner())));
 }
-function mode(ic, title, desc, onPlay) {
-  return h('div', { class: 'mode' + (onPlay ? '' : ' locked') },
-    h('div', { class: 'mode-ic' }, icon(ic)),
-    h('div', { class: 'mode-txt' }, h('b', {}, title), h('small', {}, desc)),
-    onPlay ? h('button', { class: 'btn gold', onclick: onPlay }, 'Jouer') : h('span', { class: 'lock' }, icon('lock')));
+function mode(art, title, desc, onPlay, extra, locked) {
+  return h('div', { class: 'mode m-' + art + (locked ? ' locked' : '') },
+    svgEl('m-bg', modeScene(art)),
+    svgEl('mode-art', modeIcon(art)),
+    h('div', { class: 'mode-txt' }, h('b', {}, title), h('small', {}, desc), extra || null),
+    onPlay ? h('button', { class: 'btn-jouer', onclick: () => { sfx('click'); onPlay(); } }, 'Jouer') : locked ? h('span', { class: 'lock' }, icon('lock')) : null);
 }
 
 window.__app = { play: (...a) => play(...a), playHero: id => playHero(id), P: () => P, WORLDS };

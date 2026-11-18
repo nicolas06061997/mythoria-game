@@ -112,7 +112,7 @@ export const HEROES = [
 
   // ----- Clan de la Braise -----
   { id: 'follets', name: 'Feux-Follets', title: 'Étincelles vivantes', fac: 'braise', rar: 'commun', type: 'unit',
-    hp: 180, dmg: 200, hit: 0.5, spd: 2.4, range: 0.5, tgt: 'any', count: 3, r: 0.3, fly: true, kamikaze: true,
+    hp: 230, dmg: 240, hit: 0.5, spd: 2.4, range: 0.5, tgt: 'any', count: 3, r: 0.3, fly: true, kamikaze: true,
     model: { proc: 'wisp', scale: 1 },
     lore: 'Des braises échappées du nid d’Ignar. Elles adorent exploser sur les gens.',
     ability: ['Kamikaze', 'Trois flammes volantes qui explosent au contact.'] },

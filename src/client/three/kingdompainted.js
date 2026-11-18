@@ -1,10 +1,9 @@
-// MYTHORIA — Royaume « peint » : l'illustration de l'île (assets/kingdom/island.webp) rendue vivante.
+// MYTHORIA — Royaume « peint » : l'illustration de l'île (assets/kingdom/island-hd.webp, 2× de island.webp) rendue vivante.
 // Shader : l'île et les îlots flottent, les cascades coulent, les nuages ondulent, l'herbe/lueurs scintillent.
 // Calque 2D : fumée du château, lucioles, étincelles de la mine, oiseaux, villageois qui marchent.
-// Calque HTML : bâtiments construits (illustrations 3D), pastilles ↑ / +, zones à toucher.
+// Calque HTML : bâtiments construits (images b-*.webp faites par bake-kingdom.html dans la lumière de la carte), pastilles dorées ↑ / +, zones à toucher.
 import * as THREE from 'three';
 import { createRenderer } from './stage.js';
-import { buildingPicture } from './kingdomview.js';
 import { BUILD_ORDER } from '../../shared/kingdom.js';
 
 export const IMG_W = 1050, IMG_H = 1120;
@@ -13,6 +12,27 @@ export const PSPOTS = {
   chateau: [524, 600, 'painted'], mine: [244, 700, 'painted'], carriere: [770, 625, 'painted'],
   academie: [292, 616], temple: [632, 526], marche: [399, 512], caserne: [500, 860], tour: [762, 752], cristal: [395, 770],
 };
+// Images des bâtiments (bake-kingdom.html : même lumière dorée et mêmes ombres douces que la carte), 3 paliers : niveaux 1-3, 4-6, 7+.
+// [largeur, hauteur, point d'appui x, y (fraction), largeur du bâtiment (fraction de l'image)] — rempli par l'atelier.
+export const B_ART = /*B_ART*/{'academie': [[520, 426, 0.5102, 0.672, 0.6304], [520, 440, 0.5, 0.6715, 0.6956], [520, 378, 0.5, 0.6121, 0.7589]], 'caserne': [[520, 406, 0.5, 0.6103, 0.7578], [520, 375, 0.5, 0.5684, 0.6311], [520, 415, 0.5, 0.6493, 0.6944]], 'cristal': [[520, 383, 0.5233, 0.4399, 0.5163], [520, 384, 0.5, 0.4525, 0.5378], [520, 385, 0.5085, 0.486, 0.4893]], 'marche': [[520, 355, 0.5, 0.4426, 0.75], [520, 326, 0.5, 0.4282, 0.6844], [520, 355, 0.5376, 0.4649, 0.7276]], 'temple': [[520, 390, 0.5131, 0.6569, 0.3158], [520, 403, 0.5288, 0.6185, 0.3067], [520, 405, 0.5275, 0.6086, 0.3025]], 'tour': [[520, 403, 0.5, 0.6704, 0.3422], [520, 403, 0.5, 0.6627, 0.3867], [520, 393, 0.5, 0.6548, 0.3744]]}/*/B_ART*/;
+// largeur du bâtiment sur la carte, en pixels de l'image de l'île (palier 1) ; les paliers suivants grandissent un peu
+const B_W = { academie: 150, caserne: 150, tour: 92, temple: 128, marche: 142, cristal: 112 };
+export const artTier = lvl => lvl <= 3 ? 0 : lvl <= 6 ? 1 : 2;
+export function bArt(id, lvl) {
+  const t = artTier(Math.max(1, lvl)), m = B_ART[id] && B_ART[id][t];
+  if (!m) return null;
+  const [w, h, ax, ay, ow] = m, wm = B_W[id] * (1 + t * 0.08) / ow;
+  return { src: `assets/kingdom/b-${id}-${t}.webp`, w, h, ax, ay, wm, hm: wm * h / w };
+}
+// dégradés des pastilles : définis une seule fois dans un SVG toujours rendu (dans une pastille masquée, Chrome ne les dessine pas)
+const BADGE_DEFS = '<linearGradient id="kbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff6cc"/><stop offset=".45" stop-color="#f3c552"/><stop offset="1" stop-color="#9c6510"/></linearGradient><radialGradient id="kbi" cx=".5" cy=".3" r=".8"><stop offset="0" stop-color="#3f63e0"/><stop offset="1" stop-color="#0d185a"/></radialGradient>';
+export function badgeDefs() {
+  if (document.getElementById('kbg')) return;
+  const d = document.createElement('div'); d.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden';
+  d.innerHTML = '<svg width="0" height="0" aria-hidden="true"><defs>' + BADGE_DEFS + '</defs></svg>'; document.body.append(d);
+}
+export const BADGE_SVG = '<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="url(#kbg)" stroke="#3e2404" stroke-width="1.6"/><circle cx="20" cy="20" r="13.2" fill="url(#kbi)" stroke="#6e4208" stroke-width="1"/><path class="ar" d="M20 9.5l8.5 9.5h-5.2v10.5h-6.6V19h-5.2z" fill="url(#kbg)" stroke="#5a3606" stroke-width=".8"/><path class="pl" d="M17.2 10.5h5.6v6.7h6.7v5.6h-6.7v6.7h-5.6v-6.7h-6.7v-5.6h6.7z" fill="url(#kbg)" stroke="#5a3606" stroke-width=".8"/><ellipse cx="15" cy="11" rx="6" ry="2.4" fill="#fff" opacity=".35"/></svg>';
+const SPOT_W = 0.17 * IMG_W; // largeur d'une zone .kp-spot (17 % de l'image), en pixels de l'image
 const FALLS = [[397, 224, 425, 331], [846, 330, 898, 548], [104, 774, 148, 936]];
 const PATHS = [[[560, 700], [512, 905]], [[600, 705], [760, 770]], [[470, 700], [300, 640]], [[540, 720], [640, 860]]];
 
@@ -22,7 +42,8 @@ export class KingdomPainted {
     this.stage = canvas.parentElement;
     this.r = createRenderer(canvas, { alpha: true }); this.r.toneMapping = THREE.NoToneMapping;
     this.scene = new THREE.Scene(); this.cam = new THREE.OrthographicCamera(0, 1, 1, 0, -1, 1);
-    const tex = new THREE.TextureLoader().load('assets/kingdom/island.webp'); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+    // image de l'île en 2× (Real-ESRGAN) : nette sur écrans haute définition
+    const tex = new THREE.TextureLoader().load('assets/kingdom/island-hd.webp'); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
     const E = (cx, cy, rx, ry) => new THREE.Vector4(cx / IMG_W, cy / IMG_H, rx / IMG_W, ry / IMG_H);
     const B = b => new THREE.Vector4(b[0] / IMG_W, b[1] / IMG_H, b[2] / IMG_W, b[3] / IMG_H);
     this.u = { map: { value: tex }, t: { value: 0 }, isl: { value: E(525, 770, 480, 330) }, isl2: { value: E(525, 930, 400, 190) },
@@ -65,11 +86,11 @@ export class KingdomPainted {
     this.walkers = PATHS.map((p, i) => ({ a: p[0], b: p[1], u: Math.random(), dir: 1, pause: 0, col: ['#c0392b', '#2e6fb8', '#d9a520', '#3f8a4a'][i], sp: 0.035 + Math.random() * 0.02 }));
     this.smoke = []; this.sparks = [];
     // calque HTML : bâtiments construits + pastilles + zones à toucher
-    this.items = {};
+    this.items = {}; badgeDefs();
     for (const id of BUILD_ORDER) {
       const [x, y, painted] = PSPOTS[id];
-      const el = document.createElement('div'); el.className = 'kp-spot' + (painted ? ' painted' : ''); el.style.left = (x / IMG_W * 100) + '%'; el.style.top = (y / IMG_H * 100) + '%';
-      el.innerHTML = '<img class="kp-b" alt=""><span class="kp-plot"></span><i class="kp-badge"></i>';
+      const el = document.createElement('div'); el.className = 'kp-spot' + (painted ? ' painted' : ''); el.style.left = (x / IMG_W * 100) + '%'; el.style.top = (y / IMG_H * 100) + '%'; el.style.zIndex = y; // plus bas sur la carte = devant
+      el.innerHTML = '<img class="kp-b" alt="" draggable="false"><i class="kp-badge">' + BADGE_SVG + '</i>';
       el.addEventListener('click', e => { e.stopPropagation(); this.onTap(id); });
       this.layer.append(el); this.items[id] = el;
     }
@@ -80,7 +101,13 @@ export class KingdomPainted {
     for (const id of BUILD_ORDER) {
       const el = this.items[id], lvl = K.b[id] || 0, job = K.job && K.job.id === id;
       el.classList.toggle('built', lvl > 0); el.classList.toggle('job', !!job);
-      if (!PSPOTS[id][2] && lvl > 0) { const url = await buildingPicture(id, lvl); const img = el.querySelector('.kp-b'); if (url && img.src !== url) img.src = url; }
+      const a = !PSPOTS[id][2] && lvl > 0 ? bArt(id, lvl) : null, img = el.querySelector('.kp-b');
+      if (a) {
+        // l'image est posée pour que son point d'appui tombe exactement sur l'emplacement (62 % de la hauteur de la zone carrée)
+        const w = a.wm / SPOT_W * 100, hh = a.hm / SPOT_W * 100;
+        Object.assign(img.style, { width: w + '%', left: (50 - a.ax * w) + '%', top: (62 - a.ay * hh) + '%' });
+        if (!img.src.endsWith(a.src)) img.src = a.src;
+      }
     }
   }
   setBadges(kinds) { for (const id of BUILD_ORDER) { const b = this.items[id].querySelector('.kp-badge'); b.className = 'kp-badge' + (kinds[id] ? ' ' + kinds[id] : ''); } }

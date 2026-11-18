@@ -1056,3 +1056,23 @@ body::after { background: radial-gradient(60% 22% at 30% 16%, rgba(80, 255, 190,
 .mc-lock { display: flex; align-items: center; gap: 3cqw; filter: saturate(.55); opacity: .85; } .mc-lock b { color: #c9cbe0; } .mc-lock .mt-ic { width: 11cqw; }
 .m-phase { flex: none; padding: .8cqw 2.4cqw; border-radius: 2cqw; font: 800 2.8cqw 'Roboto Condensed', sans-serif; letter-spacing: .1em; text-transform: uppercase; color: #1a1030; background: linear-gradient(#eef0fa, #9ea4c8); border: 1px solid #fff; }
 @media (prefers-reduced-motion: reduce) { .mc-halo, .mc-event, .mc-flash, .mc-play::after { animation: none; } }
+
+/* ===== Royaume : bâtiments dans la lumière de la carte peinte (18/11) =====
+   Images b-*.webp (bake-kingdom.html : lumière dorée, ombres douces portées sur le sol), carte de l'île en 2× (island-hd.webp),
+   cartes « Bâtiments » = zoom sur la carte à l'endroit du bâtiment, pastilles dorées (BADGE_SVG). */
+.k-res span.ic { padding: 0; border: 0; background: none; border-radius: 0; }
+.kp-b { bottom: auto; transform: none; filter: none; height: auto; }
+.kp-badge { width: 29px; height: 29px; margin-left: -14.5px; top: -10%; border: 0; border-radius: 0; background: none; box-shadow: none; filter: drop-shadow(0 0 5px rgba(255, 214, 110, .85)) drop-shadow(0 2px 2px rgba(0, 0, 0, .5)); }
+.kp-badge.up::before, .kp-badge.plus::before { content: none; }
+.kp-badge svg, .kc-up svg { display: block; width: 100%; height: 100%; }
+.kp-badge.up .pl, .kp-badge.plus .ar, .kc-up.up .pl, .kc-up.plus .ar { display: none; }
+.kc { flex-direction: column; padding: 0; min-height: 0; }
+.kc-art { position: relative; width: 100%; aspect-ratio: 280 / 175; flex: none; overflow: hidden; pointer-events: none; background: #2a3a2a url(assets/kingdom/island-hd.webp) no-repeat;
+  -webkit-mask-image: linear-gradient(#000 72%, transparent); mask-image: linear-gradient(#000 72%, transparent); }
+.kc-art img { position: absolute; height: auto; max-width: none; }
+.kc-art.ghost { filter: grayscale(.75) brightness(.6); } .kc-art.ghost img { opacity: .75; }
+.kc-txt { margin-top: -16px; padding: 0 10px 11px; }
+.kc-txt b { text-shadow: 0 2px 3px rgba(0, 0, 0, .8); }
+.kc-txt em { max-width: none; }
+.kc-up { right: 6px; top: 6px; width: 32px; height: 32px; border: 0; border-radius: 0; background: none; box-shadow: none; filter: drop-shadow(0 0 5px rgba(255, 214, 110, .8)) drop-shadow(0 2px 2px rgba(0, 0, 0, .5)); }
+.kc.ok { border-color: #e9c877; box-shadow: 0 0 12px rgba(255, 205, 100, .3); }

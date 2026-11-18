@@ -2,7 +2,7 @@
 import { BUILDINGS, BUILD_ORDER, DECOS, DECO_SLOTS, buildCost, buildTime, speedupGems, produced, perHour, canBuild } from '../../shared/kingdom.js';
 const affordable = (P, id) => { const K = P.kingdom, l = K.b[id] || 0; if (canBuild(K, id)) return false; const c = buildCost(id, l + 1); return P.gold >= c.gold && P.stone >= c.stone; };
 import { startBuild, speedup, collectAll, buyDeco, finishJob, worldOf, maxHeroLevel } from '../store.js';
-import { buildingPicture } from '../three/kingdomview.js';
+import { PSPOTS, IMG_W, IMG_H, bArt, BADGE_SVG, badgeDefs } from '../three/kingdompainted.js';
 import { KingdomPainted } from '../three/kingdompainted.js';
 import { h, toast, sheet } from './dom.js';
 import { icon } from './icons.js';
@@ -56,11 +56,10 @@ export function kingdomScreen() {
       h('button', { class: 'btn small ghost', onclick: () => { const e = speedup(P); if (e) return toast(e, 'bad'); sfx('fuse'); C.render(); } }, 'Terminer : ', icon('gem'), speedupGems((K.job.end - Date.now()) / 1000))) : null,
     h('div', { class: 'panel k-panel' }, h('h3', {}, 'Bâtiments'),
       h('div', { class: 'k-cards' }, BUILD_ORDER.map(id => {
-        const l = K.b[id] || 0, b = BUILDINGS[id], img = h('img', { class: 'kc-img', alt: '' }), ok = affordable(P, id), job = K.job && K.job.id === id;
-        buildingPicture(id, Math.max(1, l)).then(u => { if (u) img.src = u; });
-        return h('button', { class: 'kc' + (l ? '' : ' empty') + (ok ? ' ok' : ''), onclick: () => openBuilding(id) },
+        const l = K.b[id] || 0, b = BUILDINGS[id], img = zoomArt(id, l), ok = affordable(P, id), job = K.job && K.job.id === id;
+        return h('button', { class: 'kc' + (l ? '' : ' empty') + (ok ? ' ok' : ''), onclick: () => openBuilding(id) }, img,
           h('div', { class: 'kc-txt' }, h('b', {}, b.name), h('small', {}, job ? '🔨 En construction' : l ? 'Niveau ' + l + ' / ' + b.max : 'À construire'), h('em', {}, l ? effectText(id, l) : b.desc)),
-          img, ok ? h('span', { class: 'kc-up' }, l ? '⬆' : '+') : null);
+          ok ? badgeEl('kc-up ' + (l ? 'up' : 'plus')) : null);
       })),
       best ? h('button', { class: 'k-cta', onclick: () => openBuilding(best) }, h('small', {}, BUILDINGS[best].name + ' · ', icon('coin'), buildCost(best, (K.b[best] || 0) + 1).gold, ' · 🪨 ', buildCost(best, (K.b[best] || 0) + 1).stone), h('b', {}, (K.b[best] ? 'AMÉLIORER' : 'CONSTRUIRE') + ' LE ROYAUME')) : null),
     h('div', { class: 'panel' }, h('h3', {}, 'Décorations'), h('p', { class: 'muted' }, 'Pour embellir ton île (sans effet en combat).'),
@@ -76,6 +75,19 @@ export function kingdomScreen() {
   });
   return el;
 }
+
+// Illustration d'une carte « Bâtiment » = zoom sur ta carte à l'endroit du bâtiment (même peinture, même lumière)
+const VW = 280, VH = 175;
+function zoomArt(id, l) {
+  const [x, y, painted] = PSPOTS[id], a = painted ? null : bArt(id, Math.max(1, l));
+  // fenêtre de la carte montrée : assez haute pour les bâtiments élevés (temple, tours)
+  const top = a ? y - a.ay * a.hm * 0.92 : y - VH * 0.62, vh = Math.max(VH, (y - top) * 1.3), vw = vh * VW / VH;
+  const x0 = Math.min(IMG_W - vw, Math.max(0, x - vw / 2)), y0 = Math.min(IMG_H - vh, Math.max(0, Math.min(y - vh * 0.68, top - vh * 0.06)));
+  const box = h('div', { class: 'kc-art' + (l ? '' : ' ghost'), style: { backgroundSize: (IMG_W / vw * 100) + '% auto', backgroundPosition: (x0 / (IMG_W - vw) * 100) + '% ' + (y0 / (IMG_H - vh) * 100) + '%' } });
+  if (a) { const w = a.wm / vw * 100, hh = a.hm / vh * 100; box.append(h('img', { src: a.src, alt: '', draggable: 'false', style: { width: w + '%', left: ((x - x0) / vw * 100 - a.ax * w) + '%', top: ((y - y0) / vh * 100 - a.ay * hh) + '%' } })); }
+  return box;
+}
+function badgeEl(cls) { badgeDefs(); const e = h('span', { class: cls }); e.innerHTML = BADGE_SVG; return e; }
 
 function openBuilding(id) {
   sfx('click');

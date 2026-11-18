@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<title>MYTHORIA — bâtiments du Royaume (atelier)</title>
+<script type="importmap">{"imports":{"three":"./vendor/three.module.min.js","three/addons/":"./vendor/addons/"}}</script>
+<style>html,body{margin:0;background:#7a8a6a}canvas{display:block}</style></head>
+<body>
+<canvas id="c"></canvas>
+<script type="module">
+// Atelier hors jeu : fabrique les images des bâtiments du Royaume (assets/kingdom/b-*.webp) dans le style de la carte peinte :
+// lumière dorée du soir, ciel bleu-violet, ombres douces portées sur un sol transparent, matières « peintes », buissons autour.
+// Utilisation (Playwright) : bake-kingdom.html puis await window.bake('caserne', 0) -> dataURL PNG transparent.
+import * as THREE from 'three';
+import { loadGLB } from './src/client/three/assets.js';
+
+const W = 900, H = 800, SS = 2, RW = W * SS, RH = H * SS;
+const cv = document.getElementById('c'); cv.width = W; cv.height = H;
+const out = cv.getContext('2d');
+const gl = document.createElement('canvas');
+const r = new THREE.WebGLRenderer({ canvas: gl, antialias: false, alpha: true, preserveDrawingBuffer: true });
+r.setPixelRatio(1); r.setSize(RW, RH, false); r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap; r.setClearColor(0, 0);
+const rt = new THREE.WebGLRenderTarget(RW, RH, { type: THREE.FloatType, depthBuffer: true });
+const buf = new Float32Array(RW * RH * 4);
+const sc = new THREE.Scene();
+const L = new THREE.DirectionalLight('#ffffff', 1); L.castShadow = true; L.shadow.mapSize.set(2048, 2048); L.shadow.bias = -0.0006; L.shadow.normalBias = 0.025; L.shadow.radius = 2;
+sc.add(L, L.target);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(40, 40).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: '#ffffff' })); ground.receiveShadow = true; sc.add(ground);
+const cam = new THREE.PerspectiveCamera(24, W / H, 0.1, 100);
+const WHITE = new THREE.MeshLambertMaterial({ color: '#ffffff' });
+
+// couleurs « carte peinte » (matières des modèles Quaternius renommées par nom de matière)
+const PAL = { Main: '#4a5598', Wood: '#80562f', Wood_Light: '#a87e4f', Stone: '#8d919e', Stone_Light: '#bcbfc8', Walls: '#ddd2b8', White: '#e4ddcc', Red: '#a12c1f',
+  Gold: '#d1a442', Metal_Light: '#8d929c', Green: '#4e7d2b', Yellow: '#cdb32c', Rock: '#82858f' };
+const grain = s => {
+  s.vertexShader = s.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWp;').replace('#include <project_vertex>', '#include <project_vertex>\nvWp = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+  s.fragmentShader = s.fragmentShader.replace('#include <common>', `#include <common>
+    varying vec3 vWp;
+    float hh(vec3 p){ return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
+    float vn3(vec3 x){ vec3 i = floor(x), f = fract(x); f = f*f*(3.0-2.0*f);
+      return mix(mix(mix(hh(i), hh(i+vec3(1,0,0)), f.x), mix(hh(i+vec3(0,1,0)), hh(i+vec3(1,1,0)), f.x), f.y),
+                 mix(mix(hh(i+vec3(0,0,1)), hh(i+vec3(1,0,1)), f.x), mix(hh(i+vec3(0,1,1)), hh(i+vec3(1,1,1)), f.x), f.y), f.z); }`)
+    .replace('#include <map_fragment>', `#include <map_fragment>
+    float gr = vn3(vWp * 11.0) * 0.5 + vn3(vWp * 29.0) * 0.3 + vn3(vWp * 3.5) * 0.2;
+    diffuseColor.rgb *= 0.84 + gr * 0.3;`);
+};
+function albedoOf(m) {
+  const c = new THREE.Color(PAL[m.name] || ('#' + m.color.getHexString()));
+  const a = new THREE.MeshBasicMaterial({ color: c, map: m.map || null }); a.onBeforeCompile = grain; a.userData.emis = m.userData.emis || null; return a;
+}
+const meshes = [];
+function prep(o) { o.traverse(x => { if (!x.isMesh) return; x.castShadow = true; x.receiveShadow = true; const m = Array.isArray(x.material) ? x.material[0] : x.material; x.userData.alb = albedoOf(m); meshes.push(x); }); return o; }
+async function model(path) { const g = await loadGLB(path + '.glb'); return prep(g.scene.clone(true)); }
+function fit(o, w) {
+  const b = new THREE.Box3().setFromObject(o), s = w / Math.max(b.max.x - b.min.x, b.max.z - b.min.z, 0.01);
+  o.scale.multiplyScalar(s); const b2 = new THREE.Box3().setFromObject(o); o.position.y -= b2.min.y;
+  const c = b2.getCenter(new THREE.Vector3()); o.position.x -= c.x; o.position.z -= c.z; return o;
+}
+function crystals(n, seed = 3) {
+  let s = seed; const rnd = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+  const g = new THREE.Group();
+  for (let i = 0; i < n; i++) {
+    const m = new THREE.Mesh(new THREE.OctahedronGeometry(0.16 + rnd() * 0.12, 0).toNonIndexed(), new THREE.MeshBasicMaterial({ color: '#c9b0ff' }));
+    m.geometry.computeVertexNormals(); m.scale.y = 2.2 + rnd() * 1.6;
+    const a = rnd() * 6.28, d = 0.15 + rnd() * 0.55; m.position.set(Math.cos(a) * d, 0.22, Math.sin(a) * d); m.rotation.set((rnd() - .5) * .6, rnd() * 3, (rnd() - .5) * .6);
+    m.castShadow = true; m.receiveShadow = true; m.userData.alb = new THREE.MeshBasicMaterial({ color: '#b89cff' }); m.userData.alb.userData.emis = new THREE.Color('#7a4dff').multiplyScalar(0.55); meshes.push(m); g.add(m);
+  }
+  return g;
+}
+async function greenery(radius, seed) {
+  let s = seed; const rnd = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+  const g = new THREE.Group();
+  const spots = [[-0.95, -0.55, 0.6], [0.95, -0.6, 0.55], [-1.15, 0.25, 0.45], [1.1, 0.35, 0.5], [-0.6, -0.95, 0.42], [0.55, -0.95, 0.4], [-0.9, 0.85, 0.3], [0.85, 0.8, 0.28]];
+  for (let i = 0; i < spots.length; i++) {
+    const [x, z, k] = spots[i]; const p = i >= 6 ? 'world/Rock_Moss_2' : 'world/Bush_1';
+    try { const o = await model(p); fit(o, k * (0.85 + rnd() * 0.3)); o.position.x += x * radius; o.position.z += z * radius; o.rotation.y = rnd() * 6; g.add(o); } catch (e) {}
+  }
+  return g;
+}
+const SETS = {
+  academie: ['kingdom/Archery_FirstAge_Level1', 'kingdom/Archery_FirstAge_Level3', 'kingdom/Archery_SecondAge_Level2'],
+  caserne: ['kingdom/Barracks_FirstAge_Level1', 'kingdom/Barracks_FirstAge_Level3', 'kingdom/Barracks_SecondAge_Level2'],
+  tour: ['kingdom/WatchTower_FirstAge_Level3', 'world/WatchTower_SecondAge_Level3', 'world/WatchTower_SecondAge_Level3'],
+  temple: ['world/Temple_SecondAge_Level3', 'world/Temple_SecondAge_Level3', 'world/Temple_SecondAge_Level3'],
+  marche: ['kingdom/Market_FirstAge_Level2', 'kingdom/Market_FirstAge_Level2', 'kingdom/Storage_SecondAge_Level2'],
+  cristal: ['kingdom/Resource_Rock_2', 'kingdom/Resource_Rock_2', 'kingdom/Resource_Rock_2'],
+};
+// petits ajouts qui montrent la montée en niveau : [chemin, taille, x, z, rotation] ou cristaux
+const EXTRA = {
+  'tour:2': [['crystals', 4, 0, 0, 0, 0.5, 1.55]],
+  'temple:1': [['crystals', 3, 0.85, 0.55, 0, 0.55]], 'temple:2': [['crystals', 4, 0.85, 0.55, 0, 0.6], ['crystals', 4, -0.85, 0.55, 0, 0.6, 0, 11]],
+  'marche:1': [['kingdom/Crate_Stack2', 0.42, 0.95, 0.55, 0.4], ['kingdom/Barrel', 0.2, -0.95, 0.5, 0], ['kingdom/Barrel', 0.18, -0.75, 0.75, 0], ['kingdom/Logs', 0.4, 0.85, -0.6, 1]],
+  'marche:2': [['kingdom/Market_FirstAge_Level2', 1.2, 1.25, 0.9, 0.3], ['kingdom/Crate_Stack2', 0.4, -1.1, 0.7, 0.2]],
+};
+const v3 = (x, y, z) => new THREE.Vector3(x, y, z);
+function useMat(kind) { for (const m of meshes) m.material = kind === 'alb' ? m.userData.alb : kind === 'emis' ? (m.userData.emisMat ||= new THREE.MeshBasicMaterial({ color: m.userData.alb.userData.emis || 0x000000 })) : WHITE; }
+function pass() { r.setRenderTarget(rt); r.setClearColor(0, 0); r.clear(); r.render(sc, cam); r.readRenderTargetPixels(rt, 0, 0, RW, RH, buf); r.setRenderTarget(null); return buf; }
+function lightFrom(dir, ctr, rad) {
+  L.position.copy(ctr).addScaledVector(dir, 12); L.target.position.copy(ctr); L.target.updateMatrixWorld();
+  Object.assign(L.shadow.camera, { left: -rad, right: rad, top: rad, bottom: -rad, near: 1, far: 30 }); L.shadow.camera.updateProjectionMatrix(); L.shadow.needsUpdate = true;
+}
+window.bake = async (id, t, opt = {}) => {
+  meshes.length = 0;
+  const grp = new THREE.Group();
+  const main = fit(await model(SETS[id][t]), id === 'tour' ? 1.25 : 2.0); grp.add(main);
+  if (id === 'cristal') { main.scale.multiplyScalar(0.8); const c = crystals(5 + t * 3); c.scale.setScalar(1.1 + t * 0.15); grp.add(c); }
+  for (const [p, z, x, zz, ry, sc2, y, seed] of EXTRA[id + ':' + t] || []) {
+    if (p === 'crystals') { const c = crystals(z, seed || 5); c.scale.setScalar(sc2 || 0.6); c.position.set(x, y || 0, zz); grp.add(c); continue; }
+    const o = fit(await model(p), z); o.position.x += x; o.position.z += zz; o.rotation.y = ry; grp.add(o);
+  }
+  if (opt.green === true) grp.add(await greenery(id === 'tour' ? 0.85 : 1.15, 7 + t));
+  sc.add(grp); grp.updateMatrixWorld(true);
+  const b = new THREE.Box3().setFromObject(grp), sz = b.getSize(new THREE.Vector3()), ctr = b.getCenter(new THREE.Vector3());
+  const el = THREE.MathUtils.degToRad(opt.el ?? 38), az = THREE.MathUtils.degToRad(opt.az ?? -24);
+  const dir = v3(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el));
+  const rad = Math.max(sz.x, sz.z, sz.y * 1.15) * 0.6 + 0.2, dist = rad / Math.tan(THREE.MathUtils.degToRad(cam.fov / 2));
+  cam.position.copy(ctr).addScaledVector(dir, dist); cam.lookAt(ctr.x, ctr.y - sz.y * 0.05, ctr.z); cam.updateMatrixWorld(); cam.updateProjectionMatrix();
+  const N = RW * RH, srad = Math.max(sz.x, sz.z, sz.y) * 1.3 + 0.6;
+  // 1) couleurs de base + couverture
+  ground.visible = false; useMat('alb'); const A = Float32Array.from(pass());
+  useMat('emis'); const E = Float32Array.from(pass());
+  // 2) lumière du ciel : 40 directions, chacune avec ses ombres (donne l'occlusion douce)
+  ground.visible = true; useMat('white');
+  const sky = new Float32Array(N * 3), NS = opt.ns || 40;
+  const right = v3(Math.cos(az), 0, -Math.sin(az));
+  for (let i = 0; i < NS; i++) {
+    const y = 0.12 + 0.88 * ((i + 0.5) / NS), rr = Math.sqrt(1 - y * y), ph = i * 2.39996;
+    const d = v3(Math.cos(ph) * rr, y, Math.sin(ph) * rr);
+    const side = d.dot(right); // + = à droite de l'image (côté du couchant)
+    const col = new THREE.Color('#a9b6ff').lerp(new THREE.Color(side > 0 ? '#ffc39a' : '#8fa0e6'), (1 - y) * Math.abs(side) * 1.3);
+    lightFrom(d, ctr, srad); const p = pass();
+    for (let k = 0, j = 0; k < N; k++, j += 4) { const g = p[j]; sky[k * 3] += g * col.r; sky[k * 3 + 1] += g * col.g; sky[k * 3 + 2] += g * col.b; }
+  }
+  // 3) soleil doré (avant-gauche, haut) : 10 directions proches = ombres douces
+  const sunDir = v3(-0.62, 0.72, 0.42).applyAxisAngle(v3(0, 1, 0), az).normalize(), sun = new Float32Array(N);
+  const NJ = opt.nj || 10;
+  for (let i = 0; i < NJ; i++) { const j = v3(Math.cos(i * 2.4), Math.sin(i * 1.7), Math.sin(i * 2.4)).multiplyScalar(0.06 * Math.sqrt((i + .5) / NJ)); lightFrom(sunDir.clone().add(j).normalize(), ctr, srad); const p = pass(); for (let k = 0; k < N; k++) sun[k] += p[k * 4] / NJ; }
+  // 4) contre-jour orangé (arrière-droite)
+  const rimDir = v3(0.75, 0.42, -0.5).applyAxisAngle(v3(0, 1, 0), az).normalize(); lightFrom(rimDir, ctr, srad); const R = Float32Array.from(pass());
+  // point d'appui au sol (centre du pied) en fraction de l'image, pour placer l'image sur la carte
+  const fp = v3(ctr.x, 0, ctr.z).project(cam); window.anchor = [+(fp.x * 0.5 + 0.5).toFixed(4), +(0.5 - fp.y * 0.5).toFixed(4)];
+  sc.remove(grp);
+  // sol libre (référence, coin de l'image) pour mesurer l'ombre portée
+  const ref = k => [sky[k * 3] + sky[k * 3 + 1] + sky[k * 3 + 2], sun[k]];
+  const k0 = (RH - 6) * RW + 6, [skyO, sunO] = ref(k0);
+  const KS = opt.ks ?? 2.1 / NS, KU = opt.ku ?? 2.2, KR = opt.kr ?? 0.55;
+  const SUN = [1.0, 0.86, 0.66], RIM = [1.0, 0.62, 0.36], SH = [0.06, 0.045, 0.09];
+  const aces = x => Math.min(1, Math.max(0, (x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14)));
+  const img = out.createImageData(W, H);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    let pr = 0, pg = 0, pb = 0, pa = 0;
+    for (let sy = 0; sy < SS; sy++) for (let sx = 0; sx < SS; sx++) {
+      const k = (RH - 1 - (y * SS + sy)) * RW + (x * SS + sx), j = k * 4;
+      const a = Math.min(1, A[j + 3]);
+      // ombre sur le sol (relative au sol libre)
+      const lit = (sky[k * 3] + sky[k * 3 + 1] + sky[k * 3 + 2]) / skyO * 0.38 + sun[k] / sunO * 0.62;
+      const sh = Math.pow(Math.min(1, Math.max(0, 1 - lit)), 0.85) * 0.92 * (1 - a);
+      let cr = 0, cg = 0, cb = 0;
+      if (a > 0) {
+        const lr = sky[k * 3] * KS + sun[k] * KU * SUN[0] + R[j] * KR * RIM[0];
+        const lg = sky[k * 3 + 1] * KS + sun[k] * KU * SUN[1] + R[j] * KR * RIM[1];
+        const lb = sky[k * 3 + 2] * KS + sun[k] * KU * SUN[2] + R[j] * KR * RIM[2];
+        cr = aces(A[j] / a * lr + E[j] * 2.2); cg = aces(A[j + 1] / a * lg + E[j + 1] * 2.2); cb = aces(A[j + 2] / a * lb + E[j + 2] * 2.2);
+      }
+      // objet par-dessus l'ombre (prémultiplié)
+      pr += cr * a + SH[0] * sh; pg += cg * a + SH[1] * sh; pb += cb * a + SH[2] * sh; pa += a + sh;
+    }
+    const n = SS * SS, i = (y * W + x) * 4, al = pa / n;
+    const g = v => Math.round(255 * Math.pow(Math.min(1, v / n / Math.max(al, 1e-4)), 1 / 2.2));
+    img.data[i] = g(pr); img.data[i + 1] = g(pg); img.data[i + 2] = g(pb); img.data[i + 3] = Math.round(255 * Math.min(1, al));
+  }
+  if (opt.debug) { const d = out.createImageData(W, H); for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const k = (RH - 1 - y * SS) * RW + x * SS, i = (y * W + x) * 4; const v = opt.debug === 'sky' ? (sky[k*3]+sky[k*3+1]+sky[k*3+2]) / skyO : opt.debug === 'sun' ? sun[k] / Math.max(sunO, 1e-4) : A[k*4+3]; d.data[i] = d.data[i+1] = d.data[i+2] = Math.round(255 * Math.min(1, v * 0.8)); d.data[i+3] = 255; } out.putImageData(d, 0, 0); window.dbg = { skyO, sunO }; return cv.toDataURL('image/png'); }
+  out.putImageData(img, 0, 0);
+  return cv.toDataURL('image/png');
+};
+window.ready = true;
+</script>
+</body></html>

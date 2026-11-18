@@ -98,88 +98,123 @@ ${sp(46, 46, 4)}${sp(84, 18, 4, .9)}${sp(16, 22, 3, .7)}`);
 <path d="M47 53L88 12" stroke="#5a3010" stroke-width="3"/><path d="M47 53L56 50 50 47z" fill="#ccd6ee" stroke="#2a3048"/>
 <path d="M80 10L92 4 88 16 96 20 84 24 88 12z" fill="#e8f0ff" stroke="#2a3048" stroke-width="1"/>`);
   },
-  lock(k) {
-    return wrap(glow(k + 'h', '#7f8cff'), `<circle cx="50" cy="50" r="40" fill="url(#${k}h)" opacity=".4"/><rect x="28" y="44" width="44" height="36" rx="6" fill="#4c4e7a" stroke="#1a1a3a" stroke-width="2"/><path d="M36 44V34Q36 20 50 20Q64 20 64 34V44" stroke="#6a6c9a" stroke-width="7" fill="none"/><circle cx="50" cy="60" r="5" fill="#1a1a3a"/><path d="M48 62H52L53 72H47z" fill="#1a1a3a"/>`);
+  lock(k) { // cadenas métallique
+    return wrap(glow(k + 'h', '#9aa8ff') + `<linearGradient id="${k}m" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".45" stop-color="#b9c0da"/><stop offset="1" stop-color="#4a5070"/></linearGradient><linearGradient id="${k}a" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#e8ecff"/><stop offset=".5" stop-color="#8a92b4"/><stop offset="1" stop-color="#4a5070"/></linearGradient>`,
+      `<circle cx="50" cy="56" r="40" fill="url(#${k}h)" opacity=".35"/><path d="M34 46V33Q34 16 50 16Q66 16 66 33V46" stroke="#1a1c34" stroke-width="11" fill="none"/><path d="M34 46V33Q34 16 50 16Q66 16 66 33V46" stroke="url(#${k}a)" stroke-width="7" fill="none"/>
+<rect x="24" y="44" width="52" height="42" rx="8" fill="url(#${k}m)" stroke="#1a1c34" stroke-width="2.4"/><rect x="28" y="48" width="44" height="6" rx="3" fill="#fff" opacity=".35"/>
+<circle cx="50" cy="63" r="6" fill="#1e2038"/><path d="M47 65H53L54.5 76H45.5z" fill="#1e2038"/>`);
   },
 };
 export function modeIcon(id) { return (ICONS[id] || ICONS.lock)(uid()); }
 
-// ---------- Paysages de fond (400×100, coupés selon la largeur) ----------
-const trees = (col, base, n, seed, hMin, hMax) => {
-  let s = seed, out = '';
-  const r = () => (s = (s * 9301 + 49297) % 233280) / 233280;
-  for (let i = 0; i < n; i++) {
-    const x = 120 + i * (290 / n) + r() * 14, w = 5 + r() * 9, ht = hMin + r() * (hMax - hMin);
-    out += `<path d="M${x} ${base}L${x + w * .2} ${base - ht}L${x + w * .8} ${base - ht}L${x + w} ${base}z" fill="${col}"/>`;
-    out += `<ellipse cx="${x + w / 2}" cy="${base - ht + 4}" rx="${16 + r() * 14}" ry="${9 + r() * 6}" fill="${col}"/><ellipse cx="${x + w / 2 + 10}" cy="${base - ht + 14}" rx="${10 + r() * 8}" ry="${6 + r() * 4}" fill="${col}"/>`;
-  }
-  return out;
+// ---------- Paysages de fond (400×100, coupés selon la largeur, peints en couches + grain) ----------
+const rng = seed => { let s = seed; return () => (s = (s * 9301 + 49297) % 233280) / 233280; };
+// arbre « peint » : tronc courbe avec racines + houppier en grappes de cercles
+const tree = (x, base, ht, w, col, leaf, r) => {
+  const b = x + (r() - .5) * 8;
+  let o = `<path d="M${x - w * 1.6} ${base}Q${x - w * .5} ${base - 6} ${x - w * .5} ${base - 14}L${b - w * .3} ${base - ht}L${b + w * .3} ${base - ht}L${x + w * .5} ${base - 14}Q${x + w * .5} ${base - 6} ${x + w * 1.8} ${base}z" fill="${col}"/>`;
+  if (leaf) for (let i = 0; i < 6; i++) o += `<circle cx="${b + (r() - .5) * 46}" cy="${base - ht + (r() - .3) * 16}" r="${8 + r() * 12}" fill="${leaf}"/>`;
+  return o;
 };
-const motes = (seed, c, n = 14) => {
-  let s = seed, out = '';
-  const r = () => (s = (s * 9301 + 49297) % 233280) / 233280;
-  for (let i = 0; i < n; i++) out += `<circle cx="${150 + r() * 250}" cy="${r() * 100}" r="${.6 + r() * 1.4}" fill="${c}" opacity="${.4 + r() * .6}"/>`;
-  return out;
+const forest = (seed, n, x0, x1, base, hMin, hMax, w, col, leaf) => {
+  const r = rng(seed); let o = '';
+  for (let i = 0; i < n; i++) o += tree(x0 + (i + r() * .6) * ((x1 - x0) / n), base, hMin + r() * (hMax - hMin), w * (.7 + r() * .6), col, leaf, r);
+  return o;
 };
+const dots = (seed, n, x0, y0, x1, y1, c, rmin, rmax, op = 1) => {
+  const r = rng(seed); let o = '';
+  for (let i = 0; i < n; i++) o += `<circle cx="${(x0 + r() * (x1 - x0)).toFixed(1)}" cy="${(y0 + r() * (y1 - y0)).toFixed(1)}" r="${(rmin + r() * (rmax - rmin)).toFixed(2)}" fill="${c}" opacity="${(op * (.45 + r() * .55)).toFixed(2)}"/>`;
+  return o;
+};
+const rays = (k, cx, c, op) => `<g filter="url(#${k}bl)" opacity="${op}" fill="${c}"><path d="M${cx - 14} -5L${cx - 70} 105H${cx - 40}L${cx - 4} -5z"/><path d="M${cx + 2} -5L${cx - 8} 105H${cx + 18}L${cx + 12} -5z"/><path d="M${cx + 18} -5L${cx + 50} 105H${cx + 74}L${cx + 26} -5z"/></g>`;
+const bolt = (d, w) => `<path d="${d}" stroke="#8ff4ff" stroke-width="${w * 4}" opacity=".22" fill="none" stroke-linejoin="round"/><path d="${d}" stroke="#bdfbff" stroke-width="${w * 1.8}" opacity=".7" fill="none" stroke-linejoin="round"/><path d="${d}" stroke="#fff" stroke-width="${w * .7}" fill="none" stroke-linejoin="round"/>`;
 const scene = (k, defs, body) => `<svg viewBox="0 0 400 100" preserveAspectRatio="xMaxYMid slice" xmlns="http://www.w3.org/2000/svg"><defs>${defs}
-<linearGradient id="${k}fade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#0a1238" stop-opacity=".92"/><stop offset=".42" stop-color="#0a1238" stop-opacity=".55"/><stop offset=".7" stop-color="#0a1238" stop-opacity=".05"/><stop offset="1" stop-color="#0a1238" stop-opacity="0"/></linearGradient>
-<filter id="${k}bl" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2.2"/></filter></defs>
-${body}<rect width="400" height="100" fill="url(#${k}fade)"/></svg>`;
+<filter id="${k}bl" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="2.4"/></filter>
+<filter id="${k}bb" x="-30%" y="-80%" width="160%" height="260%"><feGaussianBlur stdDeviation="7"/></filter>
+<filter id="${k}gr" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".9 .6" numOctaves="2" seed="4"/><feColorMatrix values="0 0 0 0 .5  0 0 0 0 .5  0 0 0 0 .5  0 0 0 .9 0"/></filter>
+<linearGradient id="${k}fade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#070b22" stop-opacity=".94"/><stop offset=".38" stop-color="#070b22" stop-opacity=".62"/><stop offset=".66" stop-color="#070b22" stop-opacity=".12"/><stop offset="1" stop-color="#070b22" stop-opacity="0"/></linearGradient>
+<linearGradient id="${k}vg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".25"/><stop offset=".3" stop-color="#000" stop-opacity="0"/><stop offset=".75" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></linearGradient></defs>
+${body}<rect width="400" height="100" filter="url(#${k}gr)" opacity=".10" style="mix-blend-mode:overlay"/><rect width="400" height="100" fill="url(#${k}vg)"/><rect width="400" height="100" fill="url(#${k}fade)"/></svg>`;
+const sky = (k, a, b, c) => `<linearGradient id="${k}s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset=".55" stop-color="${b}"/><stop offset="1" stop-color="${c}"/></linearGradient>`;
 
 const SCENES = {
-  arena(k) { // forêt enchantée de Sylve
-    return scene(k, `<linearGradient id="${k}s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3f8a8c"/><stop offset=".55" stop-color="#1f5560"/><stop offset="1" stop-color="#10283a"/></linearGradient>${glow(k + 'l', '#d8fff2')}`,
-      `<rect width="400" height="100" fill="url(#${k}s)"/><ellipse cx="300" cy="18" rx="90" ry="50" fill="url(#${k}l)" opacity=".7"/>
-<path d="M285 0L250 100H275L300 0zM320 0L320 100H338L330 0z" fill="#e8fff4" opacity=".09"/>
-<g filter="url(#${k}bl)">${trees('#2e6d6a', 104, 9, 3, 70, 110)}</g>${trees('#16393f', 104, 7, 11, 80, 120)}
-<path d="M120 92Q200 84 260 90T400 86V100H120z" fill="#0f2a2c"/>${motes(5, '#c79aff', 10)}${motes(9, '#e8fff0', 10)}`);
-  },
-  camp(k) { // forêt dorée de la campagne
-    return scene(k, `<linearGradient id="${k}s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8a5a1c"/><stop offset=".6" stop-color="#4a2c0e"/><stop offset="1" stop-color="#20120a"/></linearGradient>${glow(k + 'l', '#ffd98a')}`,
-      `<rect width="400" height="100" fill="url(#${k}s)"/><ellipse cx="330" cy="40" rx="80" ry="55" fill="url(#${k}l)" opacity=".75"/>
-<g filter="url(#${k}bl)">${trees('#5a3810', 104, 8, 7, 70, 110)}</g>${trees('#2a1606', 104, 6, 2, 85, 120)}
-<path d="M120 94Q220 86 300 92T400 90V100H120z" fill="#1a0e04"/>${motes(13, '#ffe0a0', 14)}`);
-  },
-  surv(k) { // château sous l'orage
-    return scene(k, `<linearGradient id="${k}s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a5468"/><stop offset=".6" stop-color="#252c3c"/><stop offset="1" stop-color="#11141e"/></linearGradient>`,
+  arena(k) { // forêt enchantée : brume turquoise, troncs géants, fleurs violettes lumineuses
+    return scene(k, sky(k, '#5fb3ad', '#2a6f78', '#0f2c3a') + glow(k + 'l', '#eafff6') + glow(k + 'p', '#d27bff'),
       `<rect width="400" height="100" fill="url(#${k}s)"/>
-<g filter="url(#${k}bl)" fill="#6a7488" opacity=".6"><ellipse cx="250" cy="12" rx="70" ry="16"/><ellipse cx="350" cy="8" rx="60" ry="14"/></g>
-<path d="M368 0L356 26 364 26 350 52" stroke="#dfe9ff" stroke-width="1.6" fill="none" opacity=".9"/>
-<path d="M368 0L356 26 364 26 350 52" stroke="#a9c4ff" stroke-width="5" fill="none" opacity=".25"/>
-<g fill="#1a1e2a"><path d="M240 100V58H250V50H256V58H266V44L272 34 278 44V58H300V40H306V34H312V40H318V100z"/><path d="M318 100V64H330V54H336V64H350V100z"/>
-<path d="M200 100L220 74 236 82 250 100z"/></g>
-<g fill="#ffb84a" opacity=".85"><rect x="270" y="50" width="3" height="5"/><rect x="309" y="52" width="3" height="5"/><rect x="333" y="70" width="3" height="4"/></g>
-<g stroke="#c8d4ff" stroke-width=".6" opacity=".25">${Array.from({ length: 22 }, (_, i) => `<path d="M${150 + i * 12} ${(i * 37) % 60}l-4 14"/>`).join('')}</g>`);
+<ellipse cx="292" cy="30" rx="80" ry="58" fill="url(#${k}l)" opacity=".85"/>
+<g filter="url(#${k}bl)" opacity=".75">${forest(3, 9, 150, 410, 100, 70, 95, 4, '#4f9a96', '#5aa7a0')}</g>
+${rays(k, 292, '#f2fff8', .22)}
+<g filter="url(#${k}bb)" fill="#cff4ea" opacity=".35"><ellipse cx="300" cy="78" rx="110" ry="10"/></g>
+${forest(11, 5, 170, 420, 104, 90, 125, 8, '#173f45', '#1d4d50')}
+${forest(19, 3, 200, 430, 106, 110, 130, 13, '#0b2328', null)}
+<path d="M140 92Q210 84 280 90T420 86V100H140z" fill="#0c2226"/>
+<ellipse cx="300" cy="90" rx="60" ry="14" fill="url(#${k}p)" opacity=".45"/>
+${dots(5, 26, 200, 82, 400, 99, '#d58bff', .8, 2.2)}${dots(7, 12, 210, 84, 400, 98, '#ffb6f0', .6, 1.4)}${dots(9, 14, 160, 10, 400, 80, '#eafff4', .4, 1.2, .8)}`);
   },
-  event(k) { // tempête d'éther violette
-    return scene(k, `<linearGradient id="${k}s" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5a2ab8"/><stop offset=".5" stop-color="#7a3ad8"/><stop offset="1" stop-color="#2a3a9a"/></linearGradient>${glow(k + 'l', '#ff9cf2')}`,
+  camp(k) { // forêt d'automne dorée, chemin de lumière
+    return scene(k, sky(k, '#b9822e', '#6a3e12', '#22120a') + glow(k + 'l', '#ffe3a0'),
       `<rect width="400" height="100" fill="url(#${k}s)"/>
-<g filter="url(#${k}bl)"><ellipse cx="260" cy="80" rx="80" ry="22" fill="#2a1a6a"/><ellipse cx="370" cy="88" rx="70" ry="18" fill="#3a1a7a"/><ellipse cx="320" cy="20" rx="60" ry="22" fill="url(#${k}l)" opacity=".7"/></g>
-<g stroke-linejoin="round" fill="none"><path d="M300 0L288 22 298 24 282 50 296 50 276 80" stroke="#7ff6ff" stroke-width="5" opacity=".3"/><path d="M300 0L288 22 298 24 282 50 296 50 276 80" stroke="#e9ffff" stroke-width="1.6"/>
-<path d="M380 10L366 30 376 32 356 56" stroke="#7ff6ff" stroke-width="4" opacity=".3"/><path d="M380 10L366 30 376 32 356 56" stroke="#e9ffff" stroke-width="1.2"/>
-<path d="M200 0L214 18 206 22 222 40" stroke="#b9f8ff" stroke-width="1" opacity=".6"/></g>${motes(21, '#ffffff', 18)}`);
+<ellipse cx="320" cy="44" rx="86" ry="60" fill="url(#${k}l)" opacity=".9"/>
+<g filter="url(#${k}bl)" opacity=".8">${forest(7, 8, 150, 410, 100, 65, 95, 4, '#8a5a20', '#a36a24')}</g>
+${rays(k, 320, '#fff0c0', .25)}
+${forest(2, 5, 165, 420, 104, 90, 125, 8, '#3a2008', '#4a2a0c')}
+${forest(23, 3, 190, 430, 106, 110, 130, 13, '#1c0e04', null)}
+<path d="M140 94Q230 86 300 92T420 90V100H140z" fill="#1a0e04"/>
+<path d="M290 100Q300 90 318 86Q330 84 326 80" stroke="#ffd98a" stroke-width="6" fill="none" opacity=".35" filter="url(#${k}bl)"/>
+${dots(13, 22, 170, 10, 400, 95, '#ffd27a', .5, 1.6)}${dots(17, 10, 200, 30, 400, 90, '#ff9a3a', .8, 1.8, .8)}`);
   },
-  hero(k) { // arène de nuit, cercle magique
-    return scene(k, `<linearGradient id="${k}s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a2a8a"/><stop offset=".6" stop-color="#1c1660"/><stop offset="1" stop-color="#0c0a30"/></linearGradient>${glow(k + 'l', '#ff6ad8')}`,
-      `<rect width="400" height="100" fill="url(#${k}s)"/><ellipse cx="300" cy="10" rx="110" ry="30" fill="url(#${k}l)" opacity=".35"/>
-<g fill="#120c40">${[200, 240, 300, 350, 390].map((x, i) => `<rect x="${x}" y="${20 + (i % 2) * 8}" width="12" height="80"/><rect x="${x - 3}" y="${18 + (i % 2) * 8}" width="18" height="5"/>`).join('')}</g>
-<ellipse cx="300" cy="90" rx="90" ry="12" fill="none" stroke="#7fe0ff" stroke-width="1.4" opacity=".8"/><ellipse cx="300" cy="90" rx="70" ry="8" fill="none" stroke="#b98aff" stroke-width="1" stroke-dasharray="4 3" opacity=".8"/>
-<ellipse cx="300" cy="90" rx="90" ry="12" fill="#7fe0ff" opacity=".12" filter="url(#${k}bl)"/>${motes(31, '#d9c8ff', 14)}`);
-  },
-  tourney(k) { // salle d'or, bannières
-    return scene(k, `<linearGradient id="${k}s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a5418"/><stop offset=".6" stop-color="#3e2808"/><stop offset="1" stop-color="#1c1004"/></linearGradient>${glow(k + 'l', '#ffe08a')}`,
-      `<rect width="400" height="100" fill="url(#${k}s)"/><ellipse cx="310" cy="50" rx="70" ry="50" fill="url(#${k}l)" opacity=".6"/>
-<g fill="#2a1a06">${[220, 270, 350, 395].map(x => `<rect x="${x}" y="10" width="14" height="90"/>`).join('')}</g>
-<g>${[[240, '#8a1a2a'], [320, '#1a3a8a'], [372, '#8a1a2a']].map(([x, c]) => `<path d="M${x} 6H${x + 18}V44L${x + 9} 36 ${x} 44z" fill="${c}" stroke="#e9b84a" stroke-width="1"/><circle cx="${x + 9}" cy="20" r="4" fill="#e9b84a"/>`).join('')}</g>${motes(41, '#ffe8a8', 14)}`);
-  },
-  train(k) { // cour d'entraînement, mannequins
-    return scene(k, `<linearGradient id="${k}s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a4a8a"/><stop offset=".6" stop-color="#162a5a"/><stop offset="1" stop-color="#0a1434"/></linearGradient>`,
+  surv(k) { // remparts sur la falaise, orage
+    return scene(k, sky(k, '#56607a', '#2a3248', '#10131e') + glow(k + 'f', '#cfe0ff'),
       `<rect width="400" height="100" fill="url(#${k}s)"/>
-<g fill="#0c1a40">${[260, 320, 375].map(x => `<rect x="${x - 1.5}" y="50" width="3" height="50"/><rect x="${x - 14}" y="58" width="28" height="3"/><ellipse cx="${x}" cy="66" rx="7" ry="11"/><circle cx="${x}" cy="48" r="6"/>`).join('')}</g>
-<path d="M120 94Q240 88 400 92V100H120z" fill="#08102a"/>${motes(51, '#bfe0ff', 10)}`);
+<ellipse cx="360" cy="18" rx="60" ry="30" fill="url(#${k}f)" opacity=".5"/>
+<g filter="url(#${k}bb)" fill="#7a849c" opacity=".7"><ellipse cx="240" cy="10" rx="80" ry="14"/><ellipse cx="350" cy="6" rx="70" ry="13"/><ellipse cx="300" cy="30" rx="60" ry="8" fill="#3a4258"/></g>
+${bolt('M372 -2L360 22 368 23 352 50 360 51 348 70', 1)}
+<g filter="url(#${k}bl)" fill="#2a3044" opacity=".9"><path d="M150 100L190 70 230 78 270 66 300 100z"/></g>
+<path d="M200 100L230 80 330 82 360 100z" fill="#141826"/>
+<g fill="#161a28"><path d="M236 84V56H244V50H250V56H258V42L265 30 272 42V56H292V38H298V32H306V38H312V84z"/><path d="M312 84V60H322V52H328V60H342V84z"/>
+<path d="M236 56h6v-4h4v4h6v-4h4v4h6" stroke="#161a28" stroke-width="2"/></g>
+<g fill="#ffb84a"><rect x="262" y="46" width="3" height="5"/><rect x="301" y="46" width="3" height="5"/><rect x="326" y="66" width="3" height="4"/><rect x="246" y="66" width="3" height="4"/></g>
+<g fill="#ffb84a" opacity=".35" filter="url(#${k}bl)"><circle cx="263" cy="48" r="5"/><circle cx="302" cy="48" r="5"/></g>
+<g stroke="#c8d4ff" stroke-width=".6" opacity=".22">${Array.from({ length: 26 }, (_, i) => `<path d="M${150 + i * 10} ${(i * 37) % 70}l-4 16"/>`).join('')}</g>`);
+  },
+  event(k) { // tempête d'éther : nébuleuse violette, éclairs cyan
+    return scene(k, `<linearGradient id="${k}s" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4a20a8"/><stop offset=".5" stop-color="#8a44e8"/><stop offset="1" stop-color="#3048b8"/></linearGradient>` + glow(k + 'l', '#ffa8f4') + glow(k + 'c', '#8ff4ff'),
+      `<rect width="400" height="100" fill="url(#${k}s)"/>
+<g filter="url(#${k}bb)"><ellipse cx="320" cy="20" rx="70" ry="26" fill="url(#${k}l)" opacity=".8"/><ellipse cx="250" cy="86" rx="90" ry="22" fill="#2a1470"/><ellipse cx="370" cy="92" rx="80" ry="18" fill="#3a1a80"/><ellipse cx="200" cy="40" rx="50" ry="20" fill="#b46af0" opacity=".5"/></g>
+<ellipse cx="300" cy="50" rx="60" ry="40" fill="url(#${k}c)" opacity=".3"/>
+${bolt('M300 -2L288 22 298 24 282 50 296 51 276 82', 1.1)}${bolt('M380 8L366 30 376 32 356 58', .8)}${bolt('M215 -2L228 18 220 22 236 42', .5)}
+${dots(21, 30, 160, 2, 400, 98, '#ffffff', .4, 1.3)}${dots(25, 8, 200, 10, 400, 90, '#9ff6ff', .9, 1.8)}`);
+  },
+  hero(k) { // arène magique de nuit, colonnes, cercle de runes
+    return scene(k, sky(k, '#4a2a98', '#221868', '#0c0a30') + glow(k + 'l', '#ff70dc') + glow(k + 'c', '#7fe8ff'),
+      `<rect width="400" height="100" fill="url(#${k}s)"/>
+<ellipse cx="300" cy="8" rx="120" ry="34" fill="url(#${k}l)" opacity=".45"/>
+<g filter="url(#${k}bl)" fill="#2a1e78" opacity=".9">${[180, 215, 250].map(x => `<rect x="${x}" y="34" width="10" height="66"/>`).join('')}</g>
+<g fill="#110b3c">${[270, 320, 360, 398].map((x, i) => `<rect x="${x}" y="${22 + (i % 2) * 6}" width="13" height="80"/><rect x="${x - 3}" y="${19 + (i % 2) * 6}" width="19" height="5"/><rect x="${x - 3}" y="${90}" width="19" height="6"/>`).join('')}</g>
+<path d="M140 100Q260 80 420 92V100z" fill="#0a0828"/>
+<ellipse cx="310" cy="90" rx="80" ry="12" fill="url(#${k}c)" opacity=".5"/>
+<ellipse cx="310" cy="90" rx="74" ry="10" fill="none" stroke="#9ff0ff" stroke-width="1.2" opacity=".9"/><ellipse cx="310" cy="90" rx="56" ry="7" fill="none" stroke="#c9a2ff" stroke-width=".9" stroke-dasharray="3 2.5"/>
+<g fill="#b69aff">${[[262, 70], [356, 72], [380, 60]].map(([x, y]) => `<path d="M${x} ${y}l4 -12 4 12 -4 6z" opacity=".85"/>`).join('')}</g>
+${dots(31, 22, 170, 4, 400, 90, '#e2d4ff', .4, 1.3)}`);
+  },
+  tourney(k) { // salle d'honneur dorée, bannières royales, torches
+    return scene(k, sky(k, '#8a6020', '#45300c', '#1c1004') + glow(k + 'l', '#ffe08a') + glow(k + 't', '#ff9a3a'),
+      `<rect width="400" height="100" fill="url(#${k}s)"/>
+<ellipse cx="315" cy="50" rx="80" ry="56" fill="url(#${k}l)" opacity=".7"/>
+${rays(k, 315, '#fff0c0', .2)}
+<g fill="#2a1a06">${[214, 262, 352, 398].map(x => `<rect x="${x}" y="6" width="15" height="94"/><rect x="${x - 3}" y="88" width="21" height="8"/>`).join('')}</g>
+${[[232, '#9a1a2a'], [300, '#1a3a9a'], [372, '#9a1a2a']].map(([x, c]) => `<path d="M${x} 4H${x + 20}V46L${x + 10} 38 ${x} 46z" fill="${c}" stroke="#f1c45a" stroke-width="1.2"/><path d="M${x + 10} 14l3 6 6 1-4.5 4 1 6-5.5-3-5.5 3 1-6-4.5-4 6-1z" fill="#f1c45a"/>`).join('')}
+${[[221, 44], [270, 44], [360, 44]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="12" fill="url(#${k}t)" opacity=".7"/><path d="M${x} ${y - 6}q3 4 0 7q-3 -3 0 -7z" fill="#ffd27a"/>`).join('')}
+<path d="M140 96Q260 90 420 94V100H140z" fill="#140a02"/>${dots(41, 18, 180, 4, 400, 95, '#ffe8a8', .4, 1.4)}`);
+  },
+  train(k) { // cour d'entraînement au crépuscule
+    return scene(k, sky(k, '#34589a', '#182e62', '#0a1434') + glow(k + 'l', '#9fd0ff'),
+      `<rect width="400" height="100" fill="url(#${k}s)"/><ellipse cx="320" cy="30" rx="70" ry="40" fill="url(#${k}l)" opacity=".4"/>
+<g fill="#0c1a40">${[262, 322, 378].map(x => `<rect x="${x - 1.5}" y="50" width="3" height="50"/><rect x="${x - 14}" y="58" width="28" height="3"/><ellipse cx="${x}" cy="66" rx="7" ry="11"/><circle cx="${x}" cy="48" r="6"/>`).join('')}</g>
+<path d="M140 94Q260 88 420 92V100H140z" fill="#08102a"/>${dots(51, 14, 170, 4, 400, 90, '#bfe0ff', .4, 1.2)}`);
   },
   lock(k) {
-    return scene(k, `<linearGradient id="${k}s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c2050"/><stop offset="1" stop-color="#0c0f2c"/></linearGradient>`, `<rect width="400" height="100" fill="url(#${k}s)"/>${motes(61, '#8a90c8', 10)}`);
+    return scene(k, sky(k, '#1c2050', '#121540', '#0a0c28'), `<rect width="400" height="100" fill="url(#${k}s)"/>${dots(61, 16, 150, 4, 400, 96, '#8a90c8', .4, 1.1)}`);
   },
 };
 export function modeScene(id) { return (SCENES[id] || SCENES.lock)(uid()); }

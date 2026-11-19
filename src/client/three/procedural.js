@@ -3,6 +3,7 @@
 // Style « low-poly » à facettes, assorti aux personnages KayKit.
 
 import * as THREE from 'three';
+import { CREATURES } from './creatures.js';
 
 const flat = (color, o = {}) => new THREE.MeshStandardMaterial({ color, flatShading: true, roughness: 0.8, metalness: 0, ...o });
 const glowMat = (color, o = {}) => new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 1.4, flatShading: true, roughness: 0.4, ...o });
@@ -24,7 +25,7 @@ export function glowSprite(color, size) {
   return s;
 }
 
-class ProcActor {
+export class ProcActor {
   constructor(root, height) {
     this.root = root; this.height = height; this.t = Math.random() * 10; this.state = 'idle'; this.st = 0; this.flashT = 0; this.frozen = false;
     this.mats = [];
@@ -251,7 +252,7 @@ function crystalTower() {
 }
 
 export function buildProc(kind, opts = {}) {
-  const f = { dragon, golem, wisp, ram, treant, crystalTower }[kind];
+  const f = { dragon, golem, wisp, ram, treant, crystalTower, ...CREATURES }[kind];
   return f ? f(opts) : golem();
 }
 

@@ -73,3 +73,66 @@ export function survivalWaves(worldId) {
   const pools = { aube: ['ecuyer', 'squelette', 'pousse'], sylve: ['loups', 'pousse', 'archeres'], arcane: ['apprenti', 'squelette', 'pousse'], braise: ['follets', 'brann', 'squelette'], givre: ['jarl', 'frimas', 'squelette'], ombre: ['squelettes', 'osseuse', 'squelette'] };
   return { pool: pools[w.fac] || ['squelette'], lvl: 1 + worldId, bosses: BOSSES.slice(0, worldId + 1).map(b => ({ ...b, hp: Math.round(b.hp * 0.5) })) };
 }
+
+// ---------- Expédition (roguelike court, 19/11) ----------
+// 5 combats d'affilée ; après chaque victoire, le joueur choisit 1 relique parmi 3. Une défaite termine l'expédition.
+// Les reliques sont appliquées par la simulation (sim.js, option `relics`).
+export const RELICS = {
+  onde:     { name: 'Onde de fusion',   icon: '💥', desc: 'Tes héros fusionnés (★2 et ★3) créent une onde de choc en arrivant sur l’île.' },
+  coeur:    { name: 'Cœur vorace',      icon: '❤️‍🔥', desc: 'Le Cœur de Mythe te donne +100 % d’éther… mais draine la vie de ceux qui le tiennent.' },
+  reserve:  { name: 'Réserve d’éther',  icon: '💧', desc: 'Tu commences chaque combat avec 3 éther de plus.' },
+  sagesse:  { name: 'Grimoire d’Éveil', icon: '📖', desc: 'Ta jauge d’Éveil se remplit 40 % plus vite.' },
+  egide:    { name: 'Égide de l’Aube',  icon: '🛡', desc: 'Tous tes héros arrivent avec un bouclier de 15 % de leur vie.' },
+  fureur:   { name: 'Lame de fureur',   icon: '⚔️', desc: 'Tes héros font +15 % de dégâts.' },
+  vigueur:  { name: 'Sève de vigueur',  icon: '🌿', desc: 'Tes héros ont +15 % de vie.' },
+  alchimie: { name: 'Alchimie',         icon: '⚗️', desc: 'Recycler un socle rend 2 éther au lieu de 1.' },
+  etoile:   { name: 'Étoile filante',   icon: '🌠', desc: '1 invocation sur 5 arrive directement en ★2.' },
+  rempart:  { name: 'Rempart sacré',    icon: '🏯', desc: 'Ton Sanctuaire a +20 % de vie.' },
+  vampire:  { name: 'Calice sanglant',  icon: '🍷', desc: 'Tous tes héros volent 8 % des dégâts qu’ils infligent.' },
+  celerite: { name: 'Bottes de célérité', icon: '🪽', desc: 'Tes héros bougent et frappent 12 % plus vite.' },
+};
+export const EXPE = {
+  stages: 5,
+  // niveau d'IA (ajouté à la base du monde) et niveau des héros ennemis pour chaque combat
+  ai: [0, 0, 1, 1, 2], lvl: [0, 1, 1, 2, 3],
+  reward: [{ gold: 40 }, { gold: 60 }, { gold: 90, crystals: 10 }, { gold: 120, crystals: 15 }, { gold: 250, gems: 15, chest: 'magique' }],
+  names: ['Les Failles extérieures', 'Le pont brisé', 'La forêt de cristal', 'Le gouffre hurlant', 'Le Gardien de la Faille'],
+};
+// 3 reliques au hasard (déterministe), sans celles déjà possédées
+export function relicChoices(seed, have = []) {
+  const pool = Object.keys(RELICS).filter(k => !have.includes(k));
+  return shuffle(pool, makeRng(seed)).slice(0, 3);
+}
+
+// ---------- Défi du jour (graine fixe, 19/11) ----------
+// Le même pour tout le monde le même jour : deck imposé, adversaire et graine du combat identiques, mode équilibré.
+// Le score se partage par simple message (pas besoin de serveur).
+const DAILY_KINDS = [
+  { k: 'boss',  name: 'Chasse au boss',     desc: s => 'Abats ' + s.boss.name + ' et son Sanctuaire en moins de ' + s.limit + ' secondes.' },
+  { k: 'blitz', name: 'Blitz',              desc: s => 'Détruis le Sanctuaire ennemi en moins de ' + s.limit + ' secondes.' },
+  { k: 'mur',   name: 'Mur infranchissable', desc: s => 'Gagne en gardant au moins ' + s.minHp + ' % de vie à ton Sanctuaire.' },
+];
+export function dailyChallenge(day) {
+  const rng = makeRng(day * 7919 + 17);
+  const kind = DAILY_KINDS[Math.floor(rng() * DAILY_KINDS.length)];
+  const all = PLAYABLE_IDS();
+  const deck = shuffle(all.slice(), rng).slice(0, 8);
+  const opp = shuffle(all.slice(), rng).slice(0, 8);
+  const spells = ['meteore', 'givre', 'benediction', 'foudre', 'eruption', 'racines', 'malediction'];
+  const d = { day, kind: kind.k, name: kind.name, seed: (day * 2654435761) >>> 0, deck, oppDeck: opp,
+    spell: spells[Math.floor(rng() * spells.length)], oppSpell: spells[Math.floor(rng() * spells.length)],
+    ai: 2 + Math.floor(rng() * 2), world: Math.floor(rng() * WORLDS.length), level: 5 };
+  if (kind.k === 'boss') { d.boss = BOSSES[Math.floor(rng() * 3)]; d.limit = 150; }
+  if (kind.k === 'blitz') d.limit = 120;
+  if (kind.k === 'mur') d.minHp = 60;
+  d.desc = kind.desc(d);
+  return d;
+}
+// score : plus il reste de temps et de vie, mieux c'est
+export function dailyScore(d, r) {
+  if (r.result !== 'win') return 0;
+  if (d.kind === 'mur' && r.myHp * 100 < d.minHp) return 0;
+  const left = Math.max(0, (d.limit || 180) - r.time);
+  return Math.round(1000 + left * 10 + r.myHp * 1000);
+}
+const PLAYABLE_IDS = () => Object.values(HERO).filter(c => !c.token).map(c => c.id);

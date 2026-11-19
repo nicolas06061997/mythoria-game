@@ -131,6 +131,10 @@ export class BattleView {
     }
     // Cœur de Mythe
     this.heart = heartOfMyth(); this.scene.add(this.heart.group);
+    // Halo au sol du Cœur (lisible en un coup d'œil : couleur = qui capture, clignote si disputé)
+    this.heartHalo = new THREE.Mesh(new THREE.RingGeometry(HEART.r * 0.55, HEART.r, 64), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.15, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending }));
+    this.heartHalo.rotation.x = -Math.PI / 2; this.heartHalo.position.y = 0.06; this.heartHalo.scale.y = this.zk; this.scene.add(this.heartHalo);
+    this.zones = []; // zones persistantes (Éruption)
     if (this.art) this.heart.group.traverse(o => { if (o.isMesh && !o.material.transparent) o.visible = false; });
     // Cercle d'invocation (le banc du joueur, en 3D devant l'île)
     const ledge = new THREE.Group(); ledge.position.set(0, -0.35, this.bz);
@@ -312,7 +316,7 @@ export class BattleView {
   benchScreen(i) { const v = new THREE.Vector3(this.bx[i], 0, this.bz).project(this.cam); return { x: (v.x + 1) / 2 * this.ow, y: (1 - v.y) / 2 * this.oh }; }
 
   async setGhost(g) {
-    if (!g) { if (this.ghost) { this.scene.remove(this.ghost.a.holder); this.ghost.a.dispose(); this.ghost = null; } this.zone.visible = false; this.aim.visible = false; return; }
+    if (!g) { this.ghostInfo = null; if (this.ghost) { this.scene.remove(this.ghost.a.holder); this.ghost.a.dispose(); this.ghost = null; } this.zone.visible = false; this.aim.visible = false; return; }
     if (g.spell) {
       this.zone.visible = false; this.aim.visible = true;
       const w = this.toWorld(g.x, g.y); this.aim.position.set(w.x, 0.09, w.z); this.aim.scale.setScalar(SPELL[g.spell].radius);
@@ -333,6 +337,12 @@ export class BattleView {
     this.aim.visible = true; this.aim.position.set(w.x, 0.09, w.z);
     const c = HERO[g.id]; this.aim.scale.setScalar(c.range > 2 ? c.range : 1.1);
     this.aim.material.color.set(g.ok ? '#ffffff' : '#ff4f5e');
+    // étiquette : portée et capture du Cœur
+    const inHeart = Math.hypot(g.x - HEART.x, g.y - HEART.y) <= HEART.r;
+    this.ghostInfo = { x: g.x, y: g.y, ok: g.ok,
+      a: c.range > 2 ? 'Portée ' + String(c.range).replace('.', ',') + ' cases' : 'Corps à corps',
+      b: c.fly ? '🪽 Volant : ne capture pas le Cœur' : c.type === 'building' ? 'Bâtiment : ne capture pas' : c.tgt === 'buildings' ? 'Fonce sur les bâtiments' : inHeart ? '✦ Capture le Cœur ici' : '✦ Peut capturer le Cœur',
+      heart: inHeart && !c.fly && c.type !== 'building' };
   }
   highlightSlot(i) { this.bench.forEach((b, k) => { b.rune.material.color.set(k === i ? '#ffd166' : '#8fd8ff'); b.rune.material.opacity = k === i ? 0.95 : 0.5; }); }
 
@@ -348,12 +358,15 @@ export class BattleView {
         case 'attack': { const v = this.views.get(e.id); if (v && v.actor) { v.actor.play('attack', { force: true }); const c = HERO[s.ents.find(o => o.id === e.id)?.card]; if (c && !c.proj && !c.chain) { const t = this.toWorld(e.tx, e.ty); this.fx.emit(t.x, 0.9, t.z, { n: 6, color: ['#ffffff', '#ffe9b0'], size: 0.3, life: 0.25, speed: 3 }); } } break; }
         case 'hit': { const v = this.views.get(e.id); if (v && v.actor) v.actor.flash(); const ent = s.ents.find(o => o.id === e.id); if (ent && ent.kind === 'sanct') { this.num(e.x, e.y, '-' + e.amount, 3.4); this.sanctFlash = 0.1; } break; }
         case 'die': this.onDie(e, s); break;
-        case 'boom': this.fx.explosion(w.x, w.z, e.r, e.kind); if (e.kind === 'roar') this.shake = 0.4; break;
+        case 'boom': this.fx.explosion(w.x, w.z, e.r, e.kind); if (e.kind === 'roar') this.shake = Math.max(this.shake, 0.4); if (e.kind === 'surcharge') this.fx.ring(w.x, w.z, e.r * 1.3, '#c8b8ff', 0.5); if (e.kind === 'breche') { this.fx.ring(w.x, w.z, e.r * 1.4, '#e8d8b0', 0.5); this.shake = Math.max(this.shake, 0.2); } break;
+        case 'rico': { const b = this.toWorld(e.tx, e.ty); this.fx.bolt([new THREE.Vector3(w.x, 0.9, w.z), new THREE.Vector3(b.x, 0.9, b.z)], '#c8ffd0', 0.18, 0.05); break; }
+        case 'star3': this.star3Fx(e, w, s); break;
+        case 'recycle': if (e.p === this.me) { const b = this.bx[e.slot]; this.fx.ring(b, this.bz, 1.3, '#7dff9a', 0.6); this.fx.emit(b, 0.5, this.bz, { n: 22, color: ['#b0ffc0', '#7fd8ff', '#ffffff'], size: 0.4, life: 0.7, speed: 2.2, up: 1 }); this.num(CX + this.bx[e.slot], CY + this.bz / this.zk, '+' + e.back + ' éther', 1.2, '#b98cff'); } break;
         case 'cleave': this.fx.ring(w.x, w.z, e.r * 1.2, '#ffe0b0', 0.3); this.fx.emit(w.x, 0.8, w.z, { n: 10, color: ['#ffffff', '#ffd27a'], size: 0.35, life: 0.3, speed: 4, up: 0.2 }); break;
         case 'impact': if (e.kind === 'arrow') this.fx.emit(w.x, 0.9, w.z, { n: 4, color: '#ffffff', size: 0.25, life: 0.2, speed: 2 }); else if (e.kind === 'ice') this.fx.emit(w.x, 0.9, w.z, { n: 8, color: ['#ffffff', '#9fe8ff'], size: 0.35, life: 0.4, speed: 2.5 }); else this.fx.emit(w.x, 0.9, w.z, { n: 8, color: ['#ffffff', '#ffd27a'], size: 0.4, life: 0.3, speed: 2.5 }); break;
         case 'zap': this.fx.bolt(e.pts.map(p => { const q = this.toWorld(p.x, p.y); return new THREE.Vector3(q.x, 1.1, q.z); })); break;
         case 'dash': { const a = this.toWorld(e.x0, e.y0), b = this.toWorld(e.x1, e.y1); for (let k = 0; k <= 8; k++) this.fx.emit(a.x + (b.x - a.x) * k / 8, 0.8, a.z + (b.z - a.z) * k / 8, { n: 3, color: ['#ffb48a', '#ff7a3d'], size: 0.5, life: 0.4, speed: 0.6, gravity: 0 }); break; }
-        case 'fuse': this.fx.pillar(w.x, w.z, 1.0, '#ffd166', 1.0, 9); this.fx.ring(w.x, w.z, 2.2, '#ffd166', 0.7); this.fx.emit(w.x, 1, w.z, { n: 40, color: ['#fff3c0', '#ffd166'], size: 0.45, life: 1, speed: 3, up: 0.9 }); this.num(e.x, e.y, '★'.repeat(e.star) + ' FUSION', 3.0, '#ffd166', true); break;
+        case 'fuse': if (e.star >= 3) this.shake = Math.max(this.shake, 0.35); this.fx.pillar(w.x, w.z, 1.0, '#ffd166', 1.0, 9); this.fx.ring(w.x, w.z, 2.2, '#ffd166', 0.7); this.fx.emit(w.x, 1, w.z, { n: 40, color: ['#fff3c0', '#ffd166'], size: 0.45, life: 1, speed: 3, up: 0.9 }); this.num(e.x, e.y, '★'.repeat(e.star) + ' FUSION', 3.0, '#ffd166', true); break;
         case 'conjure': { const v = this.views.get(e.id); if (v && v.actor) v.actor.play('cast', { force: true }); this.fx.ring(w.x, w.z, 2, FAC_COL[e.fac] || '#a0ffb0', 0.7); this.fx.emit(w.x, 0.3, w.z, { n: 20, color: [FAC_COL[e.fac] || '#a0ffb0', '#ffffff'], size: 0.4, life: 0.8, speed: 1.5, up: 1 }); break; }
         case 'nova': { const v = this.views.get(e.id); if (v && v.actor) v.actor.play('cast', { force: true }); this.fx.ring(w.x, w.z, e.r, '#bff0ff', 0.6); this.fx.shards(w.x, w.z, e.r); this.fx.emit(w.x, 0.6, w.z, { n: 30, color: ['#ffffff', '#bff0ff'], size: 0.4, life: 0.8, speed: 4, up: 0.3 }); break; }
         case 'cast': if (SPELL[e.spell].fx === 'meteor') { const w2 = this.toWorld(e.x, e.y); this.fx.meteor(w2.x, w2.z, e.delay); } break;
@@ -376,7 +389,36 @@ export class BattleView {
       }
     }
   }
+  // Héros ★3 : grosse colonne dorée, double onde, gerbe d'étincelles et tremblement (effet unique selon son rôle)
+  star3Fx(e, w, s) {
+    const col = { gardien: '#ffd166', tireur: '#7dff9a', mage: '#b8a8ff', bete: '#ff8a4a', siege: '#e8d8b0' }[e.role] || '#ffd166';
+    this.fx.pillar(w.x, w.z, 1.5, '#fff3c0', 1.3, 12); this.fx.pillar(w.x, w.z, 0.8, col, 1.5, 14);
+    this.fx.ring(w.x, w.z, e.role === 'gardien' ? 3.0 : 2.4, col, 0.8); this.fx.ring(w.x, w.z, 3.6, '#ffffff', 0.6);
+    this.fx.flash(w.x, 1.5, w.z, 7, col, 0.45);
+    this.fx.emit(w.x, 0.8, w.z, { n: 70, color: ['#fff3c0', '#ffd166', col], size: 0.55, life: 1.2, speed: 4.5, up: 0.8, spread: 1.4 });
+    if (e.role === 'gardien') this.fx.explosion(w.x, w.z, 2.4, 'roar');
+    this.num(e.x, e.y, '★★★ ' + ({ gardien: 'ONDE DE CHOC', tireur: 'RICOCHET', mage: 'SURCHARGE', bete: 'RAGE', siege: 'BRÈCHE' }[e.role] || ''), 3.4, '#ffd166', true);
+    this.shake = Math.max(this.shake, 0.55);
+    if (this.world && this.world.cheer) this.world.cheer(0.8);
+  }
   spellFx(e, w) {
+    if (e.reso) this.fx.ring(w.x, w.z, e.r * 1.25, '#ffffff', 0.7);
+    if (e.fx === 'eruption') {
+      this.fx.explosion(w.x, w.z, e.r, 'fire'); this.fx.disc(w.x, w.z, e.r, '#ff4a0a', e.dur, 0.55); this.shake = Math.max(this.shake, 0.5);
+      this.zones.push({ x: w.x, z: w.z, r: e.r, t: e.dur, k: 0 });
+      return;
+    }
+    if (e.fx === 'roots') {
+      this.fx.disc(w.x, w.z, e.r, '#3f9a52', 2.5, 0.45); this.fx.ring(w.x, w.z, e.r, '#9fff8a', 0.8);
+      for (let k = 0; k < 10; k++) { const a = k / 10 * Math.PI * 2, d = e.r * (0.3 + (k % 3) * 0.25); this.fx.pillar(w.x + Math.cos(a) * d, w.z + Math.sin(a) * d, 0.18, '#6fd06a', 1.6, 1.6); }
+      this.fx.emit(w.x, 0.3, w.z, { n: 50, color: ['#7fe08a', '#3f9a52', '#d8ffb0'], size: 0.45, life: 1.2, speed: 1.6, up: 0.9, jitter: e.r });
+      this.shake = Math.max(this.shake, 0.2); return;
+    }
+    if (e.fx === 'curse') {
+      this.fx.disc(w.x, w.z, e.r, '#6a1aa0', 2.2, 0.5); this.fx.ring(w.x, w.z, e.r * 1.1, '#c08aff', 0.9); this.fx.flash(w.x, 1.5, w.z, e.r * 2, '#a060ff', 0.4);
+      this.fx.emit(w.x, 0.4, w.z, { n: 60, color: ['#e0c0ff', '#a060ff', '#2a0a40'], size: 0.55, life: 1.4, speed: 1.4, up: 1.1, jitter: e.r, gravity: 1 });
+      this.shake = Math.max(this.shake, 0.25); return;
+    }
     if (e.fx === 'meteor') { this.fx.explosion(w.x, w.z, e.r, 'fire'); this.fx.explosion(w.x, w.z, e.r * 0.6, 'roar'); this.fx.disc(w.x, w.z, e.r, '#ff5a1a', 2.5, 0.5); this.shake = 0.6; }
     else if (e.fx === 'freeze') { this.fx.shards(w.x, w.z, e.r, '#bff0ff', 3.5); this.fx.disc(w.x, w.z, e.r, '#9fe8ff', 3.5, 0.35); this.fx.emit(w.x, 2, w.z, { n: 60, color: ['#ffffff', '#cfefff'], size: 0.35, life: 1.6, speed: 2, up: -0.2, spread: 1.5, gravity: -1, jitter: e.r }); }
     else if (e.fx === 'heal') { for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2; this.fx.pillar(w.x + Math.cos(a) * e.r * 0.55, w.z + Math.sin(a) * e.r * 0.55, 0.3, '#ffe39a', 1.2, 5); } this.fx.disc(w.x, w.z, e.r, '#ffd166', 1.2, 0.35); this.fx.emit(w.x, 0.3, w.z, { n: 50, color: ['#fff6c8', '#ffd166', '#b0ffb0'], size: 0.45, life: 1.2, speed: 1.5, up: 1.2, jitter: e.r }); }
@@ -437,6 +479,7 @@ export class BattleView {
         a.holder.rotation.y += d * Math.min(1, dt * 10);
       }
       a.setFrozen(e.frozen > 0);
+      if (e.s3 && v.ring) { v.ring.material.opacity = 0.6 + Math.sin(this.time * 5 + e.id) * 0.35; v.ring.scale.setScalar(1 + Math.sin(this.time * 5 + e.id) * 0.12); } // aura ★3
       if (e.deploy <= 0 && !v.dying) {
         a.back = e.moving ? (e.spd < 1 ? 'walk' : 'run') : 'idle';
         if (e.moving) a.play(e.spd < 1 ? 'walk' : 'run'); else if (!['attack', 'cast'].includes(a.state) || !a.lock) a.play('idle');
@@ -477,6 +520,14 @@ export class BattleView {
       if (k < 0.5 && !S.dead) { S.smokeT -= dt; if (S.smokeT <= 0) { S.smokeT = 0.15 + k * 0.4; this.fx.emit(S.g.position.x + (Math.random() - 0.5) * 2, 2.5, S.g.position.z, { n: 1, color: k < 0.25 ? ['#ff8a3d', '#5a5050'] : ['#6a6464'], size: 1.2, life: 1.6, speed: 0.4, up: 1, gravity: 1, alpha: 0.4 }); } }
     }
     this.heart.update(this.time, this.me === 0 ? s.heart.ctl : -s.heart.ctl, s.heart.owner < 0 ? -1 : s.heart.owner === this.me ? 0 : 1, TEAM);
+    { const cap = s.heart.cap ?? -1, H = this.heartHalo.material; // halo du Cœur
+      if (cap === 2) { H.color.set(Math.sin(this.time * 14) > 0 ? '#ffffff' : '#ffb02e'); H.opacity = 0.45; }
+      else if (cap >= 0) { H.color.set(TEAM[cap === this.me ? 0 : 1]); H.opacity = 0.32 + Math.sin(this.time * 6) * 0.12; }
+      else if (s.heart.owner >= 0) { H.color.set(TEAM[s.heart.owner === this.me ? 0 : 1]); H.opacity = 0.16; }
+      else { H.color.set('#ffffff'); H.opacity = 0.08 + Math.sin(this.time * 2) * 0.03; }
+      this.heartHalo.rotation.z += dt * 0.3; }
+    for (const z of this.zones) { z.t -= dt; z.k -= dt; if (z.k <= 0 && z.t > 0) { z.k = 0.12; const a = Math.random() * 6.283, d = Math.random() * z.r; this.fx.emit(z.x + Math.cos(a) * d, 0.2, z.z + Math.sin(a) * d, { n: 3, color: ['#fff3c0', '#ffb02e', '#ff4a0a'], size: 0.5, life: 0.7, speed: 1.2, up: 1.2, spread: 0.4, gravity: 1 }); } }
+    this.zones = this.zones.filter(z => z.t > 0);
     this.fx.syncProjectiles(s.proj, (x, y) => this.toWorld(x, y));
     this.fx.update(dt);
     this.world.update(dt, this.time);
@@ -497,7 +548,7 @@ export class BattleView {
     for (const e of s.ents) {
       if (e.kind === 'sanct' || e.deploy > 0) continue;
       const v = this.views.get(e.id); if (!v || !v.actor) continue;
-      const show = e.hp < e.maxHp || e.star > 1 || e.kind === 'building' || e.shield > 0;
+      const show = e.hp < e.maxHp || e.star > 1 || e.kind === 'building' || e.shield > 0 || e.rootT > 0 || e.curseT > 0;
       if (!show) continue;
       const x = e.px + (e.x - e.px) * alpha, y = e.py + (e.y - e.py) * alpha;
       const h = v.actor.height + (e.fly ? 1.2 : 0.25);
@@ -507,6 +558,7 @@ export class BattleView {
       c.fillStyle = 'rgba(10,6,20,.8)'; rr(c, p.x - w / 2 - 1.5, p.y - 1.5, w + 3, hh + 3, 3); c.fill();
       c.fillStyle = TEAM[team]; rr(c, p.x - w / 2, p.y, w * Math.max(0, e.hp / e.maxHp), hh, 2); c.fill();
       if (e.shield > 0) { c.fillStyle = '#d8ecff'; c.fillRect(p.x - w / 2, p.y - 3, Math.min(w, w * e.shield / e.maxHp * 2), 2); }
+      if (e.rootT > 0 || e.curseT > 0) { c.font = '900 11px Nunito, sans-serif'; c.textAlign = 'left'; c.fillStyle = e.curseT > 0 ? '#d8a8ff' : '#9fff8a'; c.strokeStyle = 'rgba(20,10,30,.9)'; c.lineWidth = 3; const ic = (e.rootT > 0 ? '🌿' : '') + (e.curseT > 0 ? '☠' : ''); c.strokeText(ic, p.x + w / 2 + 3, p.y + 6); c.fillText(ic, p.x + w / 2 + 3, p.y + 6); }
       if (e.star > 1) { c.font = '900 12px Nunito, sans-serif'; c.textAlign = 'center'; c.fillStyle = '#ffd166'; c.strokeStyle = 'rgba(20,10,30,.9)'; c.lineWidth = 3; const st = '★'.repeat(e.star); c.strokeText(st, p.x, p.y - 4); c.fillText(st, p.x, p.y - 4); }
     }
     // étoiles du cercle d'invocation
@@ -521,6 +573,12 @@ export class BattleView {
       c.fillStyle = col; c.font = '800 10px Nunito, sans-serif'; c.strokeText(HERO[h.id].name, p.x, p.y + 34); c.fillText(HERO[h.id].name, p.x, p.y + 34);
       const twin = B.some((o, k) => k !== i && o && o.id === h.id && o.star === h.star && h.star < 3);
       if (twin) { c.font = '900 11px Nunito, sans-serif'; c.fillStyle = '#7dff9a'; const yy = p.y - 62 - Math.abs(Math.sin(this.time * 4)) * 5; c.strokeText('FUSION ✦', p.x, yy); c.fillText('FUSION ✦', p.x, yy); }
+    }
+    if (this.ghostInfo && this.ghost) {
+      const gi = this.ghostInfo, p = this.screenOf(gi.x, gi.y, 0);
+      c.font = '800 11px Nunito, sans-serif'; c.lineWidth = 3; c.strokeStyle = 'rgba(15,8,30,.95)';
+      c.fillStyle = gi.ok ? '#ffffff' : '#ff8a94'; c.strokeText(gi.a, p.x, p.y + 20); c.fillText(gi.a, p.x, p.y + 20);
+      c.fillStyle = gi.heart ? '#ffe28a' : '#bfe6ff'; c.strokeText(gi.b, p.x, p.y + 34); c.fillText(gi.b, p.x, p.y + 34);
     }
     for (const n of this.nums) {
       n.t += dt; const k = n.t / 1.1;

@@ -251,3 +251,38 @@ export function buyDeco(p, slot, id) {
   p.gold -= d.price; p.kingdom.deco[slot] = id; saveProfile(p); return null;
 }
 export const bonusOf = p => kingdomBonus(p.kingdom);
+
+// ---------- Replays (19/11) : graine + commandes d'un combat = quelques kilo-octets ----------
+const RKEY = 'myt_replays', RMAX = 5;
+export function saveReplay(r) {
+  if (!r || !r.cmds) return;
+  try { const L = loadReplays(); L.unshift(r); localStorage.setItem(RKEY, JSON.stringify(L.slice(0, RMAX))); }
+  catch (e) { try { localStorage.setItem(RKEY, JSON.stringify([r])); } catch (e2) {} }
+}
+export function loadReplays() { try { const L = JSON.parse(localStorage.getItem(RKEY) || '[]'); return Array.isArray(L) ? L : []; } catch (e) { return []; } }
+
+// ---------- Exporter / importer la sauvegarde (19/11) ----------
+// Code texte (ou fichier) contenant toutes les données « myt_… » de ce téléphone, sauf les replays.
+const SAVE_PREFIX = 'MYTHORIA1:';
+const b64e = str => btoa(unescape(encodeURIComponent(str)));
+const b64d = str => decodeURIComponent(escape(atob(str)));
+export function exportSave() {
+  const data = {};
+  for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith('myt_') && k !== RKEY) data[k] = localStorage.getItem(k); }
+  return SAVE_PREFIX + b64e(JSON.stringify({ v: 1, at: Date.now(), data }));
+}
+export function readSave(code) {
+  try {
+    const t = String(code || '').trim().replace(/\s+/g, '');
+    if (!t.startsWith(SAVE_PREFIX)) return { err: 'Ce n’est pas un code de sauvegarde MYTHORIA.' };
+    const o = JSON.parse(b64d(t.slice(SAVE_PREFIX.length)));
+    const prof = o && o.data && JSON.parse(o.data[KEY] || 'null');
+    if (!prof || typeof prof !== 'object' || typeof prof.trophies !== 'number' || !Array.isArray(prof.deck)) return { err: 'Sauvegarde abîmée ou incomplète.' };
+    return { data: o.data, at: o.at, name: prof.name, trophies: prof.trophies, lvl: prof.lvl };
+  } catch (e) { return { err: 'Code illisible : vérifie qu’il est complet.' }; }
+}
+export function importSave(code) {
+  const r = readSave(code); if (r.err) return r.err;
+  for (const k of Object.keys(r.data)) if (k.startsWith('myt_') && typeof r.data[k] === 'string') localStorage.setItem(k, r.data[k]);
+  return null;
+}

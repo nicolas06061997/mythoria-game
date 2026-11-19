@@ -1,9 +1,10 @@
 // MYTHORIA — modes de jeu (phase 7) : campagne et boss, survie (défense du Royaume), événement, tournoi contre l'IA.
 import { HERO, WORLDS, RARITIES } from '../../shared/content.js';
-import { CHAPTERS, stageOf, enemyDeck, eventOf, EVENT_REWARD, EVENT_WINS_PER_DAY, TOURNEY, survivalWaves } from '../../shared/campaign.js';
+import { CHAPTERS, stageOf, enemyDeck, eventOf, EVENT_REWARD, EVENT_WINS_PER_DAY, TOURNEY, survivalWaves, RELICS, EXPE, relicChoices, BOSSES, dailyChallenge, dailyScore } from '../../shared/campaign.js';
+import { SPELL, FACTIONS } from '../../shared/content.js';
 import { weekKey, dayKey } from '../../shared/economy.js';
 import { AI_LEVELS } from '../../shared/ai.js';
-import { saveProfile, worldOf, bonusOf, botDeck, botLevels } from '../store.js';
+import { saveProfile, worldOf, bonusOf, botDeck, botLevels, botSpell, give } from '../store.js';
 import { h, toast, sheet } from './dom.js';
 import { icon } from './icons.js';
 import { sfx } from '../audio.js';
@@ -92,6 +93,111 @@ export function playTourney() {
         if (P.tourney.round >= TOURNEY.rounds) { P.records.tournament = (P.records.tournament || 0) + 1; P.tourney.round = 0; r.note = 'Tournoi gagné ! (' + P.records.tournament + ' au total)'; }
         else r.note = 'Manche gagnée ! Prochaine : manche ' + (P.tourney.round + 1) + '/3';
       } else { P.tourney.round = 0; r.note = 'Éliminé du tournoi. Retente ta chance !'; }
+      saveProfile(P); return r;
+    },
+  });
+}
+
+
+// ---------- Expédition (roguelike court) ----------
+// 5 combats d'affilée ; après chaque victoire, 1 relique à choisir parmi 3. Une défaite termine l'expédition.
+const relicChip = k => h('span', { class: 'relic', title: RELICS[k].desc }, h('i', {}, RELICS[k].icon), h('b', {}, RELICS[k].name));
+export function openExpedition() {
+  sfx('click');
+  const P = C.P(), X = P.expe;
+  if (X && X.pick) return pickRelic();
+  let s;
+  const st = X ? X.stage : 0;
+  s = sheet(h('div', { class: 'expe' },
+    h('h3', {}, 'Expédition dans les Failles'),
+    h('p', { class: 'muted' }, '5 combats d’affilée, de plus en plus durs. Après chaque victoire, choisis une relique qui change les règles en ta faveur. Une défaite et l’expédition s’arrête.'),
+    h('div', { class: 'ex-path' }, EXPE.names.map((n, i) => h('div', { class: 'ex-st' + (i < st ? ' done' : i === st ? ' next' : '') + (i === 4 ? ' boss' : '') }, h('span', {}, i === 4 ? '☠' : i + 1), h('small', {}, n)))),
+    X && X.relics.length ? h('div', { class: 'relics' }, h('small', { class: 'muted' }, 'Tes reliques :'), X.relics.map(relicChip)) : null,
+    h('p', { class: 'muted small' }, 'Expéditions réussies : ' + (P.records.expe || 0)),
+    h('div', { class: 'row gap' },
+      X ? h('button', { class: 'btn ghost', onclick: () => { P.expe = null; saveProfile(P); s.close(); toast('Expédition abandonnée'); } }, 'Abandonner') : null,
+      h('button', { class: 'btn big gold grow', onclick: () => { s.close(); playExpedition(); } }, X ? 'Combat ' + (st + 1) + ' / 5' : 'Partir en expédition'))));
+}
+function pickRelic() {
+  const P = C.P(), X = P.expe;
+  let s;
+  s = sheet(h('div', { class: 'expe' },
+    h('h3', {}, 'Choisis une relique'),
+    h('p', { class: 'muted' }, 'Elle reste active jusqu’à la fin de l’expédition.'),
+    h('div', { class: 'relic-pick' }, X.pick.map(k => h('button', { class: 'relic-card', onclick: () => {
+      X.relics.push(k); X.pick = null; saveProfile(P); sfx('fuse3'); s.close(); toast(RELICS[k].name + ' ✓'); setTimeout(openExpedition, 250);
+    } }, h('i', {}, RELICS[k].icon), h('b', {}, RELICS[k].name), h('small', {}, RELICS[k].desc))))), { onClose: () => {} });
+}
+export function playExpedition() {
+  const P = C.P(), w = worldOf(P);
+  if (!P.expe) P.expe = { stage: 0, relics: [], seed: (Math.random() * 1e9) | 0 };
+  const X = P.expe, st = X.stage;
+  saveProfile(P);
+  const tro = Math.max(P.trophies, w.trophies), seed = (X.seed + st * 7919) >>> 0;
+  const base = Math.min(3, Math.floor(w.id * 0.8)), ai = Math.min(4, base + EXPE.ai[st]);
+  const oppDeck = botDeck(tro, seed, w.fac), lv = botLevels(oppDeck, tro);
+  for (const id in lv) lv[id] += EXPE.lvl[st];
+  const boss = st === 4 ? { ...BOSSES[w.id], name: 'Gardien de la Faille', hp: Math.round(BOSSES[w.id].hp * 0.8) } : null;
+  C.play('expe', ai, w, {
+    relics: X.relics.slice(), oppDeck, oppLevels: lv, oppSpell: botSpell(tro, seed), boss, simMode: boss ? 'campaign' : undefined,
+    title: 'Expédition · ' + (st + 1) + '/5',
+    onResult: r => {
+      if (r.result === 'win') {
+        r.reward = EXPE.reward[st]; X.stage++;
+        if (X.stage >= EXPE.stages) { P.records.expe = (P.records.expe || 0) + 1; P.expe = null; r.note = 'Expédition réussie ! Les Failles se referment derrière toi.'; }
+        else { X.pick = relicChoices(X.seed + X.stage * 31, X.relics); r.note = 'Victoire ! Choisis une relique pour le combat ' + (X.stage + 1) + '/5.'; r.after = () => setTimeout(pickRelic, 300); }
+      } else { r.note = 'Expédition terminée au combat ' + (st + 1) + '/5. Retente ta chance !'; P.expe = null; }
+      saveProfile(P); return r;
+    },
+  });
+}
+
+// ---------- Défi du jour (graine fixe) ----------
+export function todayChallenge() { return dailyChallenge(dayKey()); }
+function dailyState(P) { const d = dayKey(); if (!P.daily || P.daily.day !== d) P.daily = { day: d, best: 0, tries: 0, rewarded: false }; return P.daily; }
+const dateTxt = d => String(d % 100).padStart(2, '0') + '/' + String(Math.floor(d / 100) % 100).padStart(2, '0');
+function shareText(d, D) { return 'MYTHORIA · Défi du jour ' + dateTxt(d.day) + ' (' + d.name + ') : ' + D.best + ' points en ' + D.tries + ' essai' + (D.tries > 1 ? 's' : '') + '. Fais mieux ! ' + location.href.split('#')[0].split('?')[0]; }
+export async function shareDaily() {
+  const P = C.P(), d = todayChallenge(), D = dailyState(P), txt = shareText(d, D);
+  if (navigator.share) { try { await navigator.share({ title: 'MYTHORIA', text: txt }); return; } catch (e) {} }
+  try { await navigator.clipboard.writeText(txt); toast('Score copié ✓ Colle-le à tes amis'); } catch (e) { toast(txt); }
+}
+export function openDaily() {
+  sfx('click');
+  const P = C.P(), d = todayChallenge(), D = dailyState(P), w = WORLDS[d.world];
+  const mini = id => h('div', { class: 'mini sm', style: { '--rc': RARITIES[HERO[id].rar].color } }, C.portraitImg(id), h('small', {}, HERO[id].name));
+  let s;
+  s = sheet(h('div', { class: 'daily' },
+    h('small', { class: 'muted' }, 'Défi du ' + dateTxt(d.day) + ' · le même pour tout le monde'),
+    h('h3', {}, '⚔ ' + d.name),
+    h('p', { class: 'd-goal' }, d.desc),
+    h('div', { class: 'stats' },
+      h('div', { class: 'st' }, h('small', {}, 'Lieu'), h('b', {}, w.name)),
+      h('div', { class: 'st' }, h('small', {}, 'Adversaire'), h('b', {}, '🤖 IA ' + AI_LEVELS[d.ai].name)),
+      h('div', { class: 'st' }, h('small', {}, 'Ton sortilège'), h('b', {}, SPELL[d.spell].name)),
+      h('div', { class: 'st' }, h('small', {}, 'Règles'), h('b', {}, 'Équilibré · niveau ' + d.level))),
+    h('small', { class: 'muted' }, 'Deck imposé :'), h('div', { class: 'mini-row' }, d.deck.map(mini)),
+    h('div', { class: 'stats' },
+      h('div', { class: 'st' }, h('small', {}, 'Meilleur score'), h('b', {}, D.best || '—')),
+      h('div', { class: 'st' }, h('small', {}, 'Essais'), h('b', {}, D.tries)),
+      h('div', { class: 'st' }, h('small', {}, 'Récompense (1re réussite)'), h('b', {}, D.rewarded ? 'reçue ✓' : '100 or · 5 gemmes'))),
+    h('div', { class: 'row gap' },
+      D.best ? h('button', { class: 'btn ghost', onclick: shareDaily }, icon('share'), ' Partager') : null,
+      h('button', { class: 'btn big gold grow', onclick: () => { s.close(); playDaily(); } }, 'Relever le défi'))));
+}
+export function playDaily() {
+  const P = C.P(), d = todayChallenge(), D = dailyState(P);
+  const lv = ids => Object.fromEntries(ids.map(id => [id, d.level]));
+  C.play('daily', d.ai, WORLDS[d.world], {
+    deck: d.deck, spell: d.spell, oppDeck: d.oppDeck, oppSpell: d.oppSpell, seed: d.seed, fair: true, levels: lv(d.deck), oppLevels: lv(d.oppDeck),
+    mods: d.limit ? { limit: d.limit } : null, boss: d.boss || null, simMode: d.boss ? 'campaign' : undefined, title: 'Défi du jour', skins: {},
+    onResult: r => {
+      D.tries++;
+      const sc = dailyScore(d, r);
+      if (sc > D.best) D.best = sc;
+      if (sc > 0 && !D.rewarded) { D.rewarded = true; r.reward = { gold: 100, gems: 5 }; }
+      r.note = sc > 0 ? 'Défi réussi : ' + sc + ' points' + (sc >= D.best ? ' (ton meilleur score du jour !)' : ' · record du jour : ' + D.best) : (r.reason === 'limit' ? 'Temps écoulé ! ' : d.kind === 'mur' && r.result === 'win' ? 'Gagné, mais ton Sanctuaire est trop abîmé. ' : '') + 'Défi raté, réessaie !';
+      if (sc > 0) r.share = shareDaily;
       saveProfile(P); return r;
     },
   });

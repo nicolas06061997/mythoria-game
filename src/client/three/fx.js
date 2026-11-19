@@ -150,6 +150,7 @@ export class FX {
     const C = {
       fire: ['#fff3c0', '#ffb02e', '#ff5a1a'], roar: ['#fff3c0', '#ff9a3d', '#ff3a1a'], orb: ['#ffffff', '#c8a8ff', '#8a5aff'], ice: ['#ffffff', '#bff0ff', '#6fd0ff'],
       shadow: ['#e0c0ff', '#a060ff', '#4a1a80'], thorn: ['#e0ffe0', '#7fe08a', '#3f9a52'], bolt: ['#ffffff', '#bff8ff', '#5fd8ff'],
+      surcharge: ['#ffffff', '#d8c8ff', '#9b8cff'], breche: ['#fff3d0', '#e0c8a0', '#8a7a60'],
     }[kind] || ['#fff', '#ffd27a', '#ff8a3d'];
     this.flash(x, 0.8, z, r * 3, C[1], 0.3);
     this.ring(x, z, r * 1.2, C[1], 0.45);

@@ -86,6 +86,11 @@ export function botThink(bot, s, dt) {
   }
   // 5) Invoquer
   if (P.bench.includes(null) && P.mana >= SUMMON_COST + (bench.length >= 3 ? L.reserve : 0)) return ok({ p, t: 'summon' });
+  // 5 bis) Cercle plein sans fusion possible et éther au maximum : recycler le héros le plus faible
+  if (!P.bench.includes(null) && P.mana >= 9.5 && !bench.some(a => bench.some(b => a !== b && a.id === b.id && a.star === b.star && a.star < MAX_STAR)) && bot.rng() < L.merge) {
+    const low = bench.slice().sort((a, b) => power(a) - power(b))[0];
+    return ok({ p, t: 'recycle', slot: low.slot });
+  }
   // 6) Attaque : cercle plein ou héros puissant prêt
   if (bench.length >= 4 || bench.some(h => h.star >= 2)) {
     const pick = bench.sort((a, b) => power(b) - power(a))[0];

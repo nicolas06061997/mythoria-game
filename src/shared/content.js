@@ -12,7 +12,7 @@ export const RARITIES = {
 
 // 6 factions = 6 mondes. 3 héros d'une faction dans le deck = bonus, 5 = gros bonus.
 export const FACTIONS = {
-  aube:   { name: "Ordre de l'Aube",   short: 'Aube',   color: '#ffd166', bonus: ['+8 % de vie', '+15 % de vie'] },
+  aube:   { name: "Ordre de l'Aube",   short: 'Aube',   color: '#ffd166', bonus: ['Bouclier d’arrivée 12 % · Cœur capturé +30 % plus vite', 'Bouclier d’arrivée 22 % · Cœur capturé +60 % plus vite'] },
   arcane: { name: 'Cercle Arcanique',  short: 'Arcane', color: '#9b8cff', bonus: ['+8 % de dégâts', '+16 % de dégâts'] },
   sylve:  { name: 'Peuple de Sylve',   short: 'Sylve',  color: '#5fd38d', bonus: ['Régénère 1,2 %/s', 'Régénère 2,5 %/s'] },
   braise: { name: 'Clan de la Braise', short: 'Braise', color: '#ff7a3d', bonus: ['+7 % vitesse d’attaque', '+14 % vitesse d’attaque'] },
@@ -20,6 +20,22 @@ export const FACTIONS = {
   ombre:  { name: 'Légion des Ombres', short: 'Ombre',  color: '#b46bff', bonus: ['Vol de vie 8 %', 'Vol de vie 15 %'] },
   neutre: { name: 'Neutre',            short: 'Neutre', color: '#b8c0cc', bonus: null },
 };
+
+// Rôles (2e axe de synergie, 19/11) : chaque héros a un rôle. 2 héros du même rôle = bonus, 4 = gros bonus.
+// Un héros ★3 débloque l'effet unique de son rôle (`star3`), en plus de ses statistiques.
+export const ROLES = {
+  gardien: { name: 'Gardien', icon: '🛡', color: '#ffd166', bonus: ['−6 % de dégâts subis', '−12 % de dégâts subis'],
+    star3: ['Onde de choc', 'À son arrivée en ★3 : onde de choc qui assomme les ennemis proches (1 s) et bouclier de 25 % de sa vie.'] },
+  tireur:  { name: 'Tireur',  icon: '🏹', color: '#7dff9a', bonus: ['+0,4 case de portée', '+0,8 case de portée'],
+    star3: ['Ricochet', 'En ★3 : chaque projectile rebondit sur un 2e ennemi proche (60 % des dégâts).'] },
+  mage:    { name: 'Mage',    icon: '✦', color: '#9b8cff', bonus: ['Jauge d’Éveil +10 %', 'Jauge d’Éveil +20 %'],
+    star3: ['Surcharge', 'En ★3 : une attaque sur trois explose et touche tous les ennemis autour de la cible.'] },
+  bete:    { name: 'Bête',    icon: '🐾', color: '#ff9a5a', bonus: ['+10 % de vitesse', '+20 % de vitesse'],
+    star3: ['Rage sauvage', 'En ★3 : aura de rage, +25 % de vitesse d’attaque et vol de vie 12 %.'] },
+  siege:   { name: 'Siège',   icon: '🏰', color: '#c8b8a0', bonus: ['+10 % de dégâts aux bâtiments', '+20 % de dégâts aux bâtiments'],
+    star3: ['Brèche', 'En ★3 : chaque coup sur un bâtiment crée une onde qui blesse les troupes autour.'] },
+};
+export const ROLE_TIERS = [2, 4];
 
 // Mondes : débloqués avec les trophées. Chacun a son décor, son ambiance et ses adversaires.
 export const WORLDS = [
@@ -44,94 +60,94 @@ export const WORLDS = [
 //   proc   : créature construite par le code (dragon, golem…)
 export const HEROES = [
   // ----- Ordre de l'Aube -----
-  { id: 'ecuyer', name: 'Aldric', title: "Écuyer de l'Aube", fac: 'aube', rar: 'commun', type: 'unit',
+  { id: 'ecuyer', role: 'gardien', name: 'Aldric', title: "Écuyer de l'Aube", fac: 'aube', rar: 'commun', type: 'unit',
     hp: 640, dmg: 95, hit: 1.1, spd: 1.2, range: 0.8, tgt: 'ground', count: 1, r: 0.45,
     model: { glb: 'Knight', show: ['1H_Sword', 'Round_Shield'], scale: 0.92, look: { noOutline: true, env: 1.3, rough: .6, face: { mesh: 'Knight_Head', eyeCell: [2, 0], hairCell: [1, 0], eyeScale: 1.45, iris: '#5e3518', iris2: '#a8743a' }, recolor: [[[3, 0], '#c4d6c2', 1.18], [[4, 0], '#9caf9d', 1.1], [[7, 0], '#a9baa9', 1.05], [[7, 1], '#86978a'], [[5, 0], '#8a5a34', .95], [[6, 0], '#6a3e22'], [[3, 1], '#d6dde0'], [[2, 0], '#5a3520', 1.6], [[1, 0], '#efe6b8', 1.08]], metal: [[[3, 0], .2, .32], [[4, 0], .2, .36], [[7, 0], .28, .3], [[7, 1], .25, .38], [[3, 1], .5, .2], [[2, 1], .4, .35], [[4, 1], .6, .28]], mesh: { Round_Shield: { recolor: [[[3, 1], '#7a4e2e', .95], [[7, 0], '#8c9b8d']], metal: [[[3, 1], .05, .7], [[7, 0], .55, .3]] } } }, atk: ['1H_Melee_Attack_Slice_Diagonal', '1H_Melee_Attack_Chop'] },
     lore: 'Fils de forgeron, Aldric a juré de protéger le Royaume d’Aurore avant même de savoir tenir une épée.',
     ability: ['Courage', 'Rien de spécial : solide, fiable et pas cher à fusionner.'] },
-  { id: 'frere', name: 'Godric', title: 'Frère-Bouclier', fac: 'aube', rar: 'rare', type: 'unit',
+  { id: 'frere', role: 'gardien', name: 'Godric', title: 'Frère-Bouclier', fac: 'aube', rar: 'rare', type: 'unit',
     hp: 1550, dmg: 115, hit: 1.3, spd: 0.9, range: 0.9, tgt: 'ground', count: 1, r: 0.6, shield: 400,
     model: { glb: 'Knight', show: ['1H_Sword', 'Rectangle_Shield', 'Knight_Helmet', 'Knight_Cape'], scale: 1.12, tint: '#e4e8f2', atk: ['1H_Melee_Attack_Chop'] },
     lore: 'Le mur vivant de la Garde Blanche. On raconte qu’aucune flèche n’a jamais traversé son bouclier.',
     ability: ['Rempart', 'Son bouclier absorbe les 400 premiers dégâts.'] },
-  { id: 'solenne', name: 'Solenne', title: 'Paladine Solaire', fac: 'aube', rar: 'legendaire', type: 'unit',
+  { id: 'solenne', role: 'gardien', name: 'Solenne', title: 'Paladine Solaire', fac: 'aube', rar: 'legendaire', type: 'unit',
     hp: 1800, dmg: 175, hit: 1.25, spd: 1.0, range: 1.0, tgt: 'ground', count: 1, r: 0.6, aura: { heal: 35, radius: 3 },
     model: { glb: 'Knight', show: ['2H_Sword', 'Knight_Helmet', 'Knight_Cape'], scale: 1.15, tint: '#fff0c8', glow: '#ffd166', atk: ['2H_Melee_Attack_Slice', '2H_Melee_Attack_Chop'], idle: '2H_Melee_Idle' },
     lore: 'Bénie par le premier rayon de l’aube, Solenne n’a jamais perdu un compagnon tant qu’elle restait debout.',
     ability: ['Lumière bénie', 'Soigne en permanence les alliés autour d’elle.'] },
 
   // ----- Cercle Arcanique -----
-  { id: 'apprenti', name: 'Pip', title: 'Apprenti Runique', fac: 'arcane', rar: 'rare', type: 'unit',
+  { id: 'apprenti', role: 'mage', name: 'Pip', title: 'Apprenti Runique', fac: 'arcane', rar: 'rare', type: 'unit',
     hp: 440, dmg: 145, hit: 1.4, spd: 1.1, range: 5, tgt: 'any', count: 1, r: 0.45, splash: 1.2, proj: 'orb',
     model: { glb: 'Mage', show: ['1H_Wand', 'Spellbook_open', 'Mage_Hat'], scale: 0.9, atk: ['Spellcast_Shoot'] },
     lore: 'Recalé trois fois à l’examen de l’Académie, Pip a appris seul… en faisant exploser la bibliothèque.',
     ability: ['Orbe instable', 'Ses orbes explosent et touchent tous les ennemis autour de la cible.'] },
-  { id: 'vael', name: 'Vael', title: "l'Archimage", fac: 'arcane', rar: 'legendaire', type: 'unit',
+  { id: 'vael', role: 'mage', name: 'Vael', title: "l'Archimage", fac: 'arcane', rar: 'legendaire', type: 'unit',
     hp: 860, dmg: 160, hit: 1.6, spd: 1.0, range: 5.5, tgt: 'any', count: 1, r: 0.55, chain: 3, proj: 'zap',
     model: { glb: 'Mage', show: ['2H_Staff', 'Mage_Hat', 'Mage_Cape'], scale: 1.1, tint: '#d4d8ff', glow: '#7ff3ff', atk: ['Spellcast_Long', 'Spellcast_Shoot'] },
     lore: 'Doyen de l’Académie Arcane, Vael a capturé un orage dans son bâton il y a trois cents ans.',
     ability: ['Foudre en chaîne', 'Son éclair rebondit sur 3 ennemis.'] },
-  { id: 'tourelle', name: 'Obélisque', title: 'Tourelle Arcanique', fac: 'arcane', rar: 'rare', type: 'building',
+  { id: 'tourelle', role: 'siege', name: 'Obélisque', title: 'Tourelle Arcanique', fac: 'arcane', rar: 'rare', type: 'building',
     hp: 1200, dmg: 90, hit: 0.9, range: 6, tgt: 'any', r: 0.8, life: 40, proj: 'bolt',
     model: { proc: 'crystalTower', scale: 1 },
     lore: 'Un obélisque de cristal qui foudroie tout intrus. Les élèves l’appellent « le surveillant ».',
     ability: ['Gardien', 'Tour de défense qui attire les ennemis. Disparaît après 40 s.'] },
 
   // ----- Peuple de Sylve -----
-  { id: 'archeres', name: 'Lys & Faye', title: 'Arbalétrières de Sylve', fac: 'sylve', rar: 'commun', type: 'unit',
+  { id: 'archeres', role: 'tireur', name: 'Lys & Faye', title: 'Arbalétrières de Sylve', fac: 'sylve', rar: 'commun', type: 'unit',
     hp: 240, dmg: 56, hit: 1.0, spd: 1.2, range: 5, tgt: 'any', count: 2, r: 0.4, proj: 'arrow',
     model: { glb: 'Rogue_Hooded', show: ['1H_Crossbow', 'Rogue_Cape'], scale: 0.88, tint: '#e0f4d8', atk: ['1H_Ranged_Shoot'] },
     lore: 'Deux sœurs jumelles qui ne ratent jamais leur cible… sauf quand elles se disputent.',
     ability: ['Tir jumelé', 'Deux tireuses à distance, même contre les créatures volantes.'] },
-  { id: 'loups', name: 'Meute des Ronces', title: 'Loups de la forêt', fac: 'sylve', rar: 'commun', type: 'unit',
+  { id: 'loups', role: 'bete', name: 'Meute des Ronces', title: 'Loups de la forêt', fac: 'sylve', rar: 'commun', type: 'unit',
     hp: 245, dmg: 62, hit: 0.8, spd: 2.1, range: 0.7, tgt: 'ground', count: 3, r: 0.42,
     model: { beast: 'Wolf', scale: 0.55, tint: '#c9d8c2' },
     lore: 'Les gardiens sauvages de la Sylve. Ils chassent toujours à trois.',
     ability: ['Meute', 'Trois loups très rapides. Fragiles face aux dégâts de zone.'] },
-  { id: 'cerf', name: 'Émeraude', title: 'Grand Cerf de Sylve', fac: 'sylve', rar: 'epique', type: 'unit',
+  { id: 'cerf', role: 'siege', name: 'Émeraude', title: 'Grand Cerf de Sylve', fac: 'sylve', rar: 'epique', type: 'unit',
     hp: 2400, dmg: 215, hit: 1.5, spd: 1.4, range: 1.0, tgt: 'buildings', count: 1, r: 0.75, charge: true,
     model: { beast: 'Stag', scale: 0.75, tint: '#d9ffe0', glow: '#5fd38d' },
     lore: 'L’esprit de la forêt en personne. Là où il passe, les fleurs repoussent.',
     ability: ['Charge sylvestre', 'Fonce vers le Sanctuaire ennemi ; son premier coup fait double dégâts.'] },
-  { id: 'elwyn', name: 'Elwyn', title: 'Rôdeur des Cimes', fac: 'sylve', rar: 'epique', type: 'unit',
+  { id: 'elwyn', role: 'tireur', name: 'Elwyn', title: 'Rôdeur des Cimes', fac: 'sylve', rar: 'epique', type: 'unit',
     hp: 600, dmg: 68, hit: 1.15, spd: 1.25, range: 6, tgt: 'any', count: 1, r: 0.45, proj: 'arrow', multi: 3,
     model: { glb: 'Ranger', add: [['Bow', 'handslot.l']], scale: 1.0, glow: '#5fd38d', atk: ['2H_Ranged_Shoot', '1H_Ranged_Shoot'] },
     lore: 'Gardien des plus hauts arbres de la Sylve. On dit qu’il peut toucher une feuille qui tombe à cent pas.',
     ability: ['Volée de flèches', 'Tire sur 3 ennemis à la fois, de très loin.'] },
-  { id: 'myra', name: 'Myra', title: 'Sorcière des Ronces', fac: 'sylve', rar: 'epique', type: 'unit',
+  { id: 'myra', role: 'mage', name: 'Myra', title: 'Sorcière des Ronces', fac: 'sylve', rar: 'epique', type: 'unit',
     hp: 760, dmg: 100, hit: 1.2, spd: 1.0, range: 4.5, tgt: 'any', count: 1, r: 0.5, proj: 'thorn',
     summon: { id: 'pousse', every: 9, n: 2 },
     model: { glb: 'Mage', show: ['2H_Staff', 'Mage_Hat', 'Mage_Cape'], scale: 1.0, tint: '#d4f4cc', glow: '#5fd38d', atk: ['Spellcast_Shoot'], cast: 'Spellcast_Summon' },
     lore: 'Bannie de l’Académie pour avoir fait pousser une forêt dans le réfectoire.',
     ability: ['Semeuse', 'Fait pousser 2 Pousses Ronceuses toutes les 9 secondes.'] },
-  { id: 'golem', name: 'Moussu', title: 'Golem de Mousse', fac: 'sylve', rar: 'epique', type: 'unit',
+  { id: 'golem', role: 'siege', name: 'Moussu', title: 'Golem de Mousse', fac: 'sylve', rar: 'epique', type: 'unit',
     hp: 3600, dmg: 210, hit: 1.6, spd: 0.7, range: 1.0, tgt: 'buildings', count: 1, r: 0.9, death: { id: 'golemet', n: 2 },
     model: { proc: 'golem', scale: 1.15 },
     lore: 'Un rocher qui a dormi mille ans sous la mousse. Il s’est réveillé de très mauvaise humeur.',
     ability: ['Éboulement', 'Attaque les bâtiments. Se divise en 2 Golemets en mourant.'] },
 
   // ----- Clan de la Braise -----
-  { id: 'follets', name: 'Feux-Follets', title: 'Étincelles vivantes', fac: 'braise', rar: 'commun', type: 'unit',
+  { id: 'follets', role: 'bete', name: 'Feux-Follets', title: 'Étincelles vivantes', fac: 'braise', rar: 'commun', type: 'unit',
     hp: 230, dmg: 240, hit: 0.5, spd: 2.4, range: 0.5, tgt: 'any', count: 3, r: 0.3, fly: true, kamikaze: true,
     model: { proc: 'wisp', scale: 1 },
     lore: 'Des braises échappées du nid d’Ignar. Elles adorent exploser sur les gens.',
     ability: ['Kamikaze', 'Trois flammes volantes qui explosent au contact.'] },
-  { id: 'brann', name: 'Brann', title: 'Barbare des Cendres', fac: 'braise', rar: 'rare', type: 'unit',
+  { id: 'brann', role: 'gardien', name: 'Brann', title: 'Barbare des Cendres', fac: 'braise', rar: 'rare', type: 'unit',
     hp: 980, dmg: 125, hit: 1.4, spd: 1.2, range: 1.0, tgt: 'ground', count: 1, r: 0.55, splash: 0.9,
     model: { glb: 'Barbarian', show: ['2H_Axe', 'Barbarian_Hat', 'Barbarian_Cape'], scale: 1.05, tint: '#ffe0d0', glow: '#ff7a3d', atk: ['2H_Melee_Attack_Spin', '2H_Melee_Attack_Chop'], idle: '2H_Melee_Idle' },
     lore: 'Il a forgé sa hache dans la lave d’un volcan. Il dit que c’était « un peu chaud ».',
     ability: ['Tourbillon', 'Ses coups de hache touchent tous les ennemis autour de lui.'] },
-  { id: 'dragonnet', name: 'Pyrrhus', title: 'Dragonnet de Braise', fac: 'braise', rar: 'rare', type: 'unit',
-    hp: 580, dmg: 76, hit: 1.5, spd: 1.4, range: 3, tgt: 'any', count: 1, r: 0.55, fly: true, splash: 1.0, proj: 'fire',
+  { id: 'dragonnet', role: 'bete', name: 'Pyrrhus', title: 'Dragonnet de Braise', fac: 'braise', rar: 'rare', type: 'unit',
+    hp: 660, dmg: 92, hit: 1.45, spd: 1.4, range: 3, tgt: 'any', count: 1, r: 0.55, fly: true, splash: 1.0, proj: 'fire',
     model: { proc: 'dragon', scale: 0.8, color: '#ff7a3d', belly: '#ffd27a' },
     lore: 'Le plus jeune des dragons des Pics. Il crache déjà le feu, mais pas encore très droit.',
     ability: ['Souffle ardent', 'Vole et crache des boules de feu de zone.'] },
-  { id: 'kaelis', name: 'Kaëlis', title: 'Lame du Crépuscule', fac: 'braise', rar: 'legendaire', type: 'unit',
+  { id: 'kaelis', role: 'gardien', name: 'Kaëlis', title: 'Lame du Crépuscule', fac: 'braise', rar: 'legendaire', type: 'unit',
     hp: 960, dmg: 230, hit: 1.0, spd: 1.8, range: 0.8, tgt: 'ground', count: 1, r: 0.45, dash: 4,
     model: { glb: 'Rogue', show: ['Knife', 'Knife_Offhand', 'Rogue_Cape'], scale: 1.0, tint: '#ffe0cc', glow: '#ff7a3d', atk: ['Dualwield_Melee_Attack_Slice', 'Dualwield_Melee_Attack_Stab'] },
     lore: 'Assassin du Clan de la Braise. On ne la voit qu’une fois : la dernière.',
     ability: ['Bond fatal', 'Bondit sur sa cible et frappe deux fois plus fort.'] },
-  { id: 'ignar', name: 'Ignar', title: 'Wyrm Ancestral', fac: 'braise', rar: 'mythique', type: 'unit',
+  { id: 'ignar', role: 'bete', name: 'Ignar', title: 'Wyrm Ancestral', fac: 'braise', rar: 'mythique', type: 'unit',
     hp: 2300, dmg: 185, hit: 1.8, spd: 0.9, range: 3.5, tgt: 'any', count: 1, r: 1.0, fly: true, splash: 1.8, proj: 'fire',
     roar: { dmg: 160, radius: 2.8 },
     model: { proc: 'dragon', scale: 1.7, color: '#c4263c', belly: '#ffcf70', horns: true },
@@ -139,104 +155,104 @@ export const HEROES = [
     ability: ['Rugissement', 'À son arrivée, son rugissement brûle tous les ennemis autour de lui.'] },
 
   // ----- Serment du Givre -----
-  { id: 'jarl', name: 'Jarl', title: 'Garde du Givre', fac: 'givre', rar: 'commun', type: 'unit',
+  { id: 'jarl', role: 'gardien', name: 'Jarl', title: 'Garde du Givre', fac: 'givre', rar: 'commun', type: 'unit',
     hp: 700, dmg: 80, hit: 1.2, spd: 1.1, range: 0.9, tgt: 'ground', count: 1, r: 0.5, slow: 0.35,
     model: { glb: 'Barbarian', show: ['1H_Axe', 'Barbarian_Round_Shield', 'Barbarian_Hat'], scale: 0.95, tint: '#e0f2ff', glow: '#7fdcff', atk: ['1H_Melee_Attack_Chop'] },
     lore: 'Les guerriers du Nord frappent avec des haches taillées dans la glace éternelle.',
     ability: ['Hache gelée', 'Chaque coup ralentit l’ennemi pendant 2 secondes.'] },
-  { id: 'frimas', name: 'Frimas', title: 'Arbalétrier des Glaces', fac: 'givre', rar: 'rare', type: 'unit',
+  { id: 'frimas', role: 'tireur', name: 'Frimas', title: 'Arbalétrier des Glaces', fac: 'givre', rar: 'rare', type: 'unit',
     hp: 480, dmg: 140, hit: 1.5, spd: 1.1, range: 5.5, tgt: 'any', count: 1, r: 0.45, proj: 'ice', slow: 0.35,
     model: { glb: 'Rogue', show: ['2H_Crossbow', 'Rogue_Cape'], scale: 0.95, tint: '#e6f6ff', glow: '#7fdcff', atk: ['2H_Ranged_Shoot'] },
     lore: 'Chasseur solitaire des glaciers. Ses carreaux de glace ne fondent jamais.',
     ability: ['Carreau de glace', 'Ses tirs ralentissent la cible.'] },
-  { id: 'nevra', name: 'Nevra', title: 'Reine du Givre', fac: 'givre', rar: 'legendaire', type: 'unit',
+  { id: 'nevra', role: 'mage', name: 'Nevra', title: 'Reine du Givre', fac: 'givre', rar: 'legendaire', type: 'unit',
     hp: 950, dmg: 105, hit: 1.4, spd: 1.0, range: 5, tgt: 'any', count: 1, r: 0.55, proj: 'ice', splash: 1.1, slow: 0.5, nova: { every: 12, radius: 2.8, freeze: 2 },
     model: { glb: 'Mage', show: ['2H_Staff', 'Mage_Cape'], scale: 1.1, tint: '#eef9ff', glow: '#9fe8ff', atk: ['Spellcast_Shoot'], cast: 'Spellcast_Raise' },
     lore: 'Elle a figé une armée entière d’un seul regard. Son cœur, dit-on, est un flocon.',
     ability: ['Nova glaciale', 'Toutes les 12 s, gèle les ennemis autour d’elle pendant 2 s.'] },
 
   // ----- Légion des Ombres -----
-  { id: 'squelettes', name: 'Os-Errants', title: 'Squelettes', fac: 'ombre', rar: 'commun', type: 'unit',
+  { id: 'squelettes', role: 'gardien', name: 'Os-Errants', title: 'Squelettes', fac: 'ombre', rar: 'commun', type: 'unit',
     hp: 230, dmg: 65, hit: 1.0, spd: 1.3, range: 0.7, tgt: 'ground', count: 3, r: 0.4,
     model: { glb: 'Skeleton_Minion', add: [['Skeleton_Blade', 'handslot.r']], scale: 0.85, atk: ['1H_Melee_Attack_Chop', '1H_Melee_Attack_Stab'], spawn: 'Spawn_Ground_Skeletons' },
     lore: 'Ils ont oublié leur nom, leur royaume et leur visage. Pas leur épée.',
     ability: ['Horde', 'Trois squelettes : parfaits pour encercler.'] },
-  { id: 'damne', name: 'Sire Morn', title: 'Chevalier Damné', fac: 'ombre', rar: 'rare', type: 'unit',
+  { id: 'damne', role: 'gardien', name: 'Sire Morn', title: 'Chevalier Damné', fac: 'ombre', rar: 'rare', type: 'unit',
     hp: 1300, dmg: 140, hit: 1.3, spd: 1.0, range: 0.9, tgt: 'ground', count: 1, r: 0.6,
     model: { glb: 'Skeleton_Warrior', add: [['Skeleton_Axe', 'handslot.r'], ['Skeleton_Shield_Small_A', 'handslot.l']], scale: 1.08, glow: '#b46bff', atk: ['1H_Melee_Attack_Jump_Chop', '1H_Melee_Attack_Chop'], spawn: 'Spawn_Ground_Skeletons' },
     lore: 'Ancien champion de l’Aube, trahi et revenu d’entre les morts pour se venger.',
     ability: ['Vengeance', 'Robuste ; vole la vie comme toute la Légion des Ombres en synergie.'] },
-  { id: 'osseuse', name: 'Vesper', title: 'Archère d’Os', fac: 'ombre', rar: 'commun', type: 'unit',
+  { id: 'osseuse', role: 'tireur', name: 'Vesper', title: 'Archère d’Os', fac: 'ombre', rar: 'commun', type: 'unit',
     hp: 430, dmg: 100, hit: 1.1, spd: 1.2, range: 5, tgt: 'any', count: 1, r: 0.42, proj: 'arrow',
     model: { glb: 'Skeleton_Rogue', add: [['Skeleton_Crossbow', 'handslot.r']], scale: 0.95, atk: ['1H_Ranged_Shoot'], spawn: 'Spawn_Ground_Skeletons' },
     lore: 'Elle tire avec un arc taillé dans ses propres côtes. Ne lui demandez pas comment.',
     ability: ['Tir funèbre', 'Tireuse à distance qui touche aussi les volants.'] },
-  { id: 'morvak', name: 'Morvak', title: 'Nécromancien', fac: 'ombre', rar: 'epique', type: 'unit',
+  { id: 'morvak', role: 'mage', name: 'Morvak', title: 'Nécromancien', fac: 'ombre', rar: 'epique', type: 'unit',
     hp: 800, dmg: 115, hit: 1.3, spd: 1.0, range: 4.5, tgt: 'any', count: 1, r: 0.5, proj: 'shadow',
     summon: { id: 'squelette', every: 8, n: 2 },
     model: { glb: 'Skeleton_Mage', add: [['Skeleton_Staff', 'handslot.r']], scale: 1.05, glow: '#b46bff', atk: ['Spellcast_Shoot'], cast: 'Spellcast_Summon', spawn: 'Spawn_Ground_Skeletons' },
     lore: 'Il parle aux morts. Le problème, c’est qu’ils lui répondent.',
     ability: ['Réveil des morts', 'Relève 2 squelettes toutes les 8 secondes.'] },
-  { id: 'malakar', name: 'Malakar', title: 'Roi des Ombres', fac: 'ombre', rar: 'mythique', type: 'unit',
+  { id: 'malakar', role: 'gardien', name: 'Malakar', title: 'Roi des Ombres', fac: 'ombre', rar: 'mythique', type: 'unit',
     hp: 2300, dmg: 190, hit: 1.4, spd: 0.9, range: 1.2, tgt: 'ground', count: 1, r: 0.95, splash: 1.5, lifesteal: 0.2,
     model: { glb: 'Skeleton_Warrior', add: [['Skeleton_Blade', 'handslot.r']], scale: 1.75, glow: '#b46bff', atk: ['2H_Melee_Attack_Slice', '2H_Melee_Attack_Spin'], spawn: 'Spawn_Ground_Skeletons' },
     lore: 'Le premier roi de Mythoria, devenu ombre pour ne jamais mourir. Il veut récupérer son trône.',
     ability: ['Moisson', 'Frappe de zone qui le soigne de 20 % des dégâts infligés.'] },
 
   // ----- Neutre -----
-  { id: 'belier', name: 'Fracas', title: 'Bélier de Siège', fac: 'neutre', rar: 'rare', type: 'unit',
-    hp: 1700, dmg: 320, hit: 1.8, spd: 1.8, range: 0.9, tgt: 'buildings', count: 1, r: 0.65,
+  { id: 'belier', role: 'siege', name: 'Fracas', title: 'Bélier de Siège', fac: 'neutre', rar: 'rare', type: 'unit',
+    hp: 1600, dmg: 265, hit: 1.8, spd: 1.8, range: 0.9, tgt: 'buildings', count: 1, r: 0.65,
     model: { proc: 'ram', scale: 1 },
     lore: 'Construit par les nains des Forges pour ouvrir n’importe quelle porte. Surtout celles des autres.',
     ability: ['Siège', 'Fonce droit sur le Sanctuaire ennemi et ignore les troupes.'] },
 
   // ----- Nouvelles créatures (19/11, construites par le code : client/three/creatures.js) -----
-  { id: 'phenix', name: 'Pyrévane', title: 'Phénix Immortel', fac: 'braise', rar: 'legendaire', type: 'unit',
+  { id: 'phenix', role: 'bete', name: 'Pyrévane', title: 'Phénix Immortel', fac: 'braise', rar: 'legendaire', type: 'unit',
     hp: 1000, dmg: 135, hit: 1.3, spd: 1.5, range: 4, tgt: 'any', count: 1, r: 0.6, fly: true, proj: 'fire', splash: 1.3,
     model: { proc: 'phenix', scale: 1.5, glow: '#ff8a2a' },
     lore: 'Né dans le cœur d’un volcan, il renaît de ses cendres à chaque lever de soleil.',
     ability: ['Plumes de feu', 'Vole et lance des boules de feu qui brûlent tout autour de la cible.'] },
-  { id: 'yeti', name: 'Korvaal', title: 'Yéti des Cimes', fac: 'givre', rar: 'epique', type: 'unit',
+  { id: 'yeti', role: 'bete', name: 'Korvaal', title: 'Yéti des Cimes', fac: 'givre', rar: 'epique', type: 'unit',
     hp: 2300, dmg: 150, hit: 1.7, spd: 0.85, range: 1.0, tgt: 'ground', count: 1, r: 0.85, splash: 0.9, slow: 0.35,
     model: { proc: 'yeti', scale: 1.0, glow: '#9fe8ff' },
     lore: 'On le croyait légende. Puis il est descendu des montagnes, très en colère qu’on ait marché sur sa neige.',
     ability: ['Coup glacial', 'Frappe le sol : tous les ennemis autour sont touchés et ralentis.'] },
-  { id: 'griffon', name: 'Altheryn', title: 'Griffon Royal', fac: 'aube', rar: 'epique', type: 'unit',
+  { id: 'griffon', role: 'bete', name: 'Altheryn', title: 'Griffon Royal', fac: 'aube', rar: 'epique', type: 'unit',
     hp: 1250, dmg: 165, hit: 1.1, spd: 1.8, range: 1.0, tgt: 'any', count: 1, r: 0.65, fly: true, dash: 3,
     model: { proc: 'griffon', scale: 1.4, glow: '#ffd166' },
     lore: 'Monture des anciens rois d’Aurore. Il ne s’incline que devant ceux au cœur pur.',
     ability: ['Piqué royal', 'Vole et fond sur sa cible : premier coup deux fois plus fort.'] },
-  { id: 'orage', name: 'Vyrsélia', title: 'Élémentaire d’Orage', fac: 'arcane', rar: 'epique', type: 'unit',
+  { id: 'orage', role: 'mage', name: 'Vyrsélia', title: 'Élémentaire d’Orage', fac: 'arcane', rar: 'epique', type: 'unit',
     hp: 980, dmg: 125, hit: 1.3, spd: 1.0, range: 4.5, tgt: 'any', count: 1, r: 0.6, proj: 'zap', chain: 2,
     model: { proc: 'orage', scale: 1.0, glow: '#b8a8ff' },
     lore: 'Une tempête qui a pris forme dans une faille. Elle gronde quand elle est contente.',
     ability: ['Arc électrique', 'Son éclair rebondit sur un deuxième ennemi.'] },
-  { id: 'champi', name: 'Glumbrin', title: 'Champignon Ancien', fac: 'sylve', rar: 'rare', type: 'unit',
+  { id: 'champi', role: 'gardien', name: 'Glumbrin', title: 'Champignon Ancien', fac: 'sylve', rar: 'rare', type: 'unit',
     hp: 1250, dmg: 88, hit: 1.3, spd: 0.9, range: 1.0, tgt: 'ground', count: 1, r: 0.6, aura: { heal: 38, radius: 2.8 },
     model: { proc: 'champi', scale: 1.0, glow: '#7fffd0' },
     lore: 'Le plus vieux champignon de la Sylve. Ses spores soignent tout ce qui pousse… et tous ses amis.',
     ability: ['Spores guérisseuses', 'Soigne en permanence les alliés autour de lui.'] },
-  { id: 'araignee', name: 'Nethraxa', title: 'Araignée des Ombres', fac: 'ombre', rar: 'rare', type: 'unit',
+  { id: 'araignee', role: 'bete', name: 'Nethraxa', title: 'Araignée des Ombres', fac: 'ombre', rar: 'rare', type: 'unit',
     hp: 820, dmg: 115, hit: 0.95, spd: 1.7, range: 0.8, tgt: 'ground', count: 1, r: 0.6, slow: 0.4,
     model: { proc: 'araignee', scale: 1.0, glow: '#c070ff' },
     lore: 'Elle tisse ses toiles entre les mondes. Ce qui s’y prend n’en ressort jamais tout à fait pareil.',
     ability: ['Venin d’ombre', 'Très rapide ; chaque morsure ralentit sa proie.'] },
-  { id: 'tortue', name: 'Tholmyr', title: 'Tortue de Cristal', fac: 'sylve', rar: 'commun', type: 'unit',
+  { id: 'tortue', role: 'gardien', name: 'Tholmyr', title: 'Tortue de Cristal', fac: 'sylve', rar: 'commun', type: 'unit',
     hp: 950, dmg: 55, hit: 1.3, spd: 0.75, range: 0.8, tgt: 'ground', count: 1, r: 0.65, shield: 250,
     model: { proc: 'tortue', scale: 1.0, glow: '#8ff6ff' },
     lore: 'Sa carapace a poussé pendant mille ans. Les cristaux dessus en ont neuf cents.',
     ability: ['Carapace', 'Ses cristaux absorbent les 250 premiers dégâts.'] },
-  { id: 'salamandre', name: 'Les Ysquilles', title: 'Salamandres', fac: 'braise', rar: 'commun', type: 'unit',
+  { id: 'salamandre', role: 'bete', name: 'Les Ysquilles', title: 'Salamandres', fac: 'braise', rar: 'commun', type: 'unit',
     hp: 330, dmg: 64, hit: 0.85, spd: 1.8, range: 0.7, tgt: 'ground', count: 2, r: 0.42,
     model: { proc: 'salamandre', scale: 1.15, glow: '#ff9a2a' },
     lore: 'Deux petites salamandres qui vivent dans les braises. Elles mordent, et ça brûle.',
     ability: ['Duo brûlant', 'Deux salamandres très rapides.'] },
-  { id: 'hibou', name: 'Sorvélis', title: 'Hibou Arcanique', fac: 'arcane', rar: 'commun', type: 'unit',
+  { id: 'hibou', role: 'mage', name: 'Sorvélis', title: 'Hibou Arcanique', fac: 'arcane', rar: 'commun', type: 'unit',
     hp: 320, dmg: 72, hit: 1.1, spd: 1.4, range: 4.5, tgt: 'any', count: 1, r: 0.45, fly: true, proj: 'orb',
     model: { proc: 'hibou', scale: 1.3, glow: '#7ff3ff' },
     lore: 'Le bibliothécaire de l’Académie. Il a lu tous les livres, deux fois, la nuit.',
     ability: ['Orbe de savoir', 'Vole et attaque de loin, même les créatures volantes.'] },
-  { id: 'spectre', name: 'Maelvoth', title: 'Spectre à la Lanterne', fac: 'ombre', rar: 'epique', type: 'unit',
+  { id: 'spectre', role: 'bete', name: 'Maelvoth', title: 'Spectre à la Lanterne', fac: 'ombre', rar: 'epique', type: 'unit',
     hp: 1050, dmg: 150, hit: 1.1, spd: 1.2, range: 1.0, tgt: 'any', count: 1, r: 0.55, fly: true, lifesteal: 0.25,
     model: { proc: 'spectre', scale: 1.25, glow: '#7fffb0' },
     lore: 'Il erre avec sa lanterne à la recherche de son nom. Il prend un peu de vie à chacun qu’il croise.',
@@ -262,7 +278,20 @@ export const SPELLS = [
     desc: 'Soigne tes héros dans la zone et leur donne un bouclier.' },
   { id: 'foudre', name: 'Colère du Ciel', fac: 'arcane', rar: 'rare', dmg: 300, radius: 3.0, sanctPct: 0.3, strikes: 3, fx: 'storm',
     desc: 'Trois éclairs frappent la zone coup sur coup.' },
+  // 19/11 : un sort par faction (Braise, Sylve, Ombres)
+  { id: 'eruption', name: 'Éruption de Braise', fac: 'braise', rar: 'epique', burn: 115, burnT: 5, radius: 2.6, sanctPct: 0.25, fx: 'eruption',
+    desc: 'Le sol s’ouvre : une zone de lave brûle les ennemis pendant 5 secondes.' },
+  { id: 'racines', name: 'Racines Ancestrales', fac: 'sylve', rar: 'rare', dmg: 280, root: 5, radius: 3.3, sanctPct: 0.2, fx: 'roots',
+    desc: 'Des racines immobilisent les ennemis au sol pendant 3,5 s (ils peuvent encore frapper).' },
+  { id: 'malediction', name: 'Malédiction des Ombres', fac: 'ombre', rar: 'epique', dmg: 170, curse: 6, curseK: 0.4, radius: 3.0, sanctPct: 0.3, fx: 'curse',
+    desc: 'Les ennemis maudits subissent +40 % de dégâts et ne peuvent plus être soignés pendant 6 s.' },
 ];
+// Résonance : un sort de la même faction que 3 héros (ou plus) du deck est 20 % plus puissant.
+export const RESONANCE = { need: 3, k: 1.2 };
+export function spellResonance(spell, deck) {
+  const f = SPELLS.find(x => x.id === spell)?.fac; if (!f) return false;
+  return (deck || []).filter(id => HERO[id]?.fac === f).length >= RESONANCE.need;
+}
 
 export const HERO = Object.fromEntries(HEROES.map(c => [c.id, c]));
 export const SPELL = Object.fromEntries(SPELLS.map(c => [c.id, c]));
@@ -285,7 +314,7 @@ export const UNLOCKS = {
   4: ['solenne', 'nevra', 'vael', 'phenix'],
   5: ['ignar', 'malakar'],
 };
-export const SPELL_UNLOCKS = { 0: ['meteore', 'benediction'], 2: ['foudre'], 4: ['givre'] };
+export const SPELL_UNLOCKS = { 0: ['meteore', 'benediction'], 1: ['racines'], 2: ['foudre'], 3: ['eruption'], 4: ['givre'], 5: ['malediction'] };
 
 export function worldFor(trophies) {
   let w = WORLDS[0];
@@ -308,6 +337,19 @@ export function deckSynergies(deck) {
   for (const f in n) out[f] = n[f] >= 5 ? 2 : n[f] >= 3 ? 1 : 0;
   return { counts: n, tiers: out };
 }
+
+export function deckRoles(deck) {
+  const n = {};
+  for (const id of deck) { const r = HERO[id]?.role; if (r) n[r] = (n[r] || 0) + 1; }
+  const out = {};
+  for (const r in n) out[r] = n[r] >= ROLE_TIERS[1] ? 2 : n[r] >= ROLE_TIERS[0] ? 1 : 0;
+  return { counts: n, tiers: out };
+}
+
+// Mode « Tournoi / Équilibré » (futur Duel en ligne, Défi du jour) : niveaux des héros plafonnés,
+// bonus du Royaume et reliques neutralisés. Seuls le deck et le talent comptent.
+export const FAIR_LEVEL = 5;
+export function fairLevels(levels) { const o = {}; for (const id in levels || {}) o[id] = Math.min(FAIR_LEVEL, levels[id] || 1); return o; }
 
 export function validateDeck(deck, owned) {
   if (!Array.isArray(deck) || deck.length !== DECK_SIZE) return 'Le deck doit contenir 8 héros.';

@@ -1,6 +1,6 @@
 // MYTHORIA — écran de combat : simulation + IA (plus tard : réseau) + vue 3D + toucher + interface.
 import { createBattle, step, check, timeLeft, sanctOf, DT, MANA_MAX, DOUBLE_AT, SUMMON_COST, deployOk } from '../shared/sim.js';
-import { HERO, SPELL } from '../shared/content.js';
+import { HERO, SPELL, ROLES } from '../shared/content.js';
 import { createBot, botThink, AI_LEVELS } from '../shared/ai.js';
 import { BattleView } from './three/battleview.js';
 import { h, toast, confirmBox } from './ui/dom.js';
@@ -12,17 +12,20 @@ import { Tuto } from './tuto.js';
 const SPEED = Math.min(8, Math.max(1, Number(new URLSearchParams(location.search).get('speed')) || 1));
 
 export class Battle {
-  // opts : { deck, spell, oppDeck, oppSpell, botLevel, world, myName, mode, onEnd(result) }
+  // opts : { deck, spell, oppDeck, oppSpell, botLevel, world, myName, mode, onEnd(result), seed?, relics?, fair?, replay? }
+  // replay : { params, cmds } = un combat enregistré, rejoué à l'identique par la simulation déterministe (aucune commande possible)
   constructor(root, opts) {
-    this.o = opts; this.root = root;
-    const seed = (Math.random() * 1e9) | 0;
-    this.s = createBattle({ seed, decks: [opts.deck, opts.oppDeck], spells: [opts.spell, opts.oppSpell], levels: [opts.levels || {}, opts.oppLevels || {}], names: [opts.myName, 'IA ' + AI_LEVELS[opts.botLevel].name], mode: opts.simMode || 'duel', boss: opts.boss, waves: opts.waves, mods: opts.mods, bonus: opts.bonus, botMana: opts.simMode === 'survival' ? 0 : AI_LEVELS[opts.botLevel].mana });
-    this.bot = opts.simMode === 'survival' ? null : createBot(1, opts.botLevel, seed ^ 0x5bd1e995);
+    this.o = opts; this.root = root; this.replay = opts.replay || null;
+    const seed = opts.seed != null ? opts.seed >>> 0 : (Math.random() * 1e9) | 0;
+    this.params = this.replay ? JSON.parse(JSON.stringify(this.replay.params)) : JSON.parse(JSON.stringify({ seed, decks: [opts.deck, opts.oppDeck], spells: [opts.spell, opts.oppSpell], levels: [opts.levels || {}, opts.oppLevels || {}], names: [opts.myName, 'IA ' + AI_LEVELS[opts.botLevel].name], mode: opts.simMode || 'duel', boss: opts.boss || null, waves: opts.waves || null, mods: opts.mods || null, bonus: opts.bonus || null, botMana: opts.simMode === 'survival' ? 0 : AI_LEVELS[opts.botLevel].mana, relics: opts.relics || null, fair: !!opts.fair }));
+    this.s = createBattle(JSON.parse(JSON.stringify(this.params)));
+    this.log = []; this.ri = 0; this.spd = SPEED;
+    this.bot = this.replay || opts.simMode === 'survival' ? null : createBot(1, opts.botLevel, seed ^ 0x5bd1e995);
     // ?autoplay : une IA joue à ta place (tests automatiques)
-    if (new URLSearchParams(location.search).has('autoplay')) this.bot0 = createBot(0, 4, seed ^ 0x1234567);
+    if (!this.replay && new URLSearchParams(location.search).has('autoplay')) this.bot0 = createBot(0, 4, seed ^ 0x1234567);
     this.perf = { n: 0, sum: 0, max: 0, slow: 0 };
     this.me = 0; this.pending = []; this.drag = null; this.aiming = false; this.sel = -1;
-    this.acc = 0; this.started = false; this.ended = false;
+    this.acc = 0; this.started = false; this.ended = false; this.hintAgain = !!this.replay;
     this.build();
     this.view = new BattleView(this.cv, this.ovc, opts.world.key, this.me);
     this.view.skins = opts.skins || {};
@@ -49,7 +52,7 @@ export class Battle {
 
   build() {
     const w = this.o.world;
-    this.el = h('div', { class: 'battle w-' + w.key },
+    this.el = h('div', { class: 'battle w-' + w.key + (this.replay ? ' replay' : '') },
       h('div', { class: 'b-field' },
         this.cv = h('canvas', { class: 'b-3d' }),
         this.ovc = h('canvas', { class: 'b-ov' }),
@@ -74,6 +77,9 @@ export class Battle {
             h('div', { class: 'eth-txt' }, icon('ether'), this.elManaN = h('b', {}, '4'), h('small', {}, '/ 10 éther'))),
           this.elSummon = h('button', { class: 'b-summon', onclick: () => this.summon() },
             h('span', { class: 'sm-ic' }, icon('summon')), h('b', {}, 'Invoquer'), h('small', {}, icon('ether'), SUMMON_COST)))),
+      // Recycler le héros sélectionné : rend 1 éther (porte de sortie quand le Cercle est bloqué)
+      this.elRecycle = h('button', { class: 'b-recycle off', onclick: () => this.recycle() }, '♻ Recycler ', h('small', {}, '+1 ', icon('ether'))),
+      this.replay ? h('div', { class: 'b-replay' }, h('b', {}, '⏵ REPLAY'), this.elSpd = h('button', { onclick: () => this.cycleSpeed() }, '×' + this.spd)) : null,
       this.elLoad = h('div', { class: 'b-load' }, h('div', { class: 'logo' }, 'MYTHORIA'), h('b', {}, 'Ouverture de la Faille…'),
         h('small', {}, w.name), h('div', { class: 'lbar' }, this.elLoadBar = h('i'))),
       this.elHint = h('div', { class: 'b-hint' }, '👆 Touche un héros du Cercle, puis l’île'));
@@ -98,11 +104,18 @@ export class Battle {
 
   // ---------- Commandes ----------
   send(cm) {
+    if (this.replay) return false;
     const err = check(this.s, cm);
     if (err) { toast(err, 'bad'); sfx('reject'); return false; }
     this.pending.push(cm); return true;
   }
   summon() { if (this.send({ p: this.me, t: 'summon' })) sfx('summon'); }
+  recycle() {
+    if (this.sel < 0) return;
+    if (this.send({ p: this.me, t: 'recycle', slot: this.sel })) sfx('recycle');
+    this.select(-1);
+  }
+  cycleSpeed() { this.spd = this.spd >= 4 ? 1 : this.spd * 2; this.elSpd.textContent = '×' + this.spd; sfx('click'); }
   toggleAim() {
     if (this.s.players[this.me].eveil < 100) { toast('La jauge d’Éveil se remplit avec le temps (2× plus vite si tu tiens le Cœur)'); return; }
     this.aiming = !this.aiming; this.elSpell.classList.toggle('aim', this.aiming);
@@ -111,7 +124,7 @@ export class Battle {
 
   // ---------- Toucher ----------
   down(e) {
-    if (!this.started || this.ended) return;
+    if (!this.started || this.ended || this.replay) return;
     e.preventDefault();
     if (this.aiming) { this.drag = { spell: true }; this.move(e); return; }
     const slot = this.view.pickBench(e.clientX, e.clientY);
@@ -120,7 +133,7 @@ export class Battle {
       // héros déjà sélectionné + appui sur un héros identique = fusion
       if (this.sel >= 0 && this.sel !== slot && P.bench[this.sel]) {
         const A = P.bench[this.sel], B = P.bench[slot];
-        if (A.id === B.id && A.star === B.star) { if (this.send({ p: this.me, t: 'merge', a: this.sel, b: slot })) sfx('fuse'); this.select(-1); return; }
+        if (A.id === B.id && A.star === B.star) { this.send({ p: this.me, t: 'merge', a: this.sel, b: slot }); this.select(-1); return; }
       }
       this.drag = { slot, h: P.bench[slot], sx: e.clientX, sy: e.clientY, moved: false };
       sfx('click');
@@ -140,7 +153,12 @@ export class Battle {
   select(slot) {
     this.sel = slot;
     this.view.highlightSlot(slot);
-    if (slot >= 0) { const h0 = this.s.players[this.me].bench[slot]; this.view.zone.visible = true; this.elHint.textContent = 'Touche la zone bleue pour envoyer ' + HERO[h0.id].name; this.elHint.classList.remove('off'); }
+    this.elRecycle.classList.toggle('off', slot < 0);
+    if (slot >= 0) {
+      const h0 = this.s.players[this.me].bench[slot], c = HERO[h0.id];
+      const info = (c.range > 2 ? 'portée ' + String(c.range).replace('.', ',') : 'mêlée') + ' · ' + (c.fly ? 'volant (ne prend pas le Cœur)' : c.type === 'building' ? 'bâtiment' : c.tgt === 'buildings' ? 'vise les bâtiments' : 'peut prendre le Cœur');
+      this.view.zone.visible = true; this.elHint.textContent = 'Touche la zone bleue pour envoyer ' + c.name + ' (' + info + ')'; this.elHint.classList.remove('off');
+    }
     else { this.view.zone.visible = false; this.elHint.classList.add('off'); }
   }
   move(e) {
@@ -173,7 +191,7 @@ export class Battle {
       return;
     }
     if (!d.moved) { this.select(this.sel === d.slot ? -1 : d.slot); return; }
-    if (d.target >= 0) { if (this.send({ p: this.me, t: 'merge', a: d.slot, b: d.target })) sfx('fuse'); return; }
+    if (d.target >= 0) { this.send({ p: this.me, t: 'merge', a: d.slot, b: d.target }); return; }
     if (d.ground && this.send({ p: this.me, t: 'deploy', slot: d.slot, x: d.ground.x, y: d.ground.y })) sfx('deploy');
   }
 
@@ -184,11 +202,16 @@ export class Battle {
     const dt = this.last ? Math.min(0.1, (now - this.last) / 1000) : 0;
     this.last = now; const c0 = performance.now();
     if (this.started && !this.s.over) {
-      this.acc += dt * SPEED;
+      this.acc += dt * this.spd;
       while (this.acc >= DT) {
-        const cmds = this.pending.splice(0);
-        const bc = this.bot && !(this.tuto && this.tuto.holdBot) && botThink(this.bot, this.s, DT); if (bc) cmds.push(bc);
-        const b0 = this.bot0 && botThink(this.bot0, this.s, DT); if (b0) cmds.push(b0);
+        let cmds;
+        if (this.replay) { cmds = []; const L = this.replay.cmds; while (this.ri < L.length && L[this.ri].tick === this.s.tick) { const { tick, ...c } = L[this.ri++]; cmds.push(c); } }
+        else {
+          cmds = this.pending.splice(0);
+          const bc = this.bot && !(this.tuto && this.tuto.holdBot) && botThink(this.bot, this.s, DT); if (bc) cmds.push(bc);
+          const b0 = this.bot0 && botThink(this.bot0, this.s, DT); if (b0) cmds.push(b0);
+          for (const c of cmds) this.log.push({ ...c, tick: this.s.tick }); // enregistrement du replay (graine + commandes)
+        }
         step(this.s, cmds);
         this.view.ingest(this.s.ev, this.s);
         this.sounds(this.s.ev);
@@ -208,9 +231,11 @@ export class Battle {
       if (e.type === 'deploy' && e.p !== this.me) sfx('deploy', 150);
       else if (e.type === 'hit') sfx('hit', 80);
       else if (e.type === 'boom') sfx('boom', 120);
-      else if (e.type === 'spell') sfx(e.fx === 'freeze' ? 'freeze' : e.fx === 'heal' ? 'heal' : e.fx === 'storm' ? 'zap' : 'boom');
+      else if (e.type === 'spell') sfx({ freeze: 'freeze', heal: 'heal', storm: 'zap', eruption: 'eruption', roots: 'roots', curse: 'curse' }[e.fx] || 'boom');
+      else if (e.type === 'star3') sfx('star3');
+      else if (e.type === 'recycle' && e.p !== this.me) {}
       else if (e.type === 'zap') sfx('zap', 100);
-      else if (e.type === 'fuse' || e.type === 'benchFuse') sfx('fuse');
+      else if (e.type === 'fuse' || e.type === 'benchFuse') sfx(e.star >= 3 ? 'fuse3' : 'fuse2');
       else if (e.type === 'heart') { sfx('spell'); if (e.owner === this.me) { this.banner('Cœur de Mythe capturé !', 'good'); setTimeout(() => !this.ended && this.banner(''), 1300); } else if (e.owner >= 0) { this.banner('L’ennemi tient le Cœur !', 'bad'); setTimeout(() => !this.ended && this.banner(''), 1300); } }
       else if (e.type === 'attack') { const a = this.s.ents.find(o => o.id === e.id); if (a && a.proj === 'arrow') sfx('arrow', 90); }
       else if (e.type === 'wave') { this.banner('Vague ' + e.n + ' !', e.n % 5 === 0 ? 'bad' : 'go'); sfx('tick'); setTimeout(() => !this.ended && this.banner(''), 1400); }
@@ -277,12 +302,14 @@ export class Battle {
     setTimeout(() => {
       this.destroy();
       this.o.onEnd({ result, myHp: Math.max(0, me.hp) / me.maxHp, oppHp: Math.max(0, op.hp) / op.maxHp, reason: s.reason, time: Math.round(s.t),
-        opp: 'IA ' + AI_LEVELS[this.o.botLevel].name, deck: this.o.deck, mode: this.o.mode, world: this.o.world.id, heart: s.heart.owner === this.me, stats: this.stats(), wave: s.wave || 0, extra: this.o.extra });
-    }, 2800);
+        opp: 'IA ' + AI_LEVELS[this.o.botLevel].name, deck: this.o.deck, mode: this.o.mode, world: this.o.world.id, heart: s.heart.owner === this.me, stats: this.stats(), wave: s.wave || 0, extra: this.o.extra,
+        table: this.table(), replay: this.replayData(), isReplay: !!this.replay });
+    }, this.replay ? 1800 : 2800);
   }
 
   async quit() {
     if (this.ended) return;
+    if (this.replay) { this.ended = true; this.destroy(); this.o.onEnd({ isReplay: true, result: 'replay' }); return; }
     const ok = await confirmBox(this.o.mode === 'arena' ? 'Abandonner ? Cela compte comme une défaite.' : 'Quitter l’entraînement ?', 'Abandonner');
     if (!ok || this.ended) return;
     this.ended = true;
@@ -291,7 +318,21 @@ export class Battle {
     this.o.onEnd({ result: 'loss', myHp: Math.max(0, me.hp) / me.maxHp, oppHp: op.hp / op.maxHp, reason: 'forfeit', time: Math.round(this.s.t), opp: 'IA ' + AI_LEVELS[this.o.botLevel].name, deck: this.o.deck, mode: this.o.mode, world: this.o.world.id, stats: this.stats(), wave: this.s.wave || 0, extra: this.o.extra });
   }
 
-  stats() { const P = this.s.players[this.me]; return { deployed: P.deployed, fuses: P.fuses, spells: P.spells, hearts: P.hearts }; }
+  stats() { const P = this.s.players[this.me]; return { deployed: P.deployed, fuses: P.fuses, spells: P.spells, hearts: P.hearts, recycled: P.recycled }; }
+  // Tableau de fin de combat : une ligne par héros du deck (+ le sortilège), badge MVP au meilleur score
+  table() {
+    const P = this.s.players[this.me], T = P.st, rows = [];
+    for (const id of this.params.decks[this.me]) { const r = T[id] || { dmg: 0, heal: 0, taken: 0, heart: 0, kills: 0 }; rows.push({ id, kind: 'hero', ...r }); }
+    const sp = T['sp:' + P.spell]; rows.push({ id: P.spell, kind: 'spell', ...(sp || { dmg: 0, heal: 0, taken: 0, heart: 0, kills: 0 }) });
+    for (const r of rows) { r.dmg = Math.round(r.dmg); r.heal = Math.round(r.heal); r.taken = Math.round(r.taken); r.heart = Math.round(r.heart); r.score = r.dmg + r.heal + r.taken * 0.5 + r.heart * 40 + r.kills * 60; }
+    const best = rows.filter(r => r.kind === 'hero').sort((a, b) => b.score - a.score)[0];
+    if (best && best.score > 0) best.mvp = true;
+    return rows;
+  }
+  replayData() {
+    if (this.replay) return null;
+    return { v: 1, at: Date.now(), params: this.params, cmds: this.log, world: this.o.world.id, mode: this.o.mode, title: this.o.title || '', me: this.o.myName, opp: 'IA ' + AI_LEVELS[this.o.botLevel].name, botLevel: this.o.botLevel };
+  }
 
   destroy() {
     playMusic('menu');
@@ -302,4 +343,4 @@ export class Battle {
   }
 }
 
-export function spellIcon(id) { return { meteore: 'meteor', givre: 'frost', benediction: 'sun', foudre: 'bolt' }[id] || 'bolt'; }
+export function spellIcon(id) { return { meteore: 'meteor', givre: 'frost', benediction: 'sun', foudre: 'bolt', eruption: 'lava', racines: 'roots', malediction: 'curse' }[id] || 'bolt'; }

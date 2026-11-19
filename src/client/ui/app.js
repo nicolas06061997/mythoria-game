@@ -1,13 +1,13 @@
 // MYTHORIA — menus : accueil 3D, héros & deck, fiche de héros 3D, mondes, modes, résultats, profil.
-import { HERO, PLAYABLE, SPELL, SPELLS, RARITIES, FACTIONS, WORLDS, UNLOCKS, SPELL_UNLOCKS, DECK_SIZE, STAR_MULT, deckSynergies, worldFor } from '../../shared/content.js';
+import { HERO, PLAYABLE, SPELL, SPELLS, RARITIES, FACTIONS, WORLDS, UNLOCKS, SPELL_UNLOCKS, DECK_SIZE, STAR_MULT, deckSynergies, deckRoles, ROLES, ROLE_TIERS, spellResonance, RESONANCE, worldFor } from '../../shared/content.js';
 import { AI_LEVELS } from '../../shared/ai.js';
-import { loadProfile, saveProfile, resetProfile, owned, ownedSpells, worldOf, botLevelFor, botDeck, botSpell, botLevels, applyResult, xpNeed, heroLevel, canUpgrade, CHESTS } from '../store.js';
+import { loadProfile, saveProfile, resetProfile, owned, ownedSpells, worldOf, botLevelFor, botDeck, botSpell, botLevels, applyResult, xpNeed, heroLevel, canUpgrade, CHESTS, saveReplay, loadReplays, exportSave, readSave, importSave } from '../store.js';
 import { battleSVG, medalSVG, isleSVG, sparkSVG } from './art.js';
 import { modeIcon } from './modeart.js';
 import { initProgress, chestRow, missionsButton, loginPopup, shopScreen, heroProgress, chestIcon } from './progress.js';
 import { initKingdom, kingdomScreen, leaveKingdom } from './kingdom.js';
 import { story } from './story.js';
-import { initModes, openCampaign, playSurvival, playEvent, playTourney, currentEvent, eventWinsLeft } from './modes.js';
+import { initModes, openCampaign, playSurvival, playEvent, playTourney, currentEvent, eventWinsLeft, openExpedition, openDaily, todayChallenge } from './modes.js';
 import { Battle, spellIcon } from '../battle.js';
 import { HeroMode } from '../heromode.js';
 import { doInstall } from '../install.js';
@@ -29,7 +29,7 @@ export function startApp(el, version) {
   if (!webglOk()) { root.innerHTML = '<div class="nogl"><div class="logo">MYTHORIA</div><p>Ton navigateur ne permet pas l’affichage 3D (WebGL). Ouvre le jeu dans Chrome à jour.</p></div>'; return; }
   initProgress({ P: () => P, render: () => render(), portraitImg });
   initKingdom({ P: () => P, render: () => render() });
-  initModes({ P: () => P, render: () => render(), play: (m, l, w, x) => play(m, l, w, x) });
+  initModes({ P: () => P, render: () => render(), play: (m, l, w, x) => play(m, l, w, x), portraitImg });
   // Saison 1 : la cinématique d'ouverture passe une fois (nouveaux et anciens joueurs), puis l'accueil
   playIntro().catch(() => {}).then(shown => {
     render();
@@ -198,6 +198,12 @@ function openModes() {
     mcard('surv', 'Survie · Défense du Royaume', 'Résiste aux vagues de monstres et de boss · record : vague ' + (P.records.survival || 0), go(() => story('survie', playSurvival))),
     mcard('event', 'Événement : ' + ev.name, ev.desc + ' · ' + eventWinsLeft(P) + ' récompenses restantes aujourd’hui', go(() => story('evenement', playEvent))),
     mcard('hero', 'Mode Héros', 'Dirige toi-même un héros (joystick) contre des vagues de monstres · record : vague ' + (P.records.hero || 0), go(() => story('heros', pickHero))),
+    h('div', { class: 'mc-box mc-new' },
+      h('div', { class: 'mt-head' }, svgEl('mt-ic', modeIcon('camp')), h('div', { class: 'grow' }, h('b', {}, 'Expédition'), h('small', {}, '5 combats d’affilée, une relique à choisir après chaque victoire' + (P.expe ? ' · en cours : combat ' + (P.expe.stage + 1) + '/5' : ''))),
+        h('button', { class: 'btn small gold', onclick: go(openExpedition) }, P.expe ? 'Reprendre' : 'Jouer'))),
+    h('div', { class: 'mc-box mc-new' },
+      h('div', { class: 'mt-head' }, svgEl('mt-ic', modeIcon('event')), h('div', { class: 'grow' }, h('b', {}, 'Défi du jour · ' + todayChallenge().name), h('small', {}, todayChallenge().desc + ' Le même pour tous : compare ton score !')),
+        h('button', { class: 'btn small gold', onclick: go(openDaily) }, 'Jouer'))),
     mcard('tourney', 'Tournoi (contre l’IA)', '3 manches de plus en plus dures · manche ' + (T.round + 1) + '/3 · tournois gagnés : ' + (P.records.tournament || 0), go(() => story('tournoi', playTourney))),
     h('div', { class: 'mc-box mc-train' },
       h('div', { class: 'mt-head' }, svgEl('mt-ic', modeIcon('train')), h('div', {}, h('b', {}, 'Entraînement'), h('small', {}, 'Choisis le niveau de l’IA · sans trophées'))),
@@ -245,10 +251,25 @@ function play(modeId, level, world, extra = {}) {
   const holder = h('div', { class: 'battle-holder' });
   document.body.append(holder); document.body.classList.add('in-battle');
   new Battle(holder, {
-    deck: P.deck.slice(), spell: P.spell, oppDeck, oppSpell: botSpell(tro, seed), botLevel: level, world, myName: P.name, mode: modeId,
-    levels: { ...P.levels }, oppLevels: extra.oppLevels || botLevels(oppDeck, tro), skins: { ...P.skins.eq },
+    deck: (extra.deck || P.deck).slice(), spell: extra.spell || P.spell, oppDeck, oppSpell: extra.oppSpell || botSpell(tro, seed), botLevel: level, world, myName: P.name, mode: modeId,
+    levels: extra.levels || { ...P.levels }, oppLevels: extra.oppLevels || botLevels(oppDeck, tro), skins: extra.skins || { ...P.skins.eq },
     simMode: extra.simMode, tuto: extra.tuto, boss: extra.boss, waves: extra.waves, mods: extra.mods, bonus: extra.bonus, title: extra.title,
-    onEnd: r => { holder.remove(); document.body.classList.remove('in-battle'); if (extra.onResult) r = extra.onResult(r) || r; showResult(r); },
+    seed: extra.seed, relics: extra.relics, fair: extra.fair,
+    onEnd: r => { holder.remove(); document.body.classList.remove('in-battle'); if (r.replay) saveReplay(r.replay); if (extra.onResult) r = extra.onResult(r) || r; showResult(r); },
+  });
+}
+// Revoir un combat enregistré (aucune récompense, aucune commande : la simulation rejoue la graine et les commandes)
+function watchReplay(rp) {
+  if (!rp) return;
+  if (stage) { stage.dispose(); stage = null; }
+  leaveKingdom();
+  const holder = h('div', { class: 'battle-holder' });
+  document.body.append(holder); document.body.classList.add('in-battle');
+  const pr = rp.params;
+  new Battle(holder, {
+    replay: rp, deck: pr.decks[0], spell: pr.spells[0], oppDeck: pr.decks[1], oppSpell: pr.spells[1], botLevel: rp.botLevel || 0, world: WORLDS[rp.world] || WORLDS[0],
+    myName: rp.me || P.name, mode: rp.mode, title: rp.title, simMode: pr.mode === 'duel' ? undefined : pr.mode, skins: { ...P.skins.eq },
+    onEnd: () => { holder.remove(); document.body.classList.remove('in-battle'); render(); },
   });
 }
 
@@ -285,7 +306,21 @@ function endWhy(r) {
   if (r.reason === 'draw') return 'Fin de la prolongation : les deux Sanctuaires sont à égalité.';
   return '';
 }
+// Tableau des statistiques de fin de combat (une ligne par héros + le sortilège, badge MVP)
+function statsTable(rows) {
+  if (!rows || !rows.length) return null;
+  const n = v => v >= 10000 ? (v / 1000).toFixed(0) + 'k' : v >= 1000 ? (v / 1000).toFixed(1).replace('.', ',') + 'k' : String(v);
+  const max = k => Math.max(1, ...rows.map(r => r[k]));
+  const cell = (r, k, cls) => h('td', { class: cls }, h('i', { style: { width: Math.round(r[k] / max(k) * 100) + '%' } }), h('span', {}, k === 'heart' ? r[k] + ' s' : n(r[k])));
+  return h('div', { class: 'rstats' }, h('h4', {}, '📊 Statistiques du combat'),
+    h('table', {}, h('thead', {}, h('tr', {}, h('th', {}, 'Héros'), h('th', {}, '⚔ Dégâts'), h('th', {}, '✚ Soins'), h('th', {}, '🛡 Encaissés'), h('th', {}, '✦ Cœur'))),
+      h('tbody', {}, rows.map(r => h('tr', { class: r.mvp ? 'mvp' : '' },
+        h('td', { class: 'who' }, r.kind === 'spell' ? h('span', { class: 'sp-ic' }, icon(spellIcon(r.id))) : portraitImg(r.id, 'mini-pt'), h('b', {}, r.kind === 'spell' ? SPELL[r.id].name.split(' ')[0] : HERO[r.id].name), r.mvp ? h('em', { class: 'mvp-b' }, 'MVP') : null),
+        cell(r, 'dmg', 'c-dmg'), cell(r, 'heal', 'c-heal'), cell(r, 'taken', 'c-tak'), cell(r, 'heart', 'c-hrt'))))),
+    h('p', { class: 'muted small' }, 'Les invocations (squelettes, pousses, golemets) comptent pour le héros qui les a appelées. MVP = dégâts + soins + encaissés + Cœur + éliminations.'));
+}
 function showResult(r) {
+  if (r.isReplay) { render(); return; }
   const rew = applyResult(P, r);
   const title = r.result === 'survival' || r.result === 'hero' ? 'Vague ' + (r.wave || 0) : r.result === 'win' ? 'Victoire !' : r.result === 'loss' ? 'Défaite' : 'Égalité';
   const bar = (v, cls) => h('div', { class: 'rbar ' + cls }, h('i', { style: { width: Math.round(v * 100) + '%' } }), h('span', {}, Math.round(v * 100) + ' %'));
@@ -299,7 +334,7 @@ function showResult(r) {
     rew.extra ? h('div', { class: 'rchips' }, Object.entries(rew.extra).filter(([k, v]) => v).map(([k, v]) => h('span', { class: 'rchip' }, k === 'gold' ? icon('coin') : k === 'gems' ? icon('gem') : k === 'crystals' ? icon('crystal') : k === 'chest' ? chestIcon(v, 'xs') : '', k === 'chest' ? CHESTS[v].name : '+' + v))) : null,
     r.reason === 'forfeit' ? h('p', { class: 'muted' }, 'Abandon') : r.heart ? h('p', { class: 'muted' }, '✦ Tu tenais le Cœur de Mythe à la fin : +10 or') : null,
     h('div', { class: 'rewards' },
-      r.mode === 'arena' ? h('div', { class: 'rw' }, icon('trophy'), h('b', {}, (rew.trophies >= 0 ? '+' : '') + rew.trophies), h('small', {}, 'trophées')) : h('div', { class: 'rw' }, icon('summon'), h('b', {}, { training: 'Entraînement', campaign: 'Campagne', survival: 'Survie', event: 'Événement', tourney: 'Tournoi', hero: 'Mode Héros' }[r.mode] || 'Mode'), h('small', {}, 'sans trophées')),
+      r.mode === 'arena' ? h('div', { class: 'rw' }, icon('trophy'), h('b', {}, (rew.trophies >= 0 ? '+' : '') + rew.trophies), h('small', {}, 'trophées')) : h('div', { class: 'rw' }, icon('summon'), h('b', {}, { training: 'Entraînement', campaign: 'Campagne', survival: 'Survie', event: 'Événement', tourney: 'Tournoi', hero: 'Mode Héros', expe: 'Expédition', daily: 'Défi du jour' }[r.mode] || 'Mode'), h('small', {}, 'sans trophées')),
       h('div', { class: 'rw' }, icon('coin'), h('b', {}, '+' + rew.gold), h('small', {}, 'or')),
       h('div', { class: 'rw' }, icon('star'), h('b', {}, '+' + rew.xp), h('small', {}, 'expérience'))),
     rew.chest ? h('div', { class: 'banner-good row gap' }, chestIcon(rew.chest, 'xs'), CHESTS[rew.chest].name + ' gagné !') : (r.mode === 'arena' && r.result === 'win' ? h('p', { class: 'muted' }, 'Emplacements de coffres pleins : ouvre-en un pour en gagner d’autres.') : null),
@@ -307,7 +342,11 @@ function showResult(r) {
     rew.newWorld ? h('div', { class: 'banner-good' }, 'Nouveau monde : ' + rew.newWorld.name + ' !') : null,
     rew.newHeroes.length ? h('div', { class: 'newcards' }, h('b', {}, 'Nouveaux héros débloqués !'), h('div', { class: 'mini-row' }, rew.newHeroes.map(id => h('div', { class: 'mini', style: { '--rc': RARITIES[HERO[id].rar].color } }, portraitImg(id), h('small', {}, HERO[id].name))))) : null,
     rew.newSpells.length ? h('div', { class: 'banner-good' }, 'Nouveau sortilège : ' + rew.newSpells.map(id => SPELL[id].name).join(', ')) : null,
-    h('button', { class: 'btn big gold', onclick: () => { page.remove(); render(); } }, 'Continuer'));
+    r.result !== 'hero' ? statsTable(r.table) : null,
+    h('div', { class: 'row gap rbtns' },
+      r.replay ? h('button', { class: 'btn ghost', onclick: () => { page.remove(); watchReplay(r.replay); } }, '⏵ Revoir le combat') : null,
+      r.share ? h('button', { class: 'btn ghost', onclick: () => r.share() }, icon('share'), ' Partager') : null),
+    h('button', { class: 'btn big gold', onclick: () => { page.remove(); render(); r.after && r.after(); } }, 'Continuer'));
   document.body.append(page);
   if (rew.gold) setTimeout(() => sfx('coin'), 300);
 }
@@ -348,20 +387,29 @@ function heroCard(c, { lock, inDeck, sub, onclick } = {}) {
 }
 
 function synergyChips(deck) {
-  const s = deckSynergies(deck);
-  return h('div', { class: 'chips' }, Object.keys(s.counts).sort((a, b) => s.counts[b] - s.counts[a]).map(f => {
-    const F = FACTIONS[f], t = s.tiers[f];
-    return h('span', { class: 'chip' + (t ? ' on' : ''), style: { '--fc': F.color } }, F.short + ' ' + s.counts[f] + (t ? ' · ' + F.bonus[t - 1] : ' · 3 = bonus'));
-  }));
+  const s = deckSynergies(deck), r = deckRoles(deck), reso = spellResonance(P.spell, deck);
+  return h('div', { class: 'syn' },
+    h('small', { class: 'muted' }, 'Factions (3 = bonus, 5 = gros bonus)'),
+    h('div', { class: 'chips' }, Object.keys(s.counts).sort((a, b) => s.counts[b] - s.counts[a]).map(f => {
+      const F = FACTIONS[f], t = s.tiers[f];
+      return h('span', { class: 'chip' + (t ? ' on' : ''), style: { '--fc': F.color } }, F.short + ' ' + s.counts[f] + (t ? ' · ' + F.bonus[t - 1] : ' · 3 = bonus'));
+    })),
+    h('small', { class: 'muted' }, 'Rôles (' + ROLE_TIERS[0] + ' = bonus, ' + ROLE_TIERS[1] + ' = gros bonus)'),
+    h('div', { class: 'chips' }, Object.keys(r.counts).sort((a, b) => r.counts[b] - r.counts[a]).map(k => {
+      const R0 = ROLES[k], t = r.tiers[k];
+      return h('span', { class: 'chip' + (t ? ' on' : ''), style: { '--fc': R0.color } }, R0.icon + ' ' + R0.name + ' ' + r.counts[k] + (t ? ' · ' + R0.bonus[t - 1] : ' · ' + ROLE_TIERS[0] + ' = bonus'));
+    })),
+    reso ? h('div', { class: 'chips' }, h('span', { class: 'chip on', style: { '--fc': FACTIONS[SPELL[P.spell].fac].color } }, '✨ Résonance : ' + SPELL[P.spell].name + ' +20 %')) : null);
 }
 
 function openSpells(ownS) {
   const s = sheet(h('div', { class: 'spells' }, h('h3', {}, 'Choisis ton sortilège'),
-    h('p', { class: 'muted' }, 'La jauge d’Éveil se remplit pendant le combat (2× plus vite si tu tiens le Cœur de Mythe). Pleine : touche le bouton puis l’île.'),
+      h('p', { class: 'muted' }, 'La jauge d’Éveil se remplit pendant le combat (2× plus vite si tu tiens le Cœur de Mythe). Pleine : touche le bouton puis l’île. Résonance : un sort de la même faction que ' + RESONANCE.need + ' héros de ton deck est 20 % plus puissant.'),
     SPELLS.map(sp => {
       const has = ownS.includes(sp.id), w = WORLDS.find(x => (SPELL_UNLOCKS[x.id] || []).includes(sp.id));
       return h('button', { class: 'sp-row' + (P.spell === sp.id ? ' on' : '') + (has ? '' : ' locked'), onclick: () => { if (!has) return toast('Se débloque dans « ' + w.name + ' »'); P.spell = sp.id; saveProfile(P); s.close(); render(); } },
-        h('span', { class: 'sp-ic' }, icon(spellIcon(sp.id))), h('div', {}, h('b', {}, sp.name), h('small', {}, has ? sp.desc : 'Débloqué dans « ' + w.name + ' »')));
+        h('span', { class: 'sp-ic' }, icon(spellIcon(sp.id))), h('div', {}, h('b', {}, sp.name, ' ', h('em', { class: 'sp-fac', style: { color: FACTIONS[sp.fac].color } }, FACTIONS[sp.fac].short)), h('small', {}, has ? sp.desc : 'Débloqué dans « ' + w.name + ' »'),
+          has && spellResonance(sp.id, P.deck) ? h('small', { class: 'sp-reso' }, '✨ Résonance avec ton deck : +20 %') : null));
     })));
 }
 
@@ -388,6 +436,7 @@ function openHero(id) {
     h('div', { class: 'hd-body' },
       h('div', { class: 'hd-title' }, h('h2', {}, c.name), h('small', {}, c.title)),
       h('div', { class: 'chips' }, h('span', { class: 'chip on', style: { '--fc': R.color } }, R.name), h('span', { class: 'chip on', style: { '--fc': F.color } }, F.name),
+        c.role ? h('span', { class: 'chip on', style: { '--fc': ROLES[c.role].color } }, ROLES[c.role].icon + ' ' + ROLES[c.role].name) : null,
         c.fly ? h('span', { class: 'chip on', style: { '--fc': '#9fd8ff' } }, 'Volant') : null, (c.count || 1) > 1 ? h('span', { class: 'chip on', style: { '--fc': '#c0c8d8' } }, '×' + c.count) : null),
       h('p', { class: 'lore' }, '« ' + c.lore + ' »'),
       h('div', { class: 'ability' }, h('span', { class: 'ab-ic' }, icon('star')), h('div', {}, h('b', {}, c.ability[0]), h('small', {}, c.ability[1]))),
@@ -400,7 +449,8 @@ function openHero(id) {
       heroProgress(id, () => { close(); openHero(id); render(); }),
       h('div', { class: 'evo' }, h('h4', {}, 'Évolution en combat'),
         h('div', { class: 'evo-row' }, [1, 2, 3].map(st => h('div', { class: 'evo-st' }, h('b', {}, '★'.repeat(st)), h('small', {}, '×' + STAR_MULT[st] + ' puissance')))),
-        h('p', { class: 'muted' }, 'Sur le Cercle d’Invocation, glisse un héros sur un héros identique de même rang pour le faire évoluer.')),
+        c.role ? h('div', { class: 'ability s3' }, h('span', { class: 'ab-ic' }, '★3'), h('div', {}, h('b', {}, 'Effet unique ★3 : ' + ROLES[c.role].star3[0]), h('small', {}, ROLES[c.role].star3[1]))) : null,
+        h('p', { class: 'muted' }, 'Sur le Cercle d’Invocation, glisse un héros sur un héros identique de même rang pour le faire évoluer. Bloqué ? Touche un héros puis « Recycler » : il rend 1 éther.')),
       !own ? h('p', { class: 'tip lock' }, 'Se débloque dans le monde « ' + WORLDS.find(w => (UNLOCKS[w.id] || []).includes(id)).name + ' »')
         : inDeck ? h('div', { class: 'row gap' }, h('button', { class: 'btn ghost grow', onclick: () => { P.avatar = id; saveProfile(P); toast('Héros favori ✓'); close(); render(); } }, 'Mettre en vedette'), h('span', { class: 'tip grow' }, '✓ Dans ton deck'))
           : h('div', { class: 'row gap' }, h('button', { class: 'btn ghost', onclick: () => { P.avatar = id; saveProfile(P); toast('Héros favori ✓'); close(); render(); } }, 'Vedette'), h('button', { class: 'btn big gold grow', onclick: () => { swapIn = id; tab = 'heroes'; close(); render(); } }, 'Mettre dans le deck'))));
@@ -450,7 +500,11 @@ function openProfile() {
       h('span', { class: 'grow' }, (x.mode === 'arena' ? 'Arène' : 'Entraînement') + ' · 🤖 ' + x.opp),
       h('span', { class: 'muted' }, x.myHp + '% / ' + x.oppHp + '%'),
       h('span', {}, x.mode === 'arena' ? (x.trophies >= 0 ? '+' : '') + x.trophies : '')))) : h('p', { class: 'muted' }, 'Aucun combat pour l’instant.'),
-    h('p', { class: 'muted' }, 'Compte en ligne (changer de téléphone sans rien perdre) : phase 3.')));
+    h('h4', {}, '⏵ Combats enregistrés'),
+    (() => { const L = loadReplays(); return L.length ? h('div', { class: 'hist' }, L.map(rp => h('button', { class: 'hrow replay-row', onclick: () => { s.close(); watchReplay(rp); } },
+      h('span', {}, '⏵'), h('span', { class: 'grow' }, (rp.title || ({ arena: 'Arène', training: 'Entraînement', campaign: 'Campagne', expe: 'Expédition', daily: 'Défi du jour', tourney: 'Tournoi', event: 'Événement', survival: 'Survie' }[rp.mode] || 'Combat')) + ' · ' + rp.opp),
+      h('span', { class: 'muted' }, new Date(rp.at).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }))))) : h('p', { class: 'muted' }, 'Tes 5 derniers combats apparaîtront ici.'); })(),
+    h('p', { class: 'muted' }, 'Compte en ligne : phase 3. En attendant, Réglages → « Exporter ma sauvegarde » pour ne rien perdre.')));
 }
 
 
@@ -469,11 +523,49 @@ function openSettings() {
     h('button', { class: 'btn ghost wide', onclick: share }, icon('share'), ' Partager le jeu'),
     h('button', { class: 'btn ghost wide', onclick: () => { s.close(); if (stage) { stage.dispose(); stage = null; } stopMusic(); playIntro({ force: true }).then(() => render()); } }, icon('play'), ' Revoir l’introduction (Saison 1)'),
     h('button', { class: 'btn ghost wide', onclick: () => { s.close(); play('training', 0, worldOf(P), { tuto: true, title: 'Tutoriel' }); } }, icon('play'), ' Revoir le tutoriel'),
+    h('h4', {}, '💾 Sauvegarde'),
+    h('p', { class: 'muted small' }, 'Ta progression est rangée sur ce téléphone. Exporte-la avant de vider les données de Chrome ou de changer de téléphone.'),
+    h('button', { class: 'btn ghost wide', onclick: () => { s.close(); openExport(); } }, '📤 Exporter ma sauvegarde'),
+    h('button', { class: 'btn ghost wide', onclick: () => { s.close(); openImport(); } }, '📥 Importer une sauvegarde'),
     h('button', { class: 'btn ghost wide', onclick: openRoadmap }, icon('map'), ' Le plan du jeu'),
     h('button', { class: 'btn ghost wide', onclick: () => window.__checkUpdate && window.__checkUpdate(true) }, icon('summon'), ' Chercher une mise à jour'),
     h('button', { class: 'btn red wide', onclick: async () => { if (await confirmBox('Effacer toute ta progression sur ce téléphone ?', 'Tout effacer')) { resetProfile(); P = loadProfile(); s.close(); render(); toast('Progression effacée'); } } }, 'Recommencer à zéro'),
     h('p', { class: 'muted center' }, 'MYTHORIA · version ' + APP.version),
     h('p', { class: 'muted center small' }, 'Modèles 3D : KayKit (Kay Lousberg) et Quaternius, licence CC0. Moteur 3D : three.js.')));
+}
+// ---------- Exporter / importer la sauvegarde ----------
+function openExport() {
+  const code = exportSave();
+  const ta = h('textarea', { class: 'inp savecode', readonly: true, rows: 5 }); ta.value = code;
+  const file = () => {
+    const a = h('a', { href: URL.createObjectURL(new Blob([code], { type: 'text/plain' })), download: 'mythoria-sauvegarde-' + new Date().toISOString().slice(0, 10) + '.txt' });
+    document.body.append(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); toast('Fichier enregistré ✓');
+  };
+  sheet(h('div', { class: 'settings' }, h('h3', {}, '📤 Exporter ma sauvegarde'),
+    h('p', { class: 'muted' }, 'Garde ce code (ou le fichier) en lieu sûr : envoie-le-toi par message ou e-mail. Sur un autre téléphone : Réglages → Importer.'),
+    ta,
+    h('button', { class: 'btn gold wide', onclick: async () => { try { await navigator.clipboard.writeText(code); toast('Code copié ✓'); } catch (e) { ta.select(); toast('Sélectionne le texte et copie-le'); } } }, '📋 Copier le code'),
+    h('button', { class: 'btn ghost wide', onclick: file }, '💾 Enregistrer dans un fichier'),
+    navigator.share ? h('button', { class: 'btn ghost wide', onclick: () => navigator.share({ title: 'Sauvegarde MYTHORIA', text: code }).catch(() => {}) }, icon('share'), ' Envoyer') : null,
+    h('p', { class: 'muted small' }, 'Ce code contient seulement ta progression dans le jeu (pseudo, héros, ressources, Royaume).')));
+}
+function openImport() {
+  const ta = h('textarea', { class: 'inp savecode', rows: 5, placeholder: 'Colle ici ton code MYTHORIA1:…' });
+  const info = h('p', { class: 'muted small' });
+  const check = () => { const r = readSave(ta.value); info.textContent = ta.value.trim() ? (r.err || 'Sauvegarde de « ' + r.name + ' » · niveau ' + r.lvl + ' · ' + r.trophies + ' trophées') : ''; info.className = 'small ' + (r.err ? 'bad' : 'good'); return r; };
+  const inp = h('input', { type: 'file', accept: '.txt,.json,text/plain', style: { display: 'none' }, onchange: async e => { const f = e.target.files[0]; if (f) { ta.value = await f.text(); check(); } } });
+  ta.addEventListener('input', check);
+  let s;
+  s = sheet(h('div', { class: 'settings' }, h('h3', {}, '📥 Importer une sauvegarde'),
+    h('p', { class: 'muted' }, 'Attention : la progression actuelle de ce téléphone sera remplacée.'),
+    ta, inp, info,
+    h('button', { class: 'btn ghost wide', onclick: () => inp.click() }, '📂 Choisir un fichier'),
+    h('button', { class: 'btn gold wide', onclick: async () => {
+      const r = check(); if (r.err) return toast(r.err, 'bad');
+      if (!await confirmBox('Remplacer la progression de ce téléphone par celle de « ' + r.name + ' » ?', 'Importer')) return;
+      const e = importSave(ta.value); if (e) return toast(e, 'bad');
+      s.close(); P = loadProfile(); render(); toast('Sauvegarde importée ✓ Bon retour, ' + P.name + ' !');
+    } }, 'Importer')));
 }
 function install() { doInstall(); }
 async function share() {
@@ -492,8 +584,11 @@ function openHowTo() {
       h('li', {}, h('b', {}, 'Cœur de Mythe : '), 'le cristal au centre. Si tes héros au sol sont seuls à côté, tu le captures : +35 % d’éther et jauge d’Éveil plus rapide. Les volants ne capturent pas.'),
       h('li', {}, h('b', {}, 'Volants : '), 'les tirs à distance (archers, mages, tours) leur font +35 % de dégâts.'),
       h('li', {}, h('b', {}, 'Sortilège : '), 'quand la jauge d’Éveil est pleine, touche le bouton rond à gauche puis l’île.'),
-      h('li', {}, h('b', {}, 'Synergies : '), '3 héros d’une même faction dans ton deck = bonus, 5 = gros bonus.')),
-    h('p', { class: 'muted' }, 'Astuce : garde deux places libres sur ton Cercle pour pouvoir fusionner.')));
+      h('li', {}, h('b', {}, 'Synergies : '), '3 héros d’une même faction dans ton deck = bonus, 5 = gros bonus. En plus, chaque héros a un rôle (Gardien, Tireur, Mage, Bête, Siège) : 2 du même rôle = bonus, 4 = gros bonus.'),
+      h('li', {}, h('b', {}, 'Recycler : '), 'Cercle bloqué ? Touche un héros puis « Recycler » : il disparaît et te rend 1 éther.'),
+      h('li', {}, h('b', {}, 'Fusion ★3 : '), 'un héros ★3 débloque l’effet unique de son rôle (onde de choc, ricochet, surcharge, rage, brèche).'),
+      h('li', {}, h('b', {}, 'Résonance : '), 'un sortilège de la même faction que 3 héros de ton deck est 20 % plus puissant.')),
+    h('p', { class: 'muted' }, 'Astuce : garde deux places libres sur ton Cercle pour pouvoir fusionner. Après chaque combat, regarde le tableau des statistiques ou « Revoir le combat ».')));
 }
 function openRoadmap() {
   const ph = [

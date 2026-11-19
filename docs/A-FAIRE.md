@@ -47,3 +47,8 @@ Légende : 👤 = c'est toi qui le fais · 🤖 = c'est Claude qui le fait
 
 ## Déjà fait
 Phases 1, 2, 4, 5 et 7 + Mode Héros + équilibrage (voir ROADMAP.md).
+19/11 : rôles + effets ★3, bonus de l'Aube, 3 nouveaux sorts + Résonance, bouton Recycler, Expédition (reliques), Défi du jour, replays, statistiques de fin de combat (MVP), halo du Cœur, portée avant déploiement, sons ★2/★3, export/import de la sauvegarde, drapeau « mode équilibré » prêt pour le Duel en ligne.
+
+## Idées gardées pour plus tard
+- 🤖 Royaume : transformer une partie des bâtiments en choix tactiques (1 bonus actif parmi 3) plutôt qu'en bonus cumulés.
+- 🤖 Classement du Défi du jour entre amis (quand le serveur existera ; aujourd'hui : partage du score par message).

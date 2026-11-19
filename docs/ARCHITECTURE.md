@@ -40,7 +40,9 @@ il suffit de remplacer le champ `model` du héros dans `content.js`.
 
 ## Principe central : une simulation déterministe partagée
 `src/shared/sim.js` avance par ticks fixes (20/s). Même graine + mêmes commandes = même combat (test automatique).
-Commandes possibles : `summon`, `merge`, `deploy`, `spell`, toutes vérifiées par `check()`.
+Commandes possibles : `summon`, `merge`, `deploy`, `recycle` (rend 1 éther), `spell`, toutes vérifiées par `check()`.
+Replays (19/11) : `battle.js` enregistre `params` (graine, decks, niveaux, modes…) + chaque commande avec son tick ;
+« Revoir le combat » recrée la simulation et réinjecte les commandes (5 derniers combats dans `localStorage myt_replays`, quelques Ko chacun).
 En ligne, seul le serveur fera avancer la simulation : modifier le jeu dans son navigateur ne donnera aucun avantage.
 
 ## Progression, Royaume, modes (14/11/2026)
@@ -49,6 +51,18 @@ En ligne, seul le serveur fera avancer la simulation : modifier le jeu dans son 
 - `src/shared/campaign.js` : 6 chapitres × 5 étapes, 6 boss (compétences slam/summon/freeze/heal/fire, rage à 50 %), événements, tournoi, vagues de survie.
 - `src/shared/sim.js` : modes `duel`, `campaign` (boss), `survival` (vagues), `mods` (événements), `bonus` (Royaume).
 - Client : `ui/progress.js`, `ui/kingdom.js` + `three/kingdomview.js`, `ui/modes.js`, `heromode.js` (Mode Héros, moteur séparé non déterministe car solo).
+
+## Boucle de combat enrichie (19/11/2026)
+- Deux axes de synergie : faction (3/5 héros, `deckSynergies`) et rôle (`ROLES` : gardien, tireur, mage, bete, siege ; 2/4 héros, `deckRoles`).
+  Ordre de l'Aube = bouclier d'arrivée + capture du Cœur plus rapide (`heartK`). Mages = Éveil plus rapide (`eveilK`).
+- ★3 = effet unique du rôle (`e.s3` dans `applyStats`) : onde de choc (`star3Burst`), ricochet (`pr.rico`), surcharge (`mageBurst`), rage, brèche.
+- 7 sorts (un par faction au moins) : `burn` (zone `s.zones`), `root` (`e.rootT`), `curse` (`e.curseT`, +dégâts, soins bloqués). Résonance : sort de la faction de 3 héros du deck = ×1,2 (`spellResonance`).
+- Statistiques par héros (`P.st[statKey]` : dmg, heal, taken, heart, kills ; les invocations comptent pour leur invocateur, `sp:<sort>` pour le sort).
+- Reliques d'Expédition (`RELICS` dans campaign.js, option `relics` de `createBattle`, joueur 0 seulement). Défi du jour : `dailyChallenge(dayKey)` (graine fixe, `mods.limit`).
+- **Mode « Tournoi / Équilibré »** : option `fair: true` de `createBattle` → niveaux plafonnés à `FAIR_LEVEL` (5), bonus du Royaume et reliques ignorés.
+  Déjà utilisé par le Défi du jour ; le futur Duel en ligne (phase 3) l'utilisera pour qu'un ancien joueur n'écrase pas un nouveau par ses statistiques.
+  Piste suivante pour le Royaume : transformer une partie des bâtiments en choix tactiques (1 bonus actif parmi 3) plutôt qu'en statistiques cumulées.
+- Sauvegarde : `exportSave` / `importSave` (store.js) = code texte `MYTHORIA1:` (base64 de toutes les clés `myt_*`), aussi en fichier.
 
 ## Organisation
 - `src/shared/` : règles (content, sim, ai, rng) — aucun code navigateur.

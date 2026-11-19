@@ -7,7 +7,7 @@
 // Déterministe : même graine + mêmes commandes = même combat (base de l'anti-triche en ligne).
 // Pas de Math.sin/cos/random ici : seulement + - * / et sqrt.
 
-import { HERO, SPELL, RARITIES, STAR_MULT, STAR_SIZE, MAX_STAR, levelMult, deckSynergies } from './content.js';
+import { HERO, SPELL, RARITIES, STAR_MULT, STAR_SIZE, MAX_STAR, levelMult, deckSynergies, deckRoles, spellResonance, fairLevels, RESONANCE } from './content.js';
 
 export const W = 16, H = 24, CX = 8, CY = 12, RX = 7.6, RY = 11.6;
 export const TICK_RATE = 20, DT = 1 / TICK_RATE;
@@ -39,19 +39,24 @@ function clampIsland(e) {
   if (d > lim) { e.x = CX + dx / d * lim * RX; e.y = CY + dy / d * lim * RY; }
 }
 
-export function createBattle({ seed = 1, decks, spells = ['meteore', 'meteore'], levels = [{}, {}], names = ['Joueur 1', 'Joueur 2'], mode = 'duel', boss = null, waves = null, mods = null, bonus = null, botMana = 0 }) {
+// relics : reliques du joueur 0 (mode Expédition) ; fair : mode « Tournoi / Équilibré » (niveaux plafonnés, sans bonus ni reliques).
+export function createBattle({ seed = 1, decks, spells = ['meteore', 'meteore'], levels = [{}, {}], names = ['Joueur 1', 'Joueur 2'], mode = 'duel', boss = null, waves = null, mods = null, bonus = null, botMana = 0, relics = null, fair = false }) {
+  if (fair) { levels = levels.map(fairLevels); bonus = null; relics = null; }
   const s = {
-    tick: 0, t: 0, seed, rng: (seed >>> 0) || 1, nextId: 1, ents: [], proj: [], pend: [], ev: [],
+    tick: 0, t: 0, seed, rng: (seed >>> 0) || 1, nextId: 1, ents: [], proj: [], pend: [], ev: [], zones: [], fair: !!fair,
     over: false, winner: -1, reason: '', overtime: false, mode, mods: mods || {}, wave: 0, waveT: 6, wavesDef: waves,
     heart: { ctl: 0, owner: -1 },
     players: [0, 1].map(p => ({
       name: names[p], mana: MANA_START, eveil: 0, bench: Array(BENCH).fill(null), deck: decks[p].slice(),
-      spell: spells[p] || 'meteore', levels: levels[p] || {}, syn: deckSynergies(decks[p]).tiers, summons: 0, deployed: 0, fuses: 0, spells: 0, hearts: 0,
+      spell: spells[p] || 'meteore', levels: levels[p] || {}, syn: deckSynergies(decks[p]).tiers, roles: deckRoles(decks[p]).tiers, reso: spellResonance(spells[p] || 'meteore', decks[p]),
+      relics: (p === 0 && relics) || [], st: {}, summons: 0, deployed: 0, fuses: 0, spells: 0, hearts: 0, recycled: 0,
       bonus: (p === 0 && bonus) || (p === 1 && botMana ? { hp: 1, sanctDmg: 1, eveil: 1, mana: botMana } : { hp: 1, sanctDmg: 1, eveil: 1 }),
     })),
   };
   for (const p of [0, 1]) {
-    s.ents.push({ id: s.nextId++, p, kind: 'sanct', x: CX, y: SANCT.y[p], px: CX, py: SANCT.y[p], hp: SANCT.hp, maxHp: SANCT.hp, invuln: mode === 'survival' && p === 1,
+    const shp = Math.round(SANCT.hp * (has(s, p, 'rempart') ? 1.2 : 1));
+    if (has(s, p, 'reserve')) s.players[p].mana += 3;
+    s.ents.push({ id: s.nextId++, p, kind: 'sanct', x: CX, y: SANCT.y[p], px: CX, py: SANCT.y[p], hp: shp, maxHp: shp, invuln: mode === 'survival' && p === 1,
       dmg: Math.round(SANCT.dmg * s.players[p].bonus.sanctDmg), hit: SANCT.hit, cd: 0, range: SANCT.range, r: SANCT.r, tgt: 'any', proj: 'bolt', splash: SANCT.splash, star: 1, shield: 0, frozen: 0, slowT: 0, dead: false });
   }
   // Chaque camp commence avec 2 héros sur son cercle.
@@ -62,6 +67,19 @@ export function createBattle({ seed = 1, decks, spells = ['meteore', 'meteore'],
 }
 
 export const sanctOf = (s, p) => s.ents.find(e => e.kind === 'sanct' && e.p === p);
+const has = (s, p, r) => s.players[p].relics.includes(r);
+const tierOf = (s, p, k, f) => (s.players[p][k][f] || 0);
+// Statistiques de fin de combat (par héros du deck, sorts compris) : dégâts, soins, dégâts encaissés, temps sur le Cœur, éliminations.
+function stat(s, e, k, v) {
+  if (!e || !e.statKey || e.p === undefined || !(v > 0)) return;
+  const T = s.players[e.p].st, r = T[e.statKey] || (T[e.statKey] = { dmg: 0, heal: 0, taken: 0, heart: 0, kills: 0 });
+  r[k] += v;
+}
+function heal(s, e, amount, src) {
+  if (e.dead || e.curseT > 0 || amount <= 0) return 0;
+  const a = Math.min(e.maxHp - e.hp, amount); if (a <= 0) return 0;
+  e.hp += a; stat(s, src || e, 'heal', a); return a;
+}
 
 // ---------- Validation (anti-triche) ----------
 export function deployOk(p, x, y) {
@@ -92,6 +110,9 @@ export function check(s, cm) {
       if (!deployOk(cm.p, cm.x, cm.y)) return 'Pose tes héros sur ta moitié de l’île.';
       return null;
     }
+    case 'recycle':
+      if (!P.bench[cm.slot]) return 'Aucun héros à recycler ici.';
+      return null;
     case 'spell':
       if (P.eveil < 100 - 1e-6) return 'Jauge d’Éveil pas encore pleine.';
       if (!inIsland(cm.x, cm.y)) return 'Vise l’île.';
@@ -109,7 +130,9 @@ function summonHero(s, p) {
   for (const id of P.deck) tot += RARITIES[HERO[id].rar].weight;
   let r = rnd(s) * tot, pick = P.deck[0];
   for (const id of P.deck) { r -= RARITIES[HERO[id].rar].weight; if (r <= 0) { pick = id; break; } }
-  P.bench[slot] = { id: pick, star: s.mods.startStar || 1 };
+  let star = s.mods.startStar || 1;
+  if (star < 2 && has(s, p, 'etoile') && rnd(s) < 0.2) star = 2;
+  P.bench[slot] = { id: pick, star };
   P.summons++;
   s.ev.push({ type: 'summon', p, slot, id: pick });
 }
@@ -117,7 +140,13 @@ function summonHero(s, p) {
 function apply(s, cm) {
   const P = s.players[cm.p];
   if (cm.t === 'summon') { P.mana -= SUMMON_COST; summonHero(s, cm.p); }
-  else if (cm.t === 'merge') {
+  else if (cm.t === 'recycle') {
+    // Recycler un socle : rend 1 éther sur les 2 dépensés (2 avec la relique « Alchimie »)
+    const h = P.bench[cm.slot]; P.bench[cm.slot] = null; P.recycled++;
+    const back = has(s, cm.p, 'alchimie') ? 2 : 1;
+    P.mana = Math.min(MANA_MAX, P.mana + back);
+    s.ev.push({ type: 'recycle', p: cm.p, slot: cm.slot, id: h.id, back });
+  } else if (cm.t === 'merge') {
     P.bench[cm.b].star++; P.bench[cm.a] = null; P.fuses++;
     s.ev.push({ type: 'benchFuse', p: cm.p, slot: cm.b, star: P.bench[cm.b].star, id: P.bench[cm.b].id });
   } else if (cm.t === 'deploy') {
@@ -128,22 +157,30 @@ function apply(s, cm) {
     const c = SPELL[P.spell];
     s.ev.push({ type: 'cast', p: cm.p, spell: P.spell, x: cm.x, y: cm.y, delay: c.delay || 0 });
     const n = c.strikes || 1;
-    for (let k = 0; k < n; k++) s.pend.push({ at: s.tick + Math.round(((c.delay || 0) + k * 0.45) * TICK_RATE), p: cm.p, spell: P.spell, x: cm.x, y: cm.y, k });
+    for (let k = 0; k < n; k++) s.pend.push({ at: s.tick + Math.round(((c.delay || 0) + k * 0.45) * TICK_RATE), p: cm.p, spell: P.spell, x: cm.x, y: cm.y, k, reso: P.reso });
   }
 }
 
 // ---------- Héros sur l'île ----------
 function mults(s, p, c) {
-  const t = s.players[p].syn[c.fac] || 0;
+  const t = s.players[p].syn[c.fac] || 0, r = tierOf(s, p, 'roles', c.role), R = k => has(s, p, k);
   return {
-    hp: c.fac === 'aube' ? [1, 1.08, 1.15][t] : 1,
-    dmg: c.fac === 'arcane' ? [1, 1.08, 1.16][t] : 1,
+    hp: (R('vigueur') ? 1.15 : 1),
+    shield: (c.fac === 'aube' ? [0, 0.12, 0.22][t] : 0) + (R('egide') ? 0.15 : 0),
+    dmg: (c.fac === 'arcane' ? [1, 1.08, 1.16][t] : 1) * (R('fureur') ? 1.15 : 1),
     regen: c.fac === 'sylve' ? [0, 0.012, 0.025][t] : 0,
-    atk: c.fac === 'braise' ? [1, 1.07, 1.14][t] : 1,
+    atk: (c.fac === 'braise' ? [1, 1.07, 1.14][t] : 1) * (R('celerite') ? 1.12 : 1),
     slow: c.fac === 'givre' ? [0, 0.15, 0.25][t] : 0,
-    steal: c.fac === 'ombre' ? [0, 0.08, 0.15][t] : 0,
+    steal: (c.fac === 'ombre' ? [0, 0.08, 0.15][t] : 0) + (R('vampire') ? 0.08 : 0),
+    armor: c.role === 'gardien' ? [0, 0.06, 0.12][r] : 0,
+    range: c.role === 'tireur' ? [0, 0.4, 0.8][r] : 0,
+    spd: (c.role === 'bete' ? [1, 1.1, 1.2][r] : 1) * (R('celerite') ? 1.12 : 1),
+    bdmg: c.role === 'siege' ? [1, 1.1, 1.2][r] : 1,
   };
 }
+// Vitesse de capture du Cœur (Ordre de l'Aube) et de la jauge d'Éveil (Mages) pour un camp.
+const heartK = (s, p) => [1, 1.3, 1.6][tierOf(s, p, 'syn', 'aube')];
+const eveilK = (s, p) => [1, 1.1, 1.2][tierOf(s, p, 'roles', 'mage')] * (has(s, p, 'sagesse') ? 1.4 : 1);
 
 function applyStats(s, e) {
   const c = HERO[e.card], m = mults(s, e.p, c), lv = levelMult(e.lvl), st = STAR_MULT[e.star];
@@ -155,6 +192,11 @@ function applyStats(s, e) {
   e.slowOn = Math.max(c.slow || 0, m.slow);
   e.steal = (c.lifesteal || 0) + m.steal;
   e.r = e.bossR || c.r * STAR_SIZE[e.star];
+  e.armor = e.bossHp ? 0 : m.armor; e.bdmg = e.bossHp ? 1 : m.bdmg;
+  if (!e.boss) { e.spd = (c.spd || 0) * m.spd; e.range = c.range + m.range; }
+  // ★3 : effet unique selon le rôle
+  e.s3 = !e.boss && e.star >= 3 && c.role ? c.role : null;
+  if (e.s3 === 'bete') { e.hit /= 1.25; e.steal += 0.12; }
 }
 
 function spawn(s, p, id, x, y, star = 1, lvl = 1, deploy = DEPLOY_TIME) {
@@ -163,12 +205,13 @@ function spawn(s, p, id, x, y, star = 1, lvl = 1, deploy = DEPLOY_TIME) {
     id: s.nextId++, p, kind: c.type === 'building' ? 'building' : 'unit', card: id, lvl, star,
     x, y, px: x, py: y, hp: 0, maxHp: 0, cd: 0.3, spd: c.spd || 0, range: c.range, tgt: c.tgt,
     fly: !!c.fly, splash: c.splash || 0, proj: c.proj || null, shield: c.shield || 0, frozen: 0, slowT: 0,
-    deploy, target: 0, retarget: 0, dead: false, life: c.life || 0,
+    deploy, target: 0, retarget: 0, dead: false, life: c.life || 0, statKey: id, rootT: 0, curseT: 0, atkN: 0,
     sumT: c.summon ? c.summon.every : 0, novaT: c.nova ? c.nova.every : 0,
     dashReady: !!c.dash, chargeReady: !!c.charge, moving: false, atkAnim: 0, faceX: 0, faceY: p === 0 ? -1 : 1,
   };
   applyStats(s, e);
   e.hp = e.maxHp;
+  const sh = mults(s, p, c).shield; if (sh && e.kind === 'unit') e.shield += Math.round(e.maxHp * sh);
   s.ents.push(e);
   return e;
 }
@@ -182,6 +225,7 @@ function deployHero(s, p, h, x, y) {
     if (twin) {
       twin.star++; applyStats(s, twin); twin.hp = twin.maxHp; s.players[p].fuses++;
       s.ev.push({ type: 'fuse', id: twin.id, star: twin.star, x: twin.x, y: twin.y });
+      if (twin.star >= 3) star3Burst(s, twin);
       return;
     }
   }
@@ -200,17 +244,27 @@ function deployHero(s, p, h, x, y) {
 function damage(s, t, amount, src) {
   if (t.dead || amount <= 0 || t.invuln) return;
   if (t.fly && src && src.proj) amount *= 1.35; // les tirs à distance sont efficaces contre les volants
+  if (src && src.bdmg > 1 && t.kind !== 'unit') amount *= src.bdmg; // rôle Siège
+  if (t.armor) amount *= 1 - t.armor;                                  // rôle Gardien
+  if (t.curseT > 0) amount *= 1 + (t.curseK || 0.4);                    // Malédiction des Ombres
   amount = Math.round(amount);
   if (t.shield > 0) {
     const a = Math.min(t.shield, amount);
     t.shield -= a; amount -= a;
     if (t.shield <= 0) s.ev.push({ type: 'shieldBreak', id: t.id });
   }
+  const real = Math.min(amount, Math.max(0, t.hp));
   t.hp -= amount;
   s.ev.push({ type: 'hit', id: t.id, x: t.x, y: t.y, amount });
-  if (src && src.steal && src.hp > 0) src.hp = Math.min(src.maxHp, src.hp + amount * src.steal);
+  stat(s, src, 'dmg', real); stat(s, t, 'taken', real);
+  if (src && src.steal && src.hp > 0) heal(s, src, amount * src.steal);
   if (src && src.slowOn && t.kind === 'unit') t.slowT = Math.max(t.slowT, 2), t.slowK = Math.max(t.slowK || 0, src.slowOn);
-  if (t.hp <= 0) kill(s, t);
+  if (src && src.s3 === 'siege' && t.kind !== 'unit' && !src.dead) {
+    // Brèche (★3 Siège) : onde qui blesse les troupes autour du bâtiment frappé
+    for (const o of s.ents) if (!o.dead && o.p !== src.p && o.kind === 'unit' && dist(o, t) <= 1.8 + t.r) damage(s, o, src.dmg * 0.5, null);
+    s.ev.push({ type: 'boom', x: t.x, y: t.y, r: 1.8, kind: 'breche' });
+  }
+  if (t.hp <= 0) { if (t.kind !== 'sanct') stat(s, src, 'kills', 1); kill(s, t); }
 }
 
 function kill(s, t) {
@@ -220,7 +274,7 @@ function kill(s, t) {
   if (t.kind === 'sanct') return finish(s, 1 - t.p, s.mode === 'survival' ? 'survival' : 'sanct');
   if (t.boss) s.ev.push({ type: 'bossDown', id: t.id, x: t.x, y: t.y });
   const c = t.card && HERO[t.card];
-  if (c && c.death) for (let k = 0; k < c.death.n; k++) { const e = spawn(s, t.p, c.death.id, t.x + (k ? 0.55 : -0.55), t.y, 1, t.lvl, 0.3); clampIsland(e); }
+  if (c && c.death) for (let k = 0; k < c.death.n; k++) { const e = spawn(s, t.p, c.death.id, t.x + (k ? 0.55 : -0.55), t.y, 1, t.lvl, 0.3); e.statKey = t.statKey; clampIsland(e); }
 }
 
 function areaDamage(s, p, x, y, radius, dmg, sanctPct, src) {
@@ -268,6 +322,8 @@ function attack(s, e, t) {
   const c = e.card ? HERO[e.card] : null;
   e.atkAnim = 0.35;
   let dmg = e.dmg;
+  const burst = e.s3 === 'mage' && ++e.atkN % 3 === 0; // Surcharge (★3 Mage)
+  if (burst && !e.proj) mageBurst(s, e, t.x, t.y, dmg);
   if (e.bonus) { dmg *= 2; e.bonus = false; }
   s.ev.push({ type: 'attack', id: e.id, tid: t.id, x: e.x, y: e.y, tx: t.x, ty: t.y });
   if (c && c.kamikaze) {
@@ -287,20 +343,34 @@ function attack(s, e, t) {
       cur = nb;
     }
     s.ev.push({ type: 'zap', pts });
+    if (burst) mageBurst(s, e, t.x, t.y, dmg);
     return;
   }
   if (e.proj) {
     if (c && c.multi) {
       // Volée : jusqu'à `multi` cibles différentes à portée
       const others = s.ents.filter(o => o !== t && canTarget(e, o) && gap(e, o) <= e.range).sort((a, b) => dist(e, a) - dist(e, b)).slice(0, c.multi - 1);
-      for (const o of others) s.proj.push({ x: e.x, y: e.y, tid: o.id, tx: o.x, ty: o.y, spd: 13, dmg, splash: 0, p: e.p, kind: e.proj, src: e.id, fly: e.fly, id: s.nextId++ });
+      for (const o of others) s.proj.push({ x: e.x, y: e.y, tid: o.id, tx: o.x, ty: o.y, spd: 13, dmg, splash: 0, p: e.p, kind: e.proj, src: e.id, fly: e.fly, id: s.nextId++, rico: e.s3 === 'tireur' ? 1 : 0 });
     }
     s.proj.push({ x: e.x, y: e.y, tid: t.id, tx: t.x, ty: t.y, spd: e.proj === 'fire' ? 8 : e.proj === 'arrow' ? 13 : 10,
-      dmg, splash: e.splash, p: e.p, kind: e.proj, src: e.id, fly: e.fly, id: s.nextId++ });
+      dmg, splash: e.splash, p: e.p, kind: e.proj, src: e.id, fly: e.fly, id: s.nextId++, rico: e.s3 === 'tireur' ? 1 : 0, burst });
     return;
   }
   if (e.splash) { areaDamage(s, e.p, t.x, t.y, e.splash, dmg, 1, e); s.ev.push({ type: 'cleave', x: t.x, y: t.y, r: e.splash, kind: c ? c.fac : '' }); }
   else damage(s, t, dmg, e);
+}
+function mageBurst(s, e, x, y, dmg) {
+  areaDamage(s, e.p, x, y, 1.6, dmg * 0.7, 0.5, e);
+  s.ev.push({ type: 'boom', x, y, r: 1.6, kind: 'surcharge' });
+}
+// Effet d'apparition d'un héros ★3 (et onde de choc des Gardiens)
+function star3Burst(s, e) {
+  s.ev.push({ type: 'star3', id: e.id, x: e.x, y: e.y, role: e.s3, p: e.p, card: e.card });
+  if (e.s3 === 'gardien') {
+    for (const o of s.ents) if (!o.dead && o.p !== e.p && o.kind === 'unit' && !o.boss && dist(o, e) <= 2.4) o.frozen = Math.max(o.frozen, 1);
+    areaDamage(s, e.p, e.x, e.y, 2.4, e.dmg, 0.3, e);
+    e.shield += Math.round(e.maxHp * 0.25);
+  }
 }
 
 // ---------- Boucle d'un tick ----------
@@ -316,30 +386,38 @@ export function step(s, cmds = []) {
   updateHeart(s, dt);
   if (s.mode === 'survival') waveTick(s, dt);
   for (const [p, P] of s.players.entries()) {
-    const bonus = s.heart.owner === p ? 1.35 : 1;
+    const bonus = s.heart.owner === p ? (has(s, p, 'coeur') ? 2 : 1.35) : 1;
     P.mana = Math.min(MANA_MAX, P.mana + (s.t >= DOUBLE_AT && s.mode !== 'survival' ? 2 : 1) * bonus * (s.mods.mana || 1) * (P.bonus.mana || 1) / MANA_REGEN * dt);
-    P.eveil = Math.min(100, P.eveil + 100 / EVEIL_TIME * (s.heart.owner === p ? 1.6 : 1) * (s.mods.eveil || 1) * P.bonus.eveil * dt);
+    P.eveil = Math.min(100, P.eveil + 100 / EVEIL_TIME * (s.heart.owner === p ? 1.6 : 1) * (s.mods.eveil || 1) * P.bonus.eveil * eveilK(s, p) * dt);
   }
   for (const sp of s.pend) if (sp.at <= s.tick) castSpell(s, sp);
   s.pend = s.pend.filter(sp => sp.at > s.tick);
+  // zones qui brûlent (Éruption) : dégâts toutes les 0,5 s
+  for (const z of s.zones) {
+    if (s.tick >= z.next) { z.next = s.tick + TICK_RATE / 2; areaDamage(s, z.p, z.x, z.y, z.r, z.dps * 0.5, z.sanctPct, z.src); }
+    z.t -= dt;
+  }
+  s.zones = s.zones.filter(z => z.t > 0);
 
   for (const e of s.ents) { e.px = e.x; e.py = e.y; e.moving = false; }
 
   for (const e of s.ents) {
     if (e.dead) continue;
     if (e.atkAnim > 0) e.atkAnim -= dt;
+    if (e.rootT > 0) e.rootT -= dt;
+    if (e.curseT > 0) e.curseT -= dt;
     if (e.frozen > 0) { e.frozen -= dt; continue; }
     if (e.slowT > 0) { e.slowT -= dt; if (e.slowT <= 0) e.slowK = 0; }
     if (e.deploy > 0) { e.deploy -= dt; if (e.deploy <= 0) onLand(s, e); continue; }
     const c = e.card ? HERO[e.card] : null;
-    if (e.regen && e.hp < e.maxHp) e.hp = Math.min(e.maxHp, e.hp + e.maxHp * e.regen * dt);
+    if (e.regen && e.hp < e.maxHp) heal(s, e, e.maxHp * e.regen * dt);
     if (e.kind === 'building' && e.life) { e.hp -= e.maxHp / e.life * dt; if (e.hp <= 0) { kill(s, e); continue; } }
-    if (c && c.aura) for (const o of s.ents) if (!o.dead && o.p === e.p && o.kind === 'unit' && o !== e && dist(o, e) <= c.aura.radius) o.hp = Math.min(o.maxHp, o.hp + c.aura.heal * STAR_MULT[e.star] * dt);
+    if (c && c.aura) for (const o of s.ents) if (!o.dead && o.p === e.p && o.kind === 'unit' && o !== e && dist(o, e) <= c.aura.radius) heal(s, o, c.aura.heal * STAR_MULT[e.star] * dt, e);
     if (c && c.summon) {
       e.sumT -= dt;
       if (e.sumT <= 0) {
         e.sumT = c.summon.every;
-        for (let k = 0; k < c.summon.n; k++) { const m = spawn(s, e.p, c.summon.id, e.x + (k ? 0.7 : -0.7), e.y + (e.p === 0 ? 0.5 : -0.5), 1, e.lvl, 0.6); clampIsland(m); }
+        for (let k = 0; k < c.summon.n; k++) { const m = spawn(s, e.p, c.summon.id, e.x + (k ? 0.7 : -0.7), e.y + (e.p === 0 ? 0.5 : -0.5), 1, e.lvl, 0.6); m.statKey = e.statKey; clampIsland(m); }
         s.ev.push({ type: 'conjure', id: e.id, x: e.x, y: e.y, fac: c.fac });
       }
     }
@@ -370,7 +448,7 @@ export function step(s, cmds = []) {
     if (g <= e.range) {
       if (e.chargeReady) { e.chargeReady = false; e.bonus = true; }
       if (e.cd <= 0) { attack(s, e, t); e.cd = e.hit; }
-    } else if (e.kind === 'unit') {
+    } else if (e.kind === 'unit' && !(e.rootT > 0)) {
       if (e.dashReady && c.dash && g <= c.dash && g > 1.2) {
         const k = (dd - e.r - t.r - 0.3) / dd;
         s.ev.push({ type: 'dash', id: e.id, x0: e.x, y0: e.y, x1: e.x + dx * k, y1: e.y + dy * k });
@@ -394,10 +472,17 @@ export function step(s, cmds = []) {
 
 function updateHeart(s, dt) {
   let a = 0, b = 0;
-  for (const e of s.ents) if (!e.dead && e.kind === 'unit' && !e.fly && e.deploy <= 0 && dist(e, HEART) <= HEART.r) { if (e.p === 0) a++; else b++; }
+  const keys = new Set();
+  for (const e of s.ents) if (!e.dead && e.kind === 'unit' && !e.fly && e.deploy <= 0 && dist(e, HEART) <= HEART.r) {
+    if (e.p === 0) a++; else b++;
+    const k = e.p + ':' + e.statKey; if (!keys.has(k)) { keys.add(k); stat(s, e, 'heart', dt); }
+    // relique « Cœur vorace » : le Cœur draine la vie de ses porteurs
+    if (has(s, e.p, 'coeur') && s.heart.owner === e.p) e.hp = Math.max(1, e.hp - e.maxHp * 0.015 * dt);
+  }
   const H0 = s.heart, before = H0.owner;
-  if (a && !b) H0.ctl = Math.min(1, H0.ctl + HEART.rate * dt);
-  else if (b && !a) H0.ctl = Math.max(-1, H0.ctl - HEART.rate * dt);
+  H0.cap = a && b ? 2 : a ? 0 : b ? 1 : -1; // qui capture en ce moment (2 = disputé)
+  if (a && !b) H0.ctl = Math.min(1, H0.ctl + HEART.rate * heartK(s, 0) * dt);
+  else if (b && !a) H0.ctl = Math.max(-1, H0.ctl - HEART.rate * heartK(s, 1) * dt);
   if (H0.ctl >= 0.999) H0.owner = 0;
   else if (H0.ctl <= -0.999) H0.owner = 1;
   else if ((H0.owner === 0 && H0.ctl <= 0) || (H0.owner === 1 && H0.ctl >= 0)) H0.owner = -1;
@@ -407,6 +492,11 @@ function updateHeart(s, dt) {
 function onLand(s, e) {
   const c = HERO[e.card];
   s.ev.push({ type: 'land', id: e.id, x: e.x, y: e.y });
+  if (e.s3 && !e.boss) star3Burst(s, e);
+  if (e.star >= 2 && !e.boss && has(s, e.p, 'onde')) { // relique « Onde de fusion »
+    areaDamage(s, e.p, e.x, e.y, 2.2, 110 * e.star, 0.2, e);
+    s.ev.push({ type: 'boom', x: e.x, y: e.y, r: 2.2, kind: 'roar' });
+  }
   if (c && c.roar) {
     areaDamage(s, e.p, e.x, e.y, c.roar.radius, c.roar.dmg * STAR_MULT[e.star], 0.3, e);
     s.ev.push({ type: 'boom', x: e.x, y: e.y, r: c.roar.radius, kind: 'roar' });
@@ -414,19 +504,25 @@ function onLand(s, e) {
 }
 
 function castSpell(s, sp) {
-  const c = SPELL[sp.spell], lv = 1, m = { dmg: 1 };
+  const c = SPELL[sp.spell], k = sp.reso ? RESONANCE.k : 1; // Résonance : sort de la faction du deck = +20 %
   let x = sp.x, y = sp.y;
   if (c.strikes) { const o = [[0, 0], [-1, 0.8], [1, -0.7]][sp.k % 3]; x += o[0]; y += o[1]; }
-  s.ev.push({ type: 'spell', spell: sp.spell, fx: c.fx, x, y, r: c.strikes ? c.radius * 0.6 : c.radius, p: sp.p });
   const r = c.strikes ? c.radius * 0.6 : c.radius;
-  if (c.dmg) areaDamage(s, sp.p, x, y, r, sp.bossDmg || c.dmg * m.dmg * lv, c.sanctPct || 0.3, null);
-  if (c.freeze) for (const e of s.ents) if (!e.dead && e.p !== sp.p && dist(e, { x, y }) <= r + e.r * 0.5) e.frozen = Math.max(e.frozen, c.freeze);
-  if (c.heal) for (const e of s.ents) if (!e.dead && e.p === sp.p && e.kind !== 'sanct' && dist(e, { x, y }) <= r + e.r * 0.5) {
-    e.hp = Math.min(e.maxHp, e.hp + c.heal * lv); e.shield += Math.round(c.shieldAdd * lv);
+  const src = sp.bossDmg ? null : { p: sp.p, statKey: 'sp:' + sp.spell };
+  s.ev.push({ type: 'spell', spell: sp.spell, fx: c.fx, x, y, r, p: sp.p, dur: c.burnT ? c.burnT * k : 0, reso: !!sp.reso });
+  const inZone = e => dist(e, { x, y }) <= r + e.r * 0.5;
+  if (c.dmg) areaDamage(s, sp.p, x, y, r, sp.bossDmg || c.dmg * k, c.sanctPct || 0.3, src);
+  if (c.freeze) for (const e of s.ents) if (!e.dead && e.p !== sp.p && inZone(e)) e.frozen = Math.max(e.frozen, c.freeze * k);
+  if (c.root) for (const e of s.ents) if (!e.dead && e.p !== sp.p && e.kind === 'unit' && !e.fly && inZone(e)) e.rootT = Math.max(e.rootT || 0, c.root * k);
+  if (c.curse) for (const e of s.ents) if (!e.dead && e.p !== sp.p && e.kind !== 'sanct' && inZone(e)) { e.curseT = Math.max(e.curseT || 0, c.curse * k); e.curseK = c.curseK; }
+  if (c.burn) s.zones.push({ p: sp.p, x, y, r, t: c.burnT * k, dps: c.burn * k, sanctPct: c.sanctPct || 0.25, next: s.tick, src });
+  if (c.heal) for (const e of s.ents) if (!e.dead && e.p === sp.p && e.kind !== 'sanct' && inZone(e)) {
+    heal(s, e, c.heal * k, src); e.shield += Math.round(c.shieldAdd * k);
   }
 }
 
 function updateProjectiles(s, dt) {
+  const more = [];
   for (const pr of s.proj) {
     const t = s.ents.find(o => o.id === pr.tid && !o.dead);
     if (t) { pr.tx = t.x; pr.ty = t.y; }
@@ -437,9 +533,15 @@ function updateProjectiles(s, dt) {
       if (pr.splash) { areaDamage(s, pr.p, pr.tx, pr.ty, pr.splash, pr.dmg, 1, src); s.ev.push({ type: 'boom', x: pr.tx, y: pr.ty, r: pr.splash, kind: pr.kind }); }
       else if (t) damage(s, t, pr.dmg, src);
       s.ev.push({ type: 'impact', x: pr.tx, y: pr.ty, kind: pr.kind });
+      if (pr.burst) mageBurst(s, src.dmg ? src : { p: pr.p }, pr.tx, pr.ty, pr.dmg);
+      if (pr.rico && t) { // Ricochet (★3 Tireur)
+        let nb = null, nd = 3;
+        for (const o of s.ents) if (!o.dead && o !== t && o.p !== pr.p && o.kind !== 'sanct') { const d = dist(o, t); if (d < nd) { nd = d; nb = o; } }
+        if (nb) { more.push({ x: pr.tx, y: pr.ty, tid: nb.id, tx: nb.x, ty: nb.y, spd: 13, dmg: pr.dmg * 0.6, splash: 0, p: pr.p, kind: pr.kind, src: pr.src, fly: pr.fly, id: s.nextId++, rico: 0 }); s.ev.push({ type: 'rico', x: pr.tx, y: pr.ty, tx: nb.x, ty: nb.y }); }
+      }
     } else { pr.x += dx / d * stp; pr.y += dy / d * stp; }
   }
-  s.proj = s.proj.filter(p => !p.done);
+  s.proj = s.proj.filter(p => !p.done).concat(more);
 }
 
 function separate(s) {
@@ -467,6 +569,7 @@ function separate(s) {
 const ratio = (s, p) => { const e = sanctOf(s, p); return Math.max(0, e.hp) / e.maxHp; };
 function checkTime(s) {
   if (s.over || s.mode === 'survival') return;
+  if (s.mods.limit && s.t >= s.mods.limit) return finish(s, 1, 'limit'); // Défi : temps limite dépassé
   const a = ratio(s, 0), b = ratio(s, 1);
   if (s.t >= MATCH_TIME && !s.overtime) {
     if (Math.abs(a - b) >= 0.01) return finish(s, a > b ? 0 : 1, 'time');
@@ -494,7 +597,7 @@ export function spawnBoss(s, p, def, x, y) {
   e.boss = def; e.bossHp = def.hp; e.bossDmg = def.dmg; e.bossR = def.r || 1.1;
   e.hit = def.hit || 1.6; e.spd = def.spd || 0.7; e.range = def.range || 1.3; e.tgt = def.tgt || 'any'; e.splash = def.splash || 1.4;
   e.fly = !!def.fly; e.proj = def.proj || null;
-  applyStats(s, e); e.hp = e.maxHp; e.hit = def.hit || 1.6; e.range = def.range || 1.3;
+  applyStats(s, e); e.hp = e.maxHp; e.hit = def.hit || 1.6; e.range = def.range || 1.3; e.shield = def.shield || 0;
   e.skillT = (def.skills || []).map(k => k.every * 0.6);
   s.ev.push({ type: 'boss', id: e.id, name: def.name });
   return e;

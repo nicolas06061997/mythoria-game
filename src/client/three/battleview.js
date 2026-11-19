@@ -52,6 +52,62 @@ const SYLVE_FS = `uniform sampler2D map; uniform float t, cheer, top; uniform ve
     gl_FragColor = c;
   }`;
 const BENCH_Z = RY + 3.1, BENCH_X = [-4.6, -2.3, 0, 2.3, 4.6];
+// ---------- Arc runique du Cercle d'Invocation (Lot 1B, 19/11 : remplace la rangée de socles en ligne) ----------
+// Les 5 socles suivent un arc (le centre plus près de toi, les bords remontent vers l'île) ;
+// chaque socle = médaillon rond de pierre astrale, liseré doré, anneau de runes qui tourne ; le héros lévite au-dessus.
+const ARC_LIFT = 0.8; // remontée des socles du bord (unités du monde)
+let RUNE_TEX = null;
+function runeTexture() {
+  if (RUNE_TEX) return RUNE_TEX;
+  const S = 256, c = document.createElement('canvas'); c.width = c.height = S; const g = c.getContext('2d');
+  g.translate(S / 2, S / 2); g.strokeStyle = '#fff'; g.lineCap = 'round';
+  g.lineWidth = 3; g.beginPath(); g.arc(0, 0, 118, 0, 7); g.stroke();
+  g.lineWidth = 2; g.beginPath(); g.arc(0, 0, 84, 0, 7); g.stroke();
+  // glyphes entre les deux cercles
+  let sd = 11; const rnd = () => (sd = (sd * 9301 + 49297) % 233280) / 233280;
+  for (let i = 0; i < 16; i++) {
+    g.save(); g.rotate(i / 16 * Math.PI * 2); g.translate(0, -101); g.lineWidth = 2.6; g.beginPath();
+    const k = Math.floor(rnd() * 4);
+    if (k === 0) { g.moveTo(-6, -8); g.lineTo(0, 8); g.lineTo(6, -8); }
+    else if (k === 1) { g.moveTo(0, -9); g.lineTo(0, 9); g.moveTo(-6, -3); g.lineTo(6, 3); }
+    else if (k === 2) { g.moveTo(-6, 8); g.lineTo(-6, -8); g.lineTo(6, 0); g.lineTo(-6, 0); }
+    else { g.arc(0, 0, 6, 0.4, 5.9); g.moveTo(0, -9); g.lineTo(0, 9); }
+    g.stroke(); g.restore();
+  }
+  // étoile à 8 branches au centre
+  g.lineWidth = 1.6; g.globalAlpha = 0.55; g.beginPath();
+  for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; g.moveTo(Math.cos(a) * 20, Math.sin(a) * 20); g.lineTo(Math.cos(a + Math.PI / 8) * 60, Math.sin(a + Math.PI / 8) * 60); g.lineTo(Math.cos(a + Math.PI / 4) * 20, Math.sin(a + Math.PI / 4) * 20); }
+  g.stroke();
+  RUNE_TEX = new THREE.CanvasTexture(c); RUNE_TEX.colorSpace = THREE.SRGBColorSpace; RUNE_TEX.anisotropy = 4;
+  return RUNE_TEX;
+}
+// Médaillon d'un socle : pierre astrale + liseré doré + runes (additives) + halo
+function medallion() {
+  const g = new THREE.Group();
+  const stone = new THREE.Mesh(new THREE.CylinderGeometry(0.92, 0.82, 0.22, 40), new THREE.MeshStandardMaterial({ color: '#1c2766', emissive: '#0d1a5a', emissiveIntensity: 0.6, roughness: 0.55, metalness: 0.25 }));
+  stone.position.y = 0.11; stone.receiveShadow = true; g.add(stone);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.92, 0.06, 8, 48), new THREE.MeshStandardMaterial({ color: '#e9c877', emissive: '#7a5410', emissiveIntensity: 0.7, roughness: 0.3, metalness: 0.8 }));
+  rim.rotation.x = Math.PI / 2; rim.position.y = 0.22; g.add(rim);
+  const rune = new THREE.Mesh(new THREE.PlaneGeometry(1.66, 1.66), new THREE.MeshBasicMaterial({ map: runeTexture(), color: '#8fd8ff', transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false }));
+  rune.rotation.x = -Math.PI / 2; rune.position.y = 0.235; g.add(rune);
+  const halo = new THREE.Mesh(new THREE.PlaneGeometry(3, 3), new THREE.MeshBasicMaterial({ map: glowTexture(), color: '#5fb8ff', transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false }));
+  halo.rotation.x = -Math.PI / 2; halo.position.y = 0.02; g.add(halo);
+  return { g, rune, halo, rim };
+}
+// Bandeau de runes qui relie les socles (courbe passant par les 5 médaillons), motif qui défile
+const ARC_VS = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }';
+const ARC_FS = `varying vec2 vUv; uniform float t; uniform vec3 col;
+  float h(float x){ return fract(sin(x * 91.7) * 4375.5); }
+  void main(){
+    float edge = smoothstep(0.0, 0.18, vUv.y) * smoothstep(1.0, 0.82, vUv.y);
+    float line = smoothstep(0.12, 0.0, abs(vUv.y - 0.5)) * 0.55;
+    float u = vUv.x * 46.0 - t * 1.6, cell = floor(u), f = fract(u);
+    float glyph = step(0.35, h(cell)) * smoothstep(0.5, 0.2, abs(f - 0.5)) * smoothstep(0.42, 0.18, abs(vUv.y - 0.5));
+    float pulse = 0.6 + 0.4 * sin(vUv.x * 18.0 - t * 3.0);
+    float ends = smoothstep(0.0, 0.06, vUv.x) * smoothstep(1.0, 0.94, vUv.x);
+    gl_FragColor = vec4(col * (line + glyph * 0.8) * pulse * edge * ends, 1.0);
+  }`;
+
 
 // Forteresse des Sanctuaires (remplace le simple temple)
 function fortress(roof, crys, stone, hk = 1) {
@@ -86,6 +142,7 @@ export class BattleView {
     this.key = worldKey; this.me = me;
     this.q = quality();
     this.art = ARENA_ART[worldKey] || null; this.zk = this.art ? this.art.k : 1; this.bz = this.art ? this.art.benchZ : BENCH_Z; this.bx = this.art ? this.art.benchX : BENCH_X;
+    { const xm = Math.max(...this.bx.map(Math.abs)); this.bzs = this.bx.map(x => this.bz - ARC_LIFT * this.zk * (x / xm) ** 2); }
     this.r = createRenderer(canvas);
     this.scene = new THREE.Scene();
     this.cam = new THREE.PerspectiveCamera(42, 1, 0.5, 400);
@@ -140,14 +197,28 @@ export class BattleView {
     this.scene.add(ledge); if (this.art) ledge.visible = false;
     this.slotHits = [];
     for (let i = 0; i < BENCH; i++) {
-      const g = new THREE.Group(); g.position.set(this.bx[i], 0, this.bz);
-      const ped = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.95, 0.35, 8), new THREE.MeshStandardMaterial({ color: '#d8d0c0', flatShading: true })); ped.position.y = 0.05; ped.receiveShadow = true; ped.castShadow = true; g.add(ped); if (this.art) { ped.visible = false; }
-      const rune = new THREE.Mesh(new THREE.RingGeometry(0.55, 0.72, 6), new THREE.MeshBasicMaterial({ color: '#8fd8ff', transparent: true, opacity: 0.5, side: THREE.DoubleSide, depthWrite: false }));
-      rune.rotation.x = -Math.PI / 2; rune.position.y = this.art ? 0.03 : 0.24; g.add(rune);
+      const g = new THREE.Group(); g.position.set(this.bx[i], 0, this.bzs[i]);
+      const md = medallion(); md.g.scale.setScalar(1.12); g.add(md.g); const rune = md.rune;
       const hit = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.1, 2.6, 8), new THREE.MeshBasicMaterial({ visible: false })); hit.position.y = 1.2; hit.userData.slot = i; g.add(hit);
       this.slotHits.push(hit);
       this.scene.add(g);
-      this.bench.push({ g, rune, key: '', actor: null, loading: null });
+      this.bench.push({ g, rune, halo: md.halo, key: '', actor: null, loading: null, sel: false });
+    }
+    // arc de runes qui relie les médaillons (dans les arènes peintes et en 3D)
+    {
+      const pts = this.bx.map((x, i) => new THREE.Vector3(x, 0.05, this.bzs[i]));
+      const d0 = pts[0].clone().sub(pts[1]).multiplyScalar(0.55), d1 = pts[4].clone().sub(pts[3]).multiplyScalar(0.55);
+      const curve = new THREE.CatmullRomCurve3([pts[0].clone().add(d0), ...pts, pts[4].clone().add(d1)]);
+      const N = 120, W = 0.34, pos = [], uv = [], idx = [];
+      for (let k = 0; k <= N; k++) {
+        const u = k / N, p = curve.getPointAt(u), tg = curve.getTangentAt(u), nx = -tg.z, nz = tg.x, l = Math.hypot(nx, nz) || 1;
+        pos.push(p.x - nx / l * W, p.y, p.z - nz / l * W, p.x + nx / l * W, p.y, p.z + nz / l * W); uv.push(u, 0, u, 1);
+        if (k < N) { const a = k * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+      }
+      const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.setIndex(idx);
+      this.arcU = { t: { value: 0 }, col: { value: new THREE.Color('#6fc8ff') } };
+      const arc = new THREE.Mesh(geo, new THREE.ShaderMaterial({ uniforms: this.arcU, vertexShader: ARC_VS, fragmentShader: ARC_FS, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+      arc.renderOrder = -1; this.scene.add(arc);
     }
     // Zone de déploiement (moitié de l'île du joueur)
     const sh = new THREE.Shape(); sh.absellipse(0, 0, RX - 0.3, RY - 0.3, Math.PI, 2 * Math.PI, false, 0);
@@ -309,7 +380,7 @@ export class BattleView {
     return p ? this.toSim(p.x, p.z) : null;
   }
   screenOf(x, y, h = 0) { const w = this.toWorld(x, y); const v = new THREE.Vector3(w.x, h, w.z).project(this.cam); return { x: (v.x + 1) / 2 * this.ow, y: (1 - v.y) / 2 * this.oh }; }
-  benchScreen(i) { const v = new THREE.Vector3(this.bx[i], 0, this.bz).project(this.cam); return { x: (v.x + 1) / 2 * this.ow, y: (1 - v.y) / 2 * this.oh }; }
+  benchScreen(i, h = 0) { const v = new THREE.Vector3(this.bx[i], h, this.bzs[i]).project(this.cam); return { x: (v.x + 1) / 2 * this.ow, y: (1 - v.y) / 2 * this.oh }; }
 
   async setGhost(g) {
     if (!g) { if (this.ghost) { this.scene.remove(this.ghost.a.holder); this.ghost.a.dispose(); this.ghost = null; } this.zone.visible = false; this.aim.visible = false; return; }
@@ -334,7 +405,7 @@ export class BattleView {
     const c = HERO[g.id]; this.aim.scale.setScalar(c.range > 2 ? c.range : 1.1);
     this.aim.material.color.set(g.ok ? '#ffffff' : '#ff4f5e');
   }
-  highlightSlot(i) { this.bench.forEach((b, k) => { b.rune.material.color.set(k === i ? '#ffd166' : '#8fd8ff'); b.rune.material.opacity = k === i ? 0.95 : 0.5; }); }
+  highlightSlot(i) { this.bench.forEach((b, k) => { b.sel = k === i; b.rune.material.color.set(b.sel ? '#ffd166' : '#8fd8ff'); b.halo.material.color.set(b.sel ? '#ffc04a' : '#5fb8ff'); b.halo.material.opacity = b.sel ? 0.7 : 0.35; }); }
 
   // ---------- Effets à partir des événements ----------
   ingest(ev, s) {
@@ -371,8 +442,8 @@ export class BattleView {
           break; }
         case 'bossDown': this.fx.explosion(w.x, w.z, 3, 'fire'); this.fx.pillar(w.x, w.z, 1.4, '#ffd166', 1.4, 10); this.shake = 0.8; break;
         case 'wave': this.fx.flash(0, 3, -8, 10, '#ff5a3a', 0.6); break;
-        case 'summon': if (e.p === this.me) { const b = this.bx[e.slot]; const col = RARITIES[HERO[e.id].rar].color; this.fx.pillar(b, this.bz, 0.8, col, 0.8, 5); this.fx.emit(b, 0.4, this.bz, { n: 24, color: [col, '#ffffff'], size: 0.45, life: 0.8, speed: 2, up: 1 }); } break;
-        case 'benchFuse': if (e.p === this.me) { const b = this.bx[e.slot]; this.fx.pillar(b, this.bz, 1, '#ffd166', 0.9, 6); this.fx.emit(b, 0.6, this.bz, { n: 36, color: ['#fff3c0', '#ffd166'], size: 0.45, life: 0.9, speed: 2.5, up: 1 }); } break;
+        case 'summon': if (e.p === this.me) { const b = this.bx[e.slot]; const col = RARITIES[HERO[e.id].rar].color; const bz = this.bzs[e.slot]; this.fx.pillar(b, bz, 0.8, col, 0.8, 5); this.fx.emit(b, 0.4, bz, { n: 24, color: [col, '#ffffff'], size: 0.45, life: 0.8, speed: 2, up: 1 }); } break;
+        case 'benchFuse': if (e.p === this.me) { const b = this.bx[e.slot]; const bz = this.bzs[e.slot]; this.fx.pillar(b, bz, 1, '#ffd166', 0.9, 6); this.fx.emit(b, 0.6, bz, { n: 36, color: ['#fff3c0', '#ffd166'], size: 0.45, life: 0.9, speed: 2.5, up: 1 }); } break;
       }
     }
   }
@@ -463,12 +534,15 @@ export class BattleView {
           const k = key;
           makeHero(h.id, { star: h.star, lite: this.q.lite, skin: (this.skins || {})[h.id] }).then(a => {
             if (b.key !== k) { a.dispose(); return; }
-            a.holder.position.y = 0.23; a.holder.scale.multiplyScalar(1.05); a.play('idle'); b.actor = a; b.g.add(a.holder);
+            a.holder.position.y = 0.6; a.holder.scale.multiplyScalar(1.15); a.holder.rotation.order = 'YXZ'; a.play('idle'); b.actor = a; b.g.add(a.holder);
           });
         }
       }
-      if (b.actor) { b.actor.update(dt); b.actor.holder.rotation.y = Math.sin(this.time * 0.6 + i) * 0.35; }
-      b.rune.rotation.z += dt * 0.6;
+      // le héros lévite au-dessus de son médaillon
+      if (b.actor) { b.actor.update(dt); b.actor.holder.rotation.y = Math.sin(this.time * 0.6 + i) * 0.35; b.actor.holder.rotation.x = -0.55; b.actor.holder.position.y = 0.62 + Math.sin(this.time * 2.1 + i * 1.3) * 0.1; }
+      b.rune.rotation.z += dt * (h ? 0.8 : 0.35);
+      if (!b.sel) { const c = h ? RARITIES[HERO[h.id].rar].color : '#8fd8ff'; if (b.col !== c) { b.col = c; b.rune.material.color.set(c); } b.halo.material.opacity = (h ? 0.42 : 0.22) + Math.sin(this.time * 2 + i) * 0.06; }
+      else b.col = null;
     }
     // Sanctuaires, Cœur
     for (const p of [0, 1]) {
@@ -480,6 +554,7 @@ export class BattleView {
     this.fx.syncProjectiles(s.proj, (x, y) => this.toWorld(x, y));
     this.fx.update(dt);
     this.world.update(dt, this.time);
+    if (this.arcU) this.arcU.t.value = this.time;
     if (this.bgU) { this.artCheer = Math.max(0, (this.artCheer || 0) - dt * 0.6); this.bgU.t.value = this.time; this.bgU.cheer.value = Math.min(1, this.artCheer); }
     if (this.artUps) for (const u of this.artUps) u(dt, this.time);
     if (this.ghost) { this.ghost.a.update(dt); }
@@ -489,6 +564,32 @@ export class BattleView {
     this.post.render();
     if (this.perf) this.perf.tick(dt);
     this.drawOverlay(s, alpha, dt);
+  }
+
+  // Éclair d'énergie entre deux socles identiques prêts à fusionner (même héros, même rang, rang < 3)
+  drawFusionBolts(c, B, dt) {
+    const pairs = [];
+    for (let i = 0; i < BENCH; i++) for (let j = i + 1; j < BENCH; j++) { const a = B[i], b = B[j]; if (a && b && a.id === b.id && a.star === b.star && a.star < 3) pairs.push([i, j]); }
+    if (!pairs.length) return;
+    this.boltT = (this.boltT || 0) - dt;
+    if (this.boltT <= 0 || !this.bolts) { this.boltT = 0.07; this.bolts = {}; }
+    c.save(); c.globalCompositeOperation = 'lighter'; c.lineJoin = 'round'; c.lineCap = 'round';
+    for (const [i, j] of pairs) {
+      const k = i + '-' + j, A = this.benchScreen(i, 0.9), Bp = this.benchScreen(j, 0.9);
+      if (!this.bolts[k]) {
+        // ligne brisée qui monte en arc entre les deux médaillons (refaite ~14 fois par seconde)
+        const n = 12 + (j - i) * 4, lift = 26 + (j - i) * 10, pts = [];
+        for (let q = 0; q <= n; q++) { const u = q / n, x = A.x + (Bp.x - A.x) * u, y = A.y + (Bp.y - A.y) * u - Math.sin(u * Math.PI) * lift; const jit = q && q < n ? (Math.random() - 0.5) * 14 : 0; pts.push([x + jit * 0.4, y + jit]); }
+        this.bolts[k] = pts;
+      }
+      const pts = this.bolts[k], path = () => { c.beginPath(); pts.forEach(([x, y], q) => q ? c.lineTo(x, y) : c.moveTo(x, y)); };
+      const fl = 0.75 + Math.random() * 0.25;
+      path(); c.strokeStyle = `rgba(90,200,255,${0.22 * fl})`; c.lineWidth = 9; c.stroke();
+      path(); c.strokeStyle = `rgba(140,230,255,${0.6 * fl})`; c.lineWidth = 3.5; c.stroke();
+      path(); c.strokeStyle = `rgba(255,255,255,${0.95 * fl})`; c.lineWidth = 1.3; c.stroke();
+      for (const P of [A, Bp]) { const g = c.createRadialGradient(P.x, P.y, 0, P.x, P.y, 16); g.addColorStop(0, `rgba(220,245,255,${0.8 * fl})`); g.addColorStop(1, 'rgba(90,200,255,0)'); c.fillStyle = g; c.beginPath(); c.arc(P.x, P.y, 16, 0, 7); c.fill(); }
+    }
+    c.restore();
   }
 
   drawOverlay(s, alpha, dt) {
@@ -509,19 +610,18 @@ export class BattleView {
       if (e.shield > 0) { c.fillStyle = '#d8ecff'; c.fillRect(p.x - w / 2, p.y - 3, Math.min(w, w * e.shield / e.maxHp * 2), 2); }
       if (e.star > 1) { c.font = '900 12px Nunito, sans-serif'; c.textAlign = 'center'; c.fillStyle = '#ffd166'; c.strokeStyle = 'rgba(20,10,30,.9)'; c.lineWidth = 3; const st = '★'.repeat(e.star); c.strokeText(st, p.x, p.y - 4); c.fillText(st, p.x, p.y - 4); }
     }
-    // étoiles du cercle d'invocation
+    // Cercle d'Invocation : rang (★) en petites gemmes sous chaque médaillon, éclairs entre deux héros prêts à fusionner
     const B = s.players[this.me].bench;
-    c.textAlign = 'center';
     for (let i = 0; i < BENCH; i++) {
       const h = B[i]; if (!h) continue;
       const p = this.benchScreen(i);
-      const col = RARITIES[HERO[h.id].rar].color;
-      c.font = '900 13px Nunito, sans-serif'; c.lineWidth = 3; c.strokeStyle = 'rgba(15,8,30,.95)';
-      for (let k = 0; k < 3; k++) { const sx = p.x + (k - 1) * 13; c.strokeText('★', sx, p.y + 22); c.fillStyle = k < h.star ? '#ffd166' : 'rgba(255,255,255,.25)'; c.fillText('★', sx, p.y + 22); }
-      c.fillStyle = col; c.font = '800 10px Nunito, sans-serif'; c.strokeText(HERO[h.id].name, p.x, p.y + 34); c.fillText(HERO[h.id].name, p.x, p.y + 34);
-      const twin = B.some((o, k) => k !== i && o && o.id === h.id && o.star === h.star && h.star < 3);
-      if (twin) { c.font = '900 11px Nunito, sans-serif'; c.fillStyle = '#7dff9a'; const yy = p.y - 62 - Math.abs(Math.sin(this.time * 4)) * 5; c.strokeText('FUSION ✦', p.x, yy); c.fillText('FUSION ✦', p.x, yy); }
+      for (let k = 0; k < 3; k++) {
+        const sx = p.x + (k - 1) * 11, sy = p.y + 19 + Math.abs(k - 1) * -2, on = k < h.star;
+        c.beginPath(); c.moveTo(sx, sy - 5); c.lineTo(sx + 4, sy); c.lineTo(sx, sy + 5); c.lineTo(sx - 4, sy); c.closePath();
+        c.fillStyle = on ? '#ffd166' : 'rgba(180,200,255,.22)'; c.fill(); c.lineWidth = 1.2; c.strokeStyle = 'rgba(15,8,40,.9)'; c.stroke();
+      }
     }
+    this.drawFusionBolts(c, B, dt);
     for (const n of this.nums) {
       n.t += dt; const k = n.t / 1.1;
       const p = this.screenOf(n.x, n.y, n.h + k * 1.2);

@@ -1,7 +1,9 @@
 // MYTHORIA — menus : accueil 3D, héros & deck, fiche de héros 3D, mondes, modes, résultats, profil.
 import { HERO, PLAYABLE, SPELL, SPELLS, RARITIES, FACTIONS, WORLDS, UNLOCKS, SPELL_UNLOCKS, DECK_SIZE, STAR_MULT, deckSynergies, worldFor } from '../../shared/content.js';
 import { AI_LEVELS } from '../../shared/ai.js';
-import { loadProfile, saveProfile, resetProfile, owned, ownedSpells, worldOf, botLevelFor, botDeck, botSpell, botLevels, applyResult, xpNeed, heroLevel, canUpgrade, ECLATS, CONQUEST_MAX } from '../store.js';
+import { loadProfile, saveProfile, resetProfile, owned, ownedSpells, worldOf, botLevelFor, botDeck, botSpell, botLevels, applyResult, xpNeed, heroLevel, canUpgrade, ECLATS, CONQUEST_MAX, gearFor, heroItems, heroGear, equipItem, unequipItem, itemState, forgeItem, unlockedCount, heroWins } from '../store.js';
+import { SLOTS, STAT_NAME, gearBonus, botGear, itemsFor, itemById } from '../../shared/items.js';
+import { itemIcon } from './itemart.js';
 import { battleSVG, medalSVG, isleSVG, sparkSVG } from './art.js';
 import { modeIcon } from './modeart.js';
 import { initProgress, conquestRow, missionsButton, loginPopup, shopScreen, heroProgress, eclatIcon } from './progress.js';
@@ -247,6 +249,7 @@ function play(modeId, level, world, extra = {}) {
   new Battle(holder, {
     deck: P.deck.slice(), spell: P.spell, oppDeck, oppSpell: botSpell(tro, seed), botLevel: level, world, myName: P.name, mode: modeId,
     levels: { ...P.levels }, oppLevels: extra.oppLevels || botLevels(oppDeck, tro), skins: { ...P.skins.eq },
+    gear: gearFor(P, P.deck), oppGear: extra.oppGear || botGear(oppDeck, tro),
     simMode: extra.simMode, tuto: extra.tuto, boss: extra.boss, waves: extra.waves, mods: extra.mods, bonus: extra.bonus, title: extra.title,
     onEnd: r => { holder.remove(); document.body.classList.remove('in-battle'); if (extra.onResult) r = extra.onResult(r) || r; showResult(r); },
   });
@@ -373,7 +376,9 @@ function openHero(id) {
   const c = HERO[id], own = owned(P).includes(id), inDeck = P.deck.includes(id), F = FACTIONS[c.fac], R = RARITIES[c.rar];
   const max = { hp: 3600, dps: 260, spd: 2.4, range: 6 };
   const LV = Math.pow(1.1, heroLevel(P, id) - 1);
-  const dps = Math.round(c.dmg * LV / c.hit * (c.count || 1));
+  const GB = own ? heroGear(P, id) : { dmg: 0, atk: 0, hp: 0, spd: 0 };
+  const dps = Math.round(c.dmg * LV * (1 + GB.dmg) * (1 + GB.atk) / c.hit * (c.count || 1));
+  const plus = v => v ? h('i', { class: 'g-plus' }, ' ' + pct(v)) : null;
   const statBar = (k, v, m, txt) => h('div', { class: 'sbar' }, h('small', {}, k), h('div', { class: 'sb' }, h('i', { style: { width: Math.min(100, v / m * 100) + '%' } })), h('b', {}, txt));
   const cv = h('canvas', { class: 'hd-3d' });
   let sc = null;
@@ -393,11 +398,12 @@ function openHero(id) {
       h('p', { class: 'lore' }, '« ' + c.lore + ' »'),
       h('div', { class: 'ability' }, h('span', { class: 'ab-ic' }, icon('star')), h('div', {}, h('b', {}, c.ability[0]), h('small', {}, c.ability[1]))),
       h('div', { class: 'sbars' },
-        statBar('Vie', c.hp * LV * (c.count || 1), max.hp, Math.round(c.hp * LV) + ((c.count || 1) > 1 ? ' ×' + c.count : '')),
-        statBar('Dégâts / s', dps, max.dps, dps + (c.splash ? ' (zone)' : '')),
+        statBar('Vie', c.hp * LV * (1 + GB.hp) * (c.count || 1), max.hp, [Math.round(c.hp * LV * (1 + GB.hp)) + ((c.count || 1) > 1 ? ' ×' + c.count : ''), plus(GB.hp)]),
+        statBar('Dégâts / s', dps, max.dps, [dps + (c.splash ? ' (zone)' : ''), plus(GB.dmg + GB.atk)]),
         c.type === 'unit' ? statBar('Vitesse', c.spd, max.spd, c.spd >= 1.8 ? 'Très rapide' : c.spd >= 1.4 ? 'Rapide' : c.spd >= 1 ? 'Moyenne' : 'Lente') : statBar('Durée', c.life, 60, c.life + ' s'),
         statBar('Portée', c.range, max.range, c.range <= 1.2 ? 'Mêlée' : c.range + ' cases'),
         h('div', { class: 'sbar' }, h('small', {}, 'Cible'), h('b', { class: 'wide' }, TGT[c.tgt]))),
+      own ? gearBlock(id, () => { close(); openHero(id); }) : null,
       heroProgress(id, () => { close(); openHero(id); render(); }),
       h('div', { class: 'evo' }, h('h4', {}, 'Évolution en combat'),
         h('div', { class: 'evo-row' }, [1, 2, 3].map(st => h('div', { class: 'evo-st' }, h('b', {}, '★'.repeat(st)), h('small', {}, '×' + STAR_MULT[st] + ' puissance')))),
@@ -407,6 +413,45 @@ function openHero(id) {
           : h('div', { class: 'row gap' }, h('button', { class: 'btn ghost', onclick: () => { P.avatar = id; saveProfile(P); toast('Héros favori ✓'); close(); render(); } }, 'Vedette'), h('button', { class: 'btn big gold grow', onclick: () => { swapIn = id; tab = 'heroes'; close(); render(); } }, 'Mettre dans le deck'))));
   document.body.append(page);
   requestAnimationFrame(() => { if (stage) stage.spin = 0; sc = new Showcase(cv, { world: worldOf(P).key, heroId: id, mode: 'hero', skin: P.skins.eq[id] }); });
+}
+
+// ---------- Équipement : 2 emplacements par héros (Arme, Talisman) ----------
+const pct = v => '+' + Math.round(v * 100) + ' %';
+const bonusTxt = b => Object.entries(b).filter(([, v]) => v).map(([k, v]) => pct(v) + ' ' + STAT_NAME[k].toLowerCase()).join(' · ');
+function itemEl(id, cls = '') { const it = itemById(id), e = h('span', { class: 'it-ic ' + cls, style: { '--rc': RARITIES[it.rar].color } }); e.innerHTML = itemIcon(id); return e; }
+function gearBlock(id, reopen) {
+  const ids = heroItems(P, id), g = heroGear(P, id), tot = bonusTxt(g), all = itemsFor(id), n = unlockedCount(P, id);
+  return h('div', { class: 'gear-box' },
+    h('div', { class: 'gb-head' }, h('h4', {}, 'Équipement'), h('small', {}, tot || 'Aucun bonus pour l’instant')),
+    h('div', { class: 'gb-slots' }, SLOTS.map((S, i) => {
+      const it = ids[i] && itemById(ids[i]);
+      return h('button', { class: 'gb-slot' + (it ? ' full' : ''), style: it ? { '--rc': RARITIES[it.rar].color } : {}, onclick: () => { sfx('click'); openBag(id, i, reopen); } },
+        it ? itemEl(it.id) : h('span', { class: 'gb-empty' }, '+'),
+        h('div', { class: 'gb-txt' }, h('small', {}, it ? S.name + ' · ' + it.type : S.name), h('b', {}, it ? it.name : 'Vide'), h('em', {}, it ? bonusTxt(it.b) : S.hint)));
+    })),
+    h('div', { class: 'gb-coll' }, h('small', {}, 'Collection de ' + HERO[id].name + ' · ' + n + ' / 10'),
+      h('div', { class: 'gb-grid' }, all.map(it => { const st = itemState(P, it.id), e = itemEl(it.id, 'sm' + (st.ok ? '' : ' locked')); e.title = it.name; e.onclick = () => { sfx('click'); openBag(id, it.slot === 'arme' ? 0 : 1, reopen); }; return e; }))),
+    h('p', { class: 'gb-note' }, 'Débloque ses objets en le faisant monter de niveau et en gagnant avec lui, ou forge-les avec des cristaux. Bonus plafonnés : l’IA a des objets du même niveau.'));
+}
+function openBag(hero, slot, reopen) {
+  const S = SLOTS[slot], cur = (P.equip[hero] || [])[slot];
+  const list = itemsFor(hero).filter(it => it.slot === S.id);
+  const base = heroGear(P, hero), other = heroItems(P, hero).filter((x, i) => i !== slot && x);
+  let s;
+  const row = it => {
+    const st = itemState(P, it.id), mine = it.id === cur, after = gearBonus([...other, it.id]);
+    const diff = Object.keys(STAT_NAME).filter(k => Math.abs(after[k] - base[k]) > 1e-6).map(k => h('span', { class: after[k] > base[k] ? 'up' : 'down' }, (after[k] > base[k] ? '▲ ' : '▼ ') + STAT_NAME[k] + ' ' + pct(base[k]) + ' → ' + pct(after[k])));
+    const act = mine ? h('button', { class: 'btn small ghost', onclick: () => { unequipItem(P, hero, slot); sfx('click'); s.close(); reopen(); } }, 'Retirer')
+      : st.ok ? h('button', { class: 'btn small gold', onclick: () => { equipItem(P, hero, it.id); sfx('fuse'); toast(it.name + ' équipé ✓'); s.close(); reopen(); } }, 'Équiper')
+      : h('button', { class: 'btn small forge' + (P.crystals >= it.forge ? '' : ' off'), onclick: () => { const e = forgeItem(P, it.id); if (e) return toast(e, 'bad'); sfx('fuse'); toast(it.name + ' forgé ✓'); s.close(); openBag(hero, slot, reopen); } }, h('span', {}, 'Forger'), h('small', {}, icon('crystal'), it.forge));
+    return h('div', { class: 'bag-row' + (mine ? ' on' : '') + (st.ok ? '' : ' locked'), style: { '--rc': RARITIES[it.rar].color } }, itemEl(it.id, st.ok ? '' : 'locked'),
+      h('div', { class: 'bag-txt' }, h('b', {}, it.name), h('small', { class: 'irar' }, it.type + ' · ' + RARITIES[it.rar].name + ' · ' + bonusTxt(it.b)), h('em', {}, it.desc),
+        st.ok ? (diff.length && !mine ? h('div', { class: 'bag-diff' }, diff) : null)
+          : h('div', { class: 'bag-lock' }, h('small', {}, icon('lock'), ' ' + st.txt + (st.now ? ' · ' + st.now : '')), h('div', { class: 'bag-bar' }, h('i', { style: { width: Math.round(st.prog * 100) + '%' } })))),
+      act);
+  };
+  s = sheet(h('div', { class: 'bag' }, h('h3', {}, S.name + ' de ' + HERO[hero].name), h('p', { class: 'muted' }, S.hint + ' · tes cristaux : ' + P.crystals),
+    h('div', { class: 'bag-list' }, list.map(row))));
 }
 
 // ---------- Mondes ----------

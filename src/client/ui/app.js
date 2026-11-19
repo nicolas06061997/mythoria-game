@@ -235,7 +235,7 @@ function fitText(el) {
   while (el.scrollHeight > el.clientHeight + 1 && k > .7) { k -= .04; el.style.setProperty('--fk', k.toFixed(2)); }
 }
 
-window.__app = { play: (...a) => play(...a), playHero: id => playHero(id), P: () => P, WORLDS };
+window.__app = { play: (...a) => play(...a), playHero: id => playHero(id), openHero: id => openHero(id), P: () => P, WORLDS };
 function play(modeId, level, world, extra = {}) {
   if (stage) { stage.dispose(); stage = null; }
   leaveKingdom();

@@ -4,6 +4,7 @@
 import { STARTER_DECK, STARTER_SPELL, unlockedHeroes, unlockedSpells, worldFor, WORLDS, HERO, PLAYABLE, validateDeck } from '../shared/content.js';
 import { upgradeCost, MAX_LEVEL, CHESTS, CHEST_CYCLE, CHEST_SLOTS, rollChest, gemsToOpen, dayKey, weekKey, dailyShop, makeMissions, LOGIN, SKINS, botHeroLevel } from '../shared/economy.js';
 import { makeRng, shuffle } from '../shared/rng.js';
+import { ITEMS, SLOTS, gearBonus, rollItem } from '../shared/items.js';
 import { BUILDINGS, DECOS, newKingdom, canBuild, buildCost, buildTime, speedupGems, produced, kingdomBonus } from '../shared/kingdom.js';
 
 const KEY = 'myt_profile_v2';
@@ -20,6 +21,7 @@ function defaults() {
     chests: [{ type: 'bois', seed: 1, start: 0, end: 0 }, null, null, null], chestIdx: 0,
     missions: null, shop: null, login: { day: 0, streak: 0, pending: null },
     skins: { owned: [], eq: {} },
+    items: [], equip: {}, itemSeq: 0,
     kingdom: null, campaign: { done: 0, stars: {} }, records: { survival: 0, hero: 0, tournament: 0 },
   };
 }
@@ -38,6 +40,8 @@ export function loadProfile() {
   if (!ownedSpells(p).includes(p.spell)) p.spell = STARTER_SPELL;
   if (!HERO[p.avatar]) p.avatar = 'ecuyer';
   if (!p.kingdom) p.kingdom = newKingdom(now());
+  if (!Array.isArray(p.items)) p.items = []; if (!p.equip || typeof p.equip !== 'object') p.equip = {};
+  if (!p.itemStart) { p.itemStart = 1; addItem(p, 'croc'); addItem(p, 'cuir'); } // 2 objets offerts pour découvrir l'équipement
   refreshDaily(p);
   finishJob(p);
   return p;
@@ -121,6 +125,7 @@ export function openChest(p, i, withGems) {
     p.gems -= g;
   }
   const r = rollChest(c.type, c.seed, owned(p));
+  const it = rollItem(makeRng((c.seed || 1) * 7919 + 13), c.type); if (it) { r.item = it; addItem(p, it); }
   give(p, r); p.chests[i] = null; track(p, 'chest'); saveProfile(p);
   return { type: c.type, ...r };
 }
@@ -251,3 +256,19 @@ export function buyDeco(p, slot, id) {
   p.gold -= d.price; p.kingdom.deco[slot] = id; saveProfile(p); return null;
 }
 export const bonusOf = p => kingdomBonus(p.kingdom);
+
+// ---------- Objets d'équipement (2 emplacements par héros : Arme, Talisman) ----------
+export function addItem(p, id) { const u = 'i' + (++p.itemSeq || (p.itemSeq = 1)) + '_' + Date.now().toString(36); p.items.push({ u, id }); return u; }
+export const itemByU = (p, u) => p.items.find(x => x.u === u);
+export const slotIndex = id => SLOTS.findIndex(s => s.id === ITEMS[id].slot);
+// héros qui porte cet objet (ou null)
+export function wearer(p, u) { for (const h in p.equip) if ((p.equip[h] || []).includes(u)) return h; return null; }
+export function equipItem(p, hero, u) {
+  const it = itemByU(p, u); if (!it) return;
+  const w = wearer(p, u); if (w) p.equip[w][p.equip[w].indexOf(u)] = null;
+  const e = p.equip[hero] || (p.equip[hero] = [null, null]); e[slotIndex(it.id)] = u; saveProfile(p);
+}
+export function unequipItem(p, hero, slot) { if (p.equip[hero]) { p.equip[hero][slot] = null; saveProfile(p); } }
+export const heroItems = (p, hero) => (p.equip[hero] || []).map(u => u && itemByU(p, u)).map(x => x ? x.id : null);
+export const heroGear = (p, hero) => gearBonus(heroItems(p, hero).filter(Boolean));
+export function gearFor(p, deck) { const o = {}; for (const id of deck) { const g = heroGear(p, id); if (g.dmg || g.atk || g.hp || g.spd) o[id] = g; } return o; }

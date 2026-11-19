@@ -39,14 +39,14 @@ function clampIsland(e) {
   if (d > lim) { e.x = CX + dx / d * lim * RX; e.y = CY + dy / d * lim * RY; }
 }
 
-export function createBattle({ seed = 1, decks, spells = ['meteore', 'meteore'], levels = [{}, {}], names = ['Joueur 1', 'Joueur 2'], mode = 'duel', boss = null, waves = null, mods = null, bonus = null, botMana = 0 }) {
+export function createBattle({ seed = 1, decks, spells = ['meteore', 'meteore'], levels = [{}, {}], gear = [{}, {}], names = ['Joueur 1', 'Joueur 2'], mode = 'duel', boss = null, waves = null, mods = null, bonus = null, botMana = 0 }) {
   const s = {
     tick: 0, t: 0, seed, rng: (seed >>> 0) || 1, nextId: 1, ents: [], proj: [], pend: [], ev: [],
     over: false, winner: -1, reason: '', overtime: false, mode, mods: mods || {}, wave: 0, waveT: 6, wavesDef: waves,
     heart: { ctl: 0, owner: -1 },
     players: [0, 1].map(p => ({
       name: names[p], mana: MANA_START, eveil: 0, bench: Array(BENCH).fill(null), deck: decks[p].slice(),
-      spell: spells[p] || 'meteore', levels: levels[p] || {}, syn: deckSynergies(decks[p]).tiers, summons: 0, deployed: 0, fuses: 0, spells: 0, hearts: 0,
+      spell: spells[p] || 'meteore', levels: levels[p] || {}, gear: gear[p] || {}, syn: deckSynergies(decks[p]).tiers, summons: 0, deployed: 0, fuses: 0, spells: 0, hearts: 0,
       bonus: (p === 0 && bonus) || (p === 1 && botMana ? { hp: 1, sanctDmg: 1, eveil: 1, mana: botMana } : { hp: 1, sanctDmg: 1, eveil: 1 }),
     })),
   };
@@ -145,12 +145,15 @@ function mults(s, p, c) {
   };
 }
 
+const NOGEAR = { dmg: 0, atk: 0, hp: 0, spd: 0 };
 function applyStats(s, e) {
   const c = HERO[e.card], m = mults(s, e.p, c), lv = levelMult(e.lvl), st = STAR_MULT[e.star];
-  e.maxHp = Math.round(c.hp * m.hp * lv * st * (e.bossHp ? 1 : s.players[e.p].bonus.hp));
+  const g = (s.players[e.p].gear || {})[e.card] || NOGEAR; // objets équipés (bonus déjà plafonnés)
+  e.maxHp = Math.round(c.hp * m.hp * lv * st * (1 + g.hp) * (e.bossHp ? 1 : s.players[e.p].bonus.hp));
   if (e.bossHp) e.maxHp = e.bossHp;
-  e.dmg = e.bossDmg || Math.round(c.dmg * m.dmg * lv * st);
-  e.hit = c.hit / m.atk;
+  e.dmg = e.bossDmg || Math.round(c.dmg * m.dmg * lv * st * (1 + g.dmg));
+  e.hit = c.hit / m.atk / (1 + g.atk);
+  if (!e.bossHp) e.spd = (c.spd || 0) * (1 + g.spd);
   e.regen = m.regen;
   e.slowOn = Math.max(c.slow || 0, m.slow);
   e.steal = (c.lifesteal || 0) + m.steal;

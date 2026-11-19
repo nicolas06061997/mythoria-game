@@ -77,7 +77,7 @@ export function kingdomScreen() {
 }
 
 // Illustration d'une carte « Bâtiment » = zoom sur ta carte à l'endroit du bâtiment (même peinture, même lumière)
-const VW = 280, VH = 175;
+const VW = 430, VH = 269; // fenêtre assez large pour que la peinture reste nette (≈ 1,2 pixel d'écran par pixel de la carte)
 function zoomArt(id, l) {
   const [x, y, painted] = PSPOTS[id], a = painted ? null : bArt(id, Math.max(1, l));
   // fenêtre de la carte montrée : assez haute pour les bâtiments élevés (temple, tours)

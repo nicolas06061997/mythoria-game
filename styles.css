@@ -1067,11 +1067,11 @@ body::after { background: radial-gradient(60% 22% at 30% 16%, rgba(80, 255, 190,
 .kp-badge svg, .kc-up svg { display: block; width: 100%; height: 100%; }
 .kp-badge.up .pl, .kp-badge.plus .ar, .kc-up.up .pl, .kc-up.plus .ar { display: none; }
 .kc { flex-direction: column; padding: 0; min-height: 0; }
-.kc-art { position: relative; width: 100%; aspect-ratio: 280 / 175; flex: none; overflow: hidden; pointer-events: none; background: #2a3a2a url(assets/kingdom/island-hd.webp) no-repeat;
-  -webkit-mask-image: linear-gradient(#000 72%, transparent); mask-image: linear-gradient(#000 72%, transparent); }
+.kc-art { position: relative; width: 100%; aspect-ratio: 430 / 269; flex: none; overflow: hidden; pointer-events: none; background: #2a3a2a url(assets/kingdom/island-hd.webp) no-repeat;
+  border-bottom: 1.5px solid rgba(233, 200, 119, .55); box-shadow: inset 0 -10px 14px -10px rgba(0, 0, 0, .55); }
 .kc-art img { position: absolute; height: auto; max-width: none; }
 .kc-art.ghost { filter: grayscale(.75) brightness(.6); } .kc-art.ghost img { opacity: .75; }
-.kc-txt { margin-top: -16px; padding: 0 10px 11px; }
+.kc-txt { margin-top: 0; padding: 8px 10px 11px; }
 .kc-txt b { text-shadow: 0 2px 3px rgba(0, 0, 0, .8); }
 .kc-txt em { max-width: none; }
 .kc-up { right: 6px; top: 6px; width: 32px; height: 32px; border: 0; border-radius: 0; background: none; box-shadow: none; filter: drop-shadow(0 0 5px rgba(255, 214, 110, .8)) drop-shadow(0 2px 2px rgba(0, 0, 0, .5)); }

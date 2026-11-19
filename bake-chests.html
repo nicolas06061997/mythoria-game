@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<title>MYTHORIA — coffres (atelier)</title>
+<script type="importmap">{"imports":{"three":"./vendor/three.module.min.js","three/addons/":"./vendor/addons/"}}</script>
+<style>html,body{margin:0;background:#223}canvas{display:block}</style></head>
+<body>
+<script type="module">
+// Atelier hors jeu : fabrique les coffres assets/ui/chest-*.webp (coffres 3D modelés ici : corps étoilé ou bois, ferrures arrondies,
+// serrure à gemme), rendus 2× avec reflets doux d'un ciel en dégradé. Playwright : await window.bake('or') -> dataURL PNG transparent.
+import * as THREE from 'three';
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
+
+const W = 1040, H = 940;
+const r = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+r.setPixelRatio(1); r.setSize(W, H); r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = 1.05;
+r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap; r.setClearColor(0, 0);
+document.body.append(r.domElement);
+const sc = new THREE.Scene();
+// ciel en dégradé (bleu nuit en haut, lueur dorée/rose sur un côté) → reflets doux du métal
+const env = new THREE.Scene();
+const sky = new THREE.Mesh(new THREE.SphereGeometry(10, 48, 24), new THREE.ShaderMaterial({ side: THREE.BackSide, uniforms: {},
+  vertexShader: 'varying vec3 vp; void main(){ vp = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+  fragmentShader: `varying vec3 vp; void main(){ float y = vp.y;
+    vec3 c = mix(vec3(0.10,0.12,0.30), vec3(0.55,0.62,1.0), smoothstep(-0.2, 0.9, y));
+    c += vec3(1.6,1.15,0.7) * pow(max(0.0, dot(vp, normalize(vec3(-0.6,0.55,0.6)))), 18.0) * 2.5;
+    c += vec3(1.0,0.55,0.75) * pow(max(0.0, dot(vp, normalize(vec3(0.9,0.2,-0.4)))), 6.0) * 0.6;
+    c += vec3(0.9,0.95,1.2) * smoothstep(0.75, 1.0, y) * 0.6;
+    gl_FragColor = vec4(c, 1.0); }` }));
+env.add(sky);
+const pm = new THREE.PMREMGenerator(r); sc.environment = pm.fromScene(env, 0.02).texture;
+const key = new THREE.DirectionalLight('#fff0d6', 2.4); key.position.set(-3, 5, 4); key.castShadow = true; key.shadow.mapSize.set(2048, 2048); key.shadow.radius = 8; key.shadow.blurSamples = 24;
+Object.assign(key.shadow.camera, { left: -2, right: 2, top: 2, bottom: -2, near: 0.5, far: 20 }); key.shadow.bias = -0.0005; sc.add(key);
+const rim = new THREE.DirectionalLight('#ffc8e8', 1.4); rim.position.set(3, 2.5, -3); sc.add(rim);
+sc.add(new THREE.HemisphereLight('#bcc8ff', '#2a2440', 0.6));
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(8, 8).rotateX(-Math.PI / 2), new THREE.ShadowMaterial({ opacity: 0.45, color: '#0a0620' })); ground.receiveShadow = true; sc.add(ground);
+const cam = new THREE.PerspectiveCamera(26, W / H, 0.1, 50);
+
+// textures peintes
+function starTex(c1, c2, neb, seed) {
+  const cv = document.createElement('canvas'); cv.width = 1024; cv.height = 512; const g = cv.getContext('2d');
+  const gr = g.createLinearGradient(0, 0, 0, 512); gr.addColorStop(0, c1); gr.addColorStop(1, c2); g.fillStyle = gr; g.fillRect(0, 0, 1024, 512);
+  let s = seed; const rnd = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+  for (let i = 0; i < 9; i++) { const x = rnd() * 1024, y = rnd() * 512, rr = 80 + rnd() * 180; const n = g.createRadialGradient(x, y, 0, x, y, rr); n.addColorStop(0, neb); n.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = n; g.fillRect(0, 0, 1024, 512); }
+  for (let i = 0; i < 420; i++) { const x = rnd() * 1024, y = rnd() * 512, z = rnd(); g.fillStyle = `rgba(255,255,255,${0.35 + z * 0.65})`; g.beginPath(); g.arc(x, y, 0.6 + z * z * 2.2, 0, 7); g.fill(); }
+  for (let i = 0; i < 14; i++) { const x = rnd() * 1024, y = rnd() * 512, z = 6 + rnd() * 9; g.fillStyle = '#fff'; g.beginPath(); g.moveTo(x, y - z); g.quadraticCurveTo(x, y, x + z, y); g.quadraticCurveTo(x, y, x, y + z); g.quadraticCurveTo(x, y, x - z, y); g.quadraticCurveTo(x, y, x, y - z); g.fill(); }
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
+}
+function woodTex() {
+  const cv = document.createElement('canvas'); cv.width = 1024; cv.height = 512; const g = cv.getContext('2d');
+  let s = 7; const rnd = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+  const n = 6, ph = 512 / n;
+  for (let i = 0; i < n; i++) {
+    const base = [118 + rnd() * 20, 72 + rnd() * 14, 38 + rnd() * 10]; const gr = g.createLinearGradient(0, i * ph, 0, (i + 1) * ph);
+    gr.addColorStop(0, `rgb(${base.map(v => v * 1.18 | 0)})`); gr.addColorStop(1, `rgb(${base.map(v => v * 0.82 | 0)})`); g.fillStyle = gr; g.fillRect(0, i * ph, 1024, ph);
+    for (let k = 0; k < 18; k++) { g.strokeStyle = `rgba(60,30,10,${0.08 + rnd() * 0.12})`; g.lineWidth = 1 + rnd() * 2; const y = i * ph + rnd() * ph; g.beginPath(); g.moveTo(0, y); for (let x = 0; x <= 1024; x += 64) g.lineTo(x, y + Math.sin(x * 0.01 + k) * 3); g.stroke(); }
+    g.fillStyle = 'rgba(30,14,4,.75)'; g.fillRect(0, (i + 1) * ph - 3, 1024, 3);
+  }
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
+}
+const P = {
+  bois:       { body: () => woodTex(), metal: '#9a9ea8', mr: 0.42, gem: null, ring: '#b8a070' },
+  argent:     { body: () => starTex('#2f4fb8', '#141d5c', 'rgba(120,170,255,.35)', 3), metal: '#e4e8f2', mr: 0.22, gem: '#9fe8ff' },
+  or:         { body: () => starTex('#4a36b8', '#1a1260', 'rgba(170,120,255,.4)', 5), metal: '#f2c058', mr: 0.2, gem: '#8ff0ff' },
+  magique:    { body: () => starTex('#6a2ad0', '#1a2a8a', 'rgba(80,230,255,.45)', 9), metal: '#f4c868', mr: 0.18, gem: '#ff8af0', glow: '#c070ff' },
+  legendaire: { body: () => starTex('#c0304a', '#3a0c3a', 'rgba(255,170,80,.5)', 11), metal: '#ffd36a', mr: 0.16, gem: '#fff0a0', glow: '#ffb040' },
+};
+// boîte aux bords arrondis (extrusion d'un rectangle arrondi + biseau)
+function rbox(w, h, d, rad, bev) {
+  const s = new THREE.Shape(), x = -w / 2 + bev, y = -h / 2 + bev, ww = w - bev * 2, hh = h - bev * 2, rr = Math.min(rad, ww / 2, hh / 2);
+  s.moveTo(x + rr, y); s.lineTo(x + ww - rr, y); s.quadraticCurveTo(x + ww, y, x + ww, y + rr); s.lineTo(x + ww, y + hh - rr); s.quadraticCurveTo(x + ww, y + hh, x + ww - rr, y + hh);
+  s.lineTo(x + rr, y + hh); s.quadraticCurveTo(x, y + hh, x, y + hh - rr); s.lineTo(x, y + rr); s.quadraticCurveTo(x, y, x + rr, y);
+  const g = new THREE.ExtrudeGeometry(s, { depth: d - bev * 2, bevelEnabled: true, bevelThickness: bev, bevelSize: bev, bevelSegments: 5, curveSegments: 10 });
+  g.translate(0, 0, -(d - bev * 2) / 2); g.computeVertexNormals(); return g;
+}
+// bande arquée (ferrure du couvercle) : rectangle arrondi balayé sur un demi-cercle
+function arch(R, w, t) {
+  const s = new THREE.Shape(); const hw = w / 2, ht = t / 2, rr = Math.min(hw, ht) * 0.9;
+  s.moveTo(-hw + rr, -ht); s.lineTo(hw - rr, -ht); s.quadraticCurveTo(hw, -ht, hw, -ht + rr); s.lineTo(hw, ht - rr); s.quadraticCurveTo(hw, ht, hw - rr, ht); s.lineTo(-hw + rr, ht); s.quadraticCurveTo(-hw, ht, -hw, ht - rr); s.lineTo(-hw, -ht + rr); s.quadraticCurveTo(-hw, -ht, -hw + rr, -ht);
+  const path = new THREE.CatmullRomCurve3(Array.from({ length: 25 }, (_, i) => { const a = Math.PI * i / 24; return new THREE.Vector3(0, Math.sin(a) * R, Math.cos(a) * R); }));
+  const g = new THREE.ExtrudeGeometry(s, { steps: 48, extrudePath: path, curveSegments: 8 }); g.computeVertexNormals(); return g;
+}
+function chest(type) {
+  const p = P[type], grp = new THREE.Group();
+  const bodyMat = new THREE.MeshStandardMaterial({ map: p.body(), roughness: type === 'bois' ? 0.75 : 0.45, metalness: 0, envMapIntensity: 0.7 });
+  const metal = new THREE.MeshStandardMaterial({ color: p.metal, metalness: 1, roughness: p.mr, envMapIntensity: 1.25 });
+  const add = (g, m, x = 0, y = 0, z = 0) => { const o = new THREE.Mesh(g, m); o.position.set(x, y, z); o.castShadow = true; o.receiveShadow = true; grp.add(o); return o; };
+  const Wb = 1.0, Hb = 0.52, Db = 0.68, R = Db / 2;
+  // corps et couvercle bombé
+  const bg = rbox(Wb, Hb, Db, 0.05, 0.035), pos = bg.attributes.position, nor = bg.attributes.normal, uv = bg.attributes.uv;
+  // projection plane par face (sinon les étoiles sont étirées en traits sur l'avant)
+  for (let i = 0; i < pos.count; i++) { const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i), nx = Math.abs(nor.getX(i)), ny = Math.abs(nor.getY(i));
+    if (nx > 0.6) uv.setXY(i, (z + Db / 2) / Wb * 0.7, (y + Hb / 2) / Wb * 0.5 + 0.1); else if (ny > 0.6) uv.setXY(i, (x + Wb / 2) / Wb, (z + Db / 2) / Wb * 0.5); else uv.setXY(i, (x + Wb / 2) / Wb, (y + Hb / 2) / Wb * 0.5 + 0.1); }
+  add(bg, bodyMat, 0, Hb / 2 + 0.02, 0);
+  const lid = new THREE.CylinderGeometry(R - 0.005, R - 0.005, Wb - 0.03, 96, 1, false); lid.rotateZ(Math.PI / 2);
+  add(lid, bodyMat, 0, Hb + 0.02, 0);
+  // ferrures : arches aux bouts + au milieu, montants d'angle, bande de fermeture, socle
+  const aw = 0.13, at = 0.05;
+  for (const x of [-Wb / 2 + aw / 2 - 0.005, Wb / 2 - aw / 2 + 0.005]) {
+    const a = add(arch(R + 0.012, aw, at), metal, x, Hb + 0.02, 0);
+    add(rbox(aw, Hb + 0.03, 0.07, 0.03, 0.018), metal, x, Hb / 2 + 0.02, Db / 2 - 0.02);
+    add(rbox(aw, Hb + 0.03, 0.07, 0.03, 0.018), metal, x, Hb / 2 + 0.02, -Db / 2 + 0.02);
+  }
+  add(rbox(Wb + 0.04, 0.075, Db + 0.05, 0.03, 0.02), metal, 0, Hb + 0.005, 0);
+  add(rbox(Wb + 0.06, 0.07, Db + 0.06, 0.03, 0.02), metal, 0, 0.055, 0);
+  if (type !== 'bois') add(arch(R + 0.01, 0.07, 0.035), metal, 0, Hb + 0.02, 0);
+  // serrure : plaque en goutte + gemme (ou anneau pour le bois)
+  const plate = new THREE.Shape(); plate.moveTo(0, 0.16); plate.quadraticCurveTo(0.13, 0.12, 0.12, -0.02); plate.quadraticCurveTo(0.1, -0.13, 0, -0.17); plate.quadraticCurveTo(-0.1, -0.13, -0.12, -0.02); plate.quadraticCurveTo(-0.13, 0.12, 0, 0.16);
+  const pg = new THREE.ExtrudeGeometry(plate, { depth: 0.03, bevelEnabled: true, bevelThickness: 0.015, bevelSize: 0.015, bevelSegments: 4, curveSegments: 16 }); pg.computeVertexNormals();
+  add(pg, metal, 0, Hb + 0.0, Db / 2 + 0.03);
+  if (p.gem) {
+    const gm = new THREE.MeshPhysicalMaterial({ color: p.gem, emissive: p.gem, emissiveIntensity: 0.35, metalness: 0, roughness: 0.05, transmission: 0, clearcoat: 1, envMapIntensity: 1.6, flatShading: true });
+    const gem = add(new THREE.OctahedronGeometry(0.085, 0), gm, 0, Hb + 0.0, Db / 2 + 0.1); gem.scale.set(0.9, 1.25, 0.55);
+  } else {
+    add(new THREE.TorusGeometry(0.055, 0.016, 12, 32), new THREE.MeshStandardMaterial({ color: p.ring, metalness: 1, roughness: 0.3 }), 0, Hb - 0.05, Db / 2 + 0.085);
+    add(new THREE.CylinderGeometry(0.03, 0.03, 0.03, 20).rotateX(Math.PI / 2), metal, 0, Hb + 0.01, Db / 2 + 0.07);
+  }
+  // rivets
+  const rv = new THREE.SphereGeometry(0.017, 12, 8);
+  for (const x of [-Wb / 2 + 0.065, Wb / 2 - 0.065]) for (const y of [0.13, Hb - 0.08]) add(rv, metal, x, y + 0.02, Db / 2 + 0.03);
+  if (p.glow) { const l = new THREE.PointLight(p.glow, 1.2, 2.5); l.position.set(0, Hb + 0.05, Db / 2 + 0.35); grp.add(l); }
+  return grp;
+}
+let cur = null;
+window.bake = async type => {
+  if (cur) sc.remove(cur);
+  cur = chest(type); sc.add(cur);
+  // vue 3/4 un peu plongeante, légèrement de gauche (comme la maquette)
+  const az = THREE.MathUtils.degToRad(-24), el = THREE.MathUtils.degToRad(20), d = 3.25;
+  cam.position.set(Math.sin(az) * Math.cos(el) * d, 0.42 + Math.sin(el) * d, Math.cos(az) * Math.cos(el) * d); cam.lookAt(0, 0.42, 0);
+  r.render(sc, cam); return r.domElement.toDataURL('image/png');
+};
+window.ready = true;
+</script>
+</body></html>

@@ -1076,3 +1076,16 @@ body::after { background: radial-gradient(60% 22% at 30% 16%, rgba(80, 255, 190,
 .kc-txt em { max-width: none; }
 .kc-up { right: 6px; top: 6px; width: 32px; height: 32px; border: 0; border-radius: 0; background: none; box-shadow: none; filter: drop-shadow(0 0 5px rgba(255, 214, 110, .8)) drop-shadow(0 2px 2px rgba(0, 0, 0, .5)); }
 .kc.ok { border-color: #e9c877; box-shadow: 0 0 12px rgba(255, 205, 100, .3); }
+
+/* ===== Coffres refaits (19/11) : coffres 3D lisses (bake-chests.html → chest-c1..c5.webp, détourés) sur une étagère dessinée nette ===== */
+.chests { --cw: calc(min(100vw, 560px) * .94 / 4 * .9); --th: calc(var(--cw) * 452 / 480); grid-template-columns: repeat(4, minmax(0, 1fr)); justify-content: stretch;
+  padding: 10px 3% 8px; background: radial-gradient(120% 90% at 50% 0%, #1b2766, #0c1236 70%); border-top: 1.5px solid #c9a55a; }
+.chests::before { display: block; content: ''; position: absolute; z-index: 0; left: 0; right: 0; top: calc(10px + var(--th) * .88); height: calc(var(--th) * .14); clip-path: none;
+  background: linear-gradient(#f6e2a6 0, #e3c27a 22%, #c79a4c 23%, #b8873c 70%, #8a5e22 100%); box-shadow: 0 1px 0 #4a2e08, 0 6px 10px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(255, 255, 255, .6); }
+.chests::after { display: block; content: ''; position: absolute; z-index: 0; left: 0; right: 0; top: calc(10px + var(--th) * 1.02); height: 4px; background: linear-gradient(rgba(0, 0, 0, .45), transparent); }
+.cslot { position: relative; z-index: 1; padding: 0 0 4px; }
+.cslot .chest-ic, .cslot .chest-ic.ghost { width: var(--cw); height: var(--th); aspect-ratio: auto; margin: 0 auto 6px; background: none !important; opacity: 1; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, .35)); }
+.cslot .chest-ic img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.cslot .ci-empty { background: url(assets/ui/chest-c3.webp) center / contain no-repeat !important; filter: grayscale(1) brightness(.45) !important; opacity: .35 !important; }
+.cslot.ready .chest-ic { animation: slotglow 1.3s ease-in-out infinite; }
+@media (max-width: 370px) { .cslot .chest-ic { width: var(--cw); height: var(--th); } }

@@ -1,6 +1,4 @@
 // MYTHORIA — écrans de progression : boutique, coffres, missions, connexion, amélioration, apparences.
-import { ITEMS } from '../../shared/items.js';
-import { itemIcon } from './itemart.js';
 import { HERO, RARITIES, FACTIONS, SPELL } from '../../shared/content.js';
 import { SKINS, CHESTS, MAX_LEVEL } from '../../shared/economy.js';
 import { saveProfile, owned, heroLevel, canUpgrade, upgradeHero, chestState, startChest, chestGemCost, openChest, shopOffers, buy, skinsFor, missionsReady, claimMission, claimLogin, maxHeroLevel } from '../store.js';
@@ -72,7 +70,6 @@ function reveal(r) {
     chestIcon(r.type, 'big pop'), h('h3', {}, CHESTS[r.type].name),
     h('div', { class: 'rchips' }, rewardChips(r)),
     h('div', { class: 'shard-grid' }, Object.entries(r.shards).map(([id, n]) => h('div', { class: 'shard', style: { '--rc': RARITIES[HERO[id].rar].color } }, C.portraitImg(id), h('b', {}, '×' + n), h('small', {}, HERO[id].name)))),
-    r.item ? (() => { const it = ITEMS[r.item], e = h('div', { class: 'item-won', style: { '--rc': RARITIES[it.rar].color } }); const ic = h('span', { class: 'it-ic big' }); ic.innerHTML = itemIcon(r.item); e.append(ic, h('div', {}, h('small', {}, 'Nouvel objet · ' + RARITIES[it.rar].name), h('b', {}, it.name), h('em', {}, 'Équipe-le dans la fiche d’un héros'))); return e; })() : null,
     h('button', { class: 'btn big gold', onclick: () => { s.close(); C.render(); } }, 'Super !')));
 }
 

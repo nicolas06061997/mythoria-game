@@ -106,13 +106,14 @@ test('une IA forte bat souvent une IA faible', () => {
 });
 
 // Objets d'équipement (19/11) : bonus plafonnés et appliqués au héros en combat
-import { gearBonus, ITEM_MAX, botGear } from '../src/shared/items.js';
+import { gearBonus, ITEM_MAX, botGear, itemsFor } from '../src/shared/items.js';
 test('objets : bonus plafonnés et appliqués', async () => {
   const { createBattle } = await import('../src/shared/sim.js');
-  const g = gearBonus(['braise', 'orage', 'runelame']);
+  assert.equal(itemsFor('ecuyer').length, 10);
+  const g = gearBonus(['ecuyer:a4', 'ecuyer:a3', 'ecuyer:t4']);
   assert.ok(g.dmg <= ITEM_MAX.dmg + 1e-9);
   const deck = ['ecuyer', 'archeres', 'loups', 'follets', 'jarl', 'squelettes', 'osseuse', 'frere'];
-  const a = createBattle({ seed: 3, decks: [deck, deck] }), b = createBattle({ seed: 3, decks: [deck, deck], gear: [{ ecuyer: gearBonus(['braise', 'egide']) }, {}] });
+  const a = createBattle({ seed: 3, decks: [deck, deck] }), b = createBattle({ seed: 3, decks: [deck, deck], gear: [{ ecuyer: gearBonus(['ecuyer:a4', 'ecuyer:t4']) }, {}] });
   assert.ok(a && b);
   assert.equal(Object.keys(botGear(deck, 0)).length, 0);
   assert.equal(Object.keys(botGear(deck, 900)).length, deck.length);

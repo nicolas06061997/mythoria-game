@@ -1,8 +1,8 @@
 // MYTHORIA — menus : accueil 3D, héros & deck, fiche de héros 3D, mondes, modes, résultats, profil.
 import { HERO, PLAYABLE, SPELL, SPELLS, RARITIES, FACTIONS, WORLDS, UNLOCKS, SPELL_UNLOCKS, DECK_SIZE, STAR_MULT, deckSynergies, worldFor } from '../../shared/content.js';
 import { AI_LEVELS } from '../../shared/ai.js';
-import { loadProfile, saveProfile, resetProfile, owned, ownedSpells, worldOf, botLevelFor, botDeck, botSpell, botLevels, applyResult, xpNeed, heroLevel, canUpgrade, CHESTS, gearFor, heroItems, heroGear, equipItem, unequipItem, wearer, itemByU } from '../store.js';
-import { ITEMS, SLOTS, STAT_NAME, gearBonus, botGear } from '../../shared/items.js';
+import { loadProfile, saveProfile, resetProfile, owned, ownedSpells, worldOf, botLevelFor, botDeck, botSpell, botLevels, applyResult, xpNeed, heroLevel, canUpgrade, CHESTS, gearFor, heroItems, heroGear, equipItem, unequipItem, itemState, forgeItem, unlockedCount, heroWins } from '../store.js';
+import { SLOTS, STAT_NAME, gearBonus, botGear, itemsFor, itemById } from '../../shared/items.js';
 import { itemIcon } from './itemart.js';
 import { battleSVG, medalSVG, isleSVG, sparkSVG } from './art.js';
 import { modeIcon } from './modeart.js';
@@ -417,36 +417,40 @@ function openHero(id) {
 // ---------- Équipement : 2 emplacements par héros (Arme, Talisman) ----------
 const pct = v => '+' + Math.round(v * 100) + ' %';
 const bonusTxt = b => Object.entries(b).filter(([, v]) => v).map(([k, v]) => pct(v) + ' ' + STAT_NAME[k].toLowerCase()).join(' · ');
-function itemEl(id, cls = '') { const e = h('span', { class: 'it-ic ' + cls, style: { '--rc': RARITIES[ITEMS[id].rar].color } }); e.innerHTML = itemIcon(id); return e; }
+function itemEl(id, cls = '') { const it = itemById(id), e = h('span', { class: 'it-ic ' + cls, style: { '--rc': RARITIES[it.rar].color } }); e.innerHTML = itemIcon(id); return e; }
 function gearBlock(id, reopen) {
-  const ids = heroItems(P, id), g = heroGear(P, id), tot = bonusTxt(g);
+  const ids = heroItems(P, id), g = heroGear(P, id), tot = bonusTxt(g), all = itemsFor(id), n = unlockedCount(P, id);
   return h('div', { class: 'gear-box' },
     h('div', { class: 'gb-head' }, h('h4', {}, 'Équipement'), h('small', {}, tot || 'Aucun bonus pour l’instant')),
     h('div', { class: 'gb-slots' }, SLOTS.map((S, i) => {
-      const it = ids[i];
-      return h('button', { class: 'gb-slot' + (it ? ' full' : ''), style: it ? { '--rc': RARITIES[ITEMS[it].rar].color } : {}, onclick: () => { sfx('click'); openBag(id, i, reopen); } },
-        it ? itemEl(it) : h('span', { class: 'gb-empty' }, '+'),
-        h('div', { class: 'gb-txt' }, h('small', {}, S.name), h('b', {}, it ? ITEMS[it].name : 'Vide'), h('em', {}, it ? bonusTxt(ITEMS[it].b) : S.hint)));
+      const it = ids[i] && itemById(ids[i]);
+      return h('button', { class: 'gb-slot' + (it ? ' full' : ''), style: it ? { '--rc': RARITIES[it.rar].color } : {}, onclick: () => { sfx('click'); openBag(id, i, reopen); } },
+        it ? itemEl(it.id) : h('span', { class: 'gb-empty' }, '+'),
+        h('div', { class: 'gb-txt' }, h('small', {}, S.name), h('b', {}, it ? it.name : 'Vide'), h('em', {}, it ? bonusTxt(it.b) : S.hint)));
     })),
-    h('p', { class: 'gb-note' }, 'Gagne des objets dans les coffres. Bonus plafonnés : l’IA reçoit des objets du même niveau, l’Arène reste juste.'));
+    h('div', { class: 'gb-coll' }, h('small', {}, 'Collection de ' + HERO[id].name + ' · ' + n + ' / 10'),
+      h('div', { class: 'gb-grid' }, all.map(it => { const st = itemState(P, it.id), e = itemEl(it.id, 'sm' + (st.ok ? '' : ' locked')); e.title = it.name; e.onclick = () => { sfx('click'); openBag(id, it.slot === 'arme' ? 0 : 1, reopen); }; return e; }))),
+    h('p', { class: 'gb-note' }, 'Débloque ses objets en le faisant monter de niveau et en gagnant avec lui, ou forge-les avec des cristaux. Bonus plafonnés : l’IA a des objets du même niveau.'));
 }
 function openBag(hero, slot, reopen) {
   const S = SLOTS[slot], cur = (P.equip[hero] || [])[slot];
-  const list = P.items.filter(x => ITEMS[x.id] && ITEMS[x.id].slot === S.id).sort((a, b) => ['epique', 'rare', 'commun'].indexOf(ITEMS[a.id].rar) - ['epique', 'rare', 'commun'].indexOf(ITEMS[b.id].rar));
+  const list = itemsFor(hero).filter(it => it.slot === S.id);
   const base = heroGear(P, hero), other = heroItems(P, hero).filter((x, i) => i !== slot && x);
   let s;
-  const row = x => {
-    const it = ITEMS[x.id], w = wearer(P, x.u), mine = x.u === cur, after = gearBonus([...other, x.id]);
+  const row = it => {
+    const st = itemState(P, it.id), mine = it.id === cur, after = gearBonus([...other, it.id]);
     const diff = Object.keys(STAT_NAME).filter(k => Math.abs(after[k] - base[k]) > 1e-6).map(k => h('span', { class: after[k] > base[k] ? 'up' : 'down' }, (after[k] > base[k] ? '▲ ' : '▼ ') + STAT_NAME[k] + ' ' + pct(base[k]) + ' → ' + pct(after[k])));
-    return h('div', { class: 'bag-row' + (mine ? ' on' : ''), style: { '--rc': RARITIES[it.rar].color } }, itemEl(x.id),
+    const act = mine ? h('button', { class: 'btn small ghost', onclick: () => { unequipItem(P, hero, slot); sfx('click'); s.close(); reopen(); } }, 'Retirer')
+      : st.ok ? h('button', { class: 'btn small gold', onclick: () => { equipItem(P, hero, it.id); sfx('fuse'); toast(it.name + ' équipé ✓'); s.close(); reopen(); } }, 'Équiper')
+      : h('button', { class: 'btn small forge' + (P.crystals >= it.forge ? '' : ' off'), onclick: () => { const e = forgeItem(P, it.id); if (e) return toast(e, 'bad'); sfx('fuse'); toast(it.name + ' forgé ✓'); s.close(); openBag(hero, slot, reopen); } }, h('span', {}, 'Forger'), h('small', {}, icon('crystal'), it.forge));
+    return h('div', { class: 'bag-row' + (mine ? ' on' : '') + (st.ok ? '' : ' locked'), style: { '--rc': RARITIES[it.rar].color } }, itemEl(it.id, st.ok ? '' : 'locked'),
       h('div', { class: 'bag-txt' }, h('b', {}, it.name), h('small', { class: 'irar' }, RARITIES[it.rar].name + ' · ' + bonusTxt(it.b)), h('em', {}, it.desc),
-        diff.length && !mine ? h('div', { class: 'bag-diff' }, diff) : null,
-        w && !mine ? h('small', { class: 'bag-w' }, 'Porté par ' + HERO[w].name + ' (il lui sera retiré)') : null),
-      mine ? h('button', { class: 'btn small ghost', onclick: () => { unequipItem(P, hero, slot); sfx('click'); s.close(); reopen(); } }, 'Retirer')
-        : h('button', { class: 'btn small gold', onclick: () => { equipItem(P, hero, x.u); sfx('fuse'); toast(it.name + ' équipé ✓'); s.close(); reopen(); } }, 'Équiper'));
+        st.ok ? (diff.length && !mine ? h('div', { class: 'bag-diff' }, diff) : null)
+          : h('div', { class: 'bag-lock' }, h('small', {}, icon('lock'), ' ' + st.txt + (st.now ? ' · ' + st.now : '')), h('div', { class: 'bag-bar' }, h('i', { style: { width: Math.round(st.prog * 100) + '%' } })))),
+      act);
   };
-  s = sheet(h('div', { class: 'bag' }, h('h3', {}, S.name + ' de ' + HERO[hero].name), h('p', { class: 'muted' }, S.hint),
-    list.length ? h('div', { class: 'bag-list' }, list.map(row)) : h('p', { class: 'tip' }, 'Tu n’as pas encore d’objet de ce type. Ouvre des coffres pour en gagner !')));
+  s = sheet(h('div', { class: 'bag' }, h('h3', {}, S.name + ' de ' + HERO[hero].name), h('p', { class: 'muted' }, S.hint + ' · tes cristaux : ' + P.crystals),
+    h('div', { class: 'bag-list' }, list.map(row))));
 }
 
 // ---------- Mondes ----------

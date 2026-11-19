@@ -4,7 +4,7 @@
 import { STARTER_DECK, STARTER_SPELL, unlockedHeroes, unlockedSpells, worldFor, WORLDS, HERO, PLAYABLE, validateDeck } from '../shared/content.js';
 import { upgradeCost, MAX_LEVEL, CHESTS, CHEST_CYCLE, CHEST_SLOTS, rollChest, gemsToOpen, dayKey, weekKey, dailyShop, makeMissions, LOGIN, SKINS, botHeroLevel } from '../shared/economy.js';
 import { makeRng, shuffle } from '../shared/rng.js';
-import { ITEMS, SLOTS, gearBonus, rollItem } from '../shared/items.js';
+import { SLOTS, gearBonus, itemsFor, itemById } from '../shared/items.js';
 import { BUILDINGS, DECOS, newKingdom, canBuild, buildCost, buildTime, speedupGems, produced, kingdomBonus } from '../shared/kingdom.js';
 
 const KEY = 'myt_profile_v2';
@@ -21,7 +21,7 @@ function defaults() {
     chests: [{ type: 'bois', seed: 1, start: 0, end: 0 }, null, null, null], chestIdx: 0,
     missions: null, shop: null, login: { day: 0, streak: 0, pending: null },
     skins: { owned: [], eq: {} },
-    items: [], equip: {}, itemSeq: 0,
+    equip: {}, forged: [], heroWins: {},
     kingdom: null, campaign: { done: 0, stars: {} }, records: { survival: 0, hero: 0, tournament: 0 },
   };
 }
@@ -40,8 +40,10 @@ export function loadProfile() {
   if (!ownedSpells(p).includes(p.spell)) p.spell = STARTER_SPELL;
   if (!HERO[p.avatar]) p.avatar = 'ecuyer';
   if (!p.kingdom) p.kingdom = newKingdom(now());
-  if (!Array.isArray(p.items)) p.items = []; if (!p.equip || typeof p.equip !== 'object') p.equip = {};
-  if (!p.itemStart) { p.itemStart = 1; addItem(p, 'croc'); addItem(p, 'cuir'); } // 2 objets offerts pour découvrir l'équipement
+  if (!p.equip || typeof p.equip !== 'object') p.equip = {};
+  for (const h in p.equip) if (!Array.isArray(p.equip[h]) || p.equip[h].some(x => x && !itemById(x))) p.equip[h] = [null, null];
+  if (!Array.isArray(p.forged)) p.forged = []; if (!p.heroWins || typeof p.heroWins !== 'object') p.heroWins = {};
+  delete p.items; delete p.itemSeq; delete p.itemStart;
   refreshDaily(p);
   finishJob(p);
   return p;
@@ -125,7 +127,6 @@ export function openChest(p, i, withGems) {
     p.gems -= g;
   }
   const r = rollChest(c.type, c.seed, owned(p));
-  const it = rollItem(makeRng((c.seed || 1) * 7919 + 13), c.type); if (it) { r.item = it; addItem(p, it); }
   give(p, r); p.chests[i] = null; track(p, 'chest'); saveProfile(p);
   return { type: c.type, ...r };
 }
@@ -188,6 +189,7 @@ export function applyResult(p, r) {
   else if (r.result === 'loss') { rew.trophies = ranked ? -Math.min(p.trophies, 15) : 0; rew.gold = ranked ? 8 : 2; rew.xp = ranked ? 10 : 4; }
   else { rew.gold = ranked ? 12 : 3; rew.xp = ranked ? 14 : 5; }
   if (r.reward) { rew.extra = r.reward; give(p, r.reward); }
+  if (r.result === 'win' && r.mode !== 'training' && Array.isArray(r.deck)) for (const h of r.deck) p.heroWins[h] = (p.heroWins[h] || 0) + 1;
   p.trophies += rew.trophies; p.best = Math.max(p.best, p.trophies);
   p.gold += rew.gold; p.xp += rew.xp;
   rew.lvlUp = levelUp(p);
@@ -257,18 +259,30 @@ export function buyDeco(p, slot, id) {
 }
 export const bonusOf = p => kingdomBonus(p.kingdom);
 
-// ---------- Objets d'équipement (2 emplacements par héros : Arme, Talisman) ----------
-export function addItem(p, id) { const u = 'i' + (++p.itemSeq || (p.itemSeq = 1)) + '_' + Date.now().toString(36); p.items.push({ u, id }); return u; }
-export const itemByU = (p, u) => p.items.find(x => x.u === u);
-export const slotIndex = id => SLOTS.findIndex(s => s.id === ITEMS[id].slot);
-// héros qui porte cet objet (ou null)
-export function wearer(p, u) { for (const h in p.equip) if ((p.equip[h] || []).includes(u)) return h; return null; }
-export function equipItem(p, hero, u) {
-  const it = itemByU(p, u); if (!it) return;
-  const w = wearer(p, u); if (w) p.equip[w][p.equip[w].indexOf(u)] = null;
-  const e = p.equip[hero] || (p.equip[hero] = [null, null]); e[slotIndex(it.id)] = u; saveProfile(p);
+// ---------- Équipement : chaque héros a ses 10 objets ; 2 portés (Arme, Talisman) ----------
+export const heroWins = (p, h) => p.heroWins[h] || 0;
+// état d'un objet : { ok, txt (condition), prog 0..1 }
+export function itemState(p, id) {
+  const it = itemById(id); if (!it) return { ok: false, txt: '', prog: 0 };
+  if (!owned(p).includes(it.hero)) return { ok: false, txt: 'Débloque d’abord ce héros', prog: 0 };
+  if (p.forged.includes(id)) return { ok: true, txt: 'Forgé', prog: 1 };
+  const u = it.unlock;
+  if (u.lvl) { const l = heroLevel(p, it.hero); return { ok: l >= u.lvl, txt: 'Héros niveau ' + u.lvl, prog: Math.min(1, l / u.lvl), now: 'niveau ' + l }; }
+  if (u.win) { const w = heroWins(p, it.hero); return { ok: w >= u.win, txt: u.win + ' victoires avec ce héros', prog: Math.min(1, w / u.win), now: w + ' / ' + u.win }; }
+  return { ok: true, txt: 'Disponible', prog: 1 };
+}
+export const unlockedCount = (p, h) => itemsFor(h).filter(it => itemState(p, it.id).ok).length;
+export function forgeItem(p, id) {
+  const it = itemById(id), st = itemState(p, id); if (!it || st.ok) return 'Déjà débloqué';
+  if (!owned(p).includes(it.hero)) return 'Débloque d’abord ce héros';
+  if (p.crystals < it.forge) return 'Pas assez de cristaux (' + it.forge + ' nécessaires)';
+  p.crystals -= it.forge; p.forged.push(id); saveProfile(p); return null;
+}
+export function equipItem(p, hero, id) {
+  const it = itemById(id); if (!it || it.hero !== hero || !itemState(p, id).ok) return;
+  const e = p.equip[hero] || (p.equip[hero] = [null, null]); e[it.slot === 'arme' ? 0 : 1] = id; saveProfile(p);
 }
 export function unequipItem(p, hero, slot) { if (p.equip[hero]) { p.equip[hero][slot] = null; saveProfile(p); } }
-export const heroItems = (p, hero) => (p.equip[hero] || []).map(u => u && itemByU(p, u)).map(x => x ? x.id : null);
+export const heroItems = (p, hero) => (p.equip[hero] || [null, null]).map(x => x && itemById(x) ? x : null);
 export const heroGear = (p, hero) => gearBonus(heroItems(p, hero).filter(Boolean));
 export function gearFor(p, deck) { const o = {}; for (const id of deck) { const g = heroGear(p, id); if (g.dmg || g.atk || g.hp || g.spd) o[id] = g; } return o; }

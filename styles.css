@@ -1092,3 +1092,55 @@ body::after { background: radial-gradient(60% 22% at 30% 16%, rgba(80, 255, 190,
 .bag-bar { height: 5px; margin-top: 3px; border-radius: 3px; background: rgba(255, 255, 255, .1); overflow: hidden; } .bag-bar i { display: block; height: 100%; background: linear-gradient(90deg, #ffcf5a, #ffe9a0); }
 .btn.forge { display: flex; flex-direction: column; align-items: center; line-height: 1.05; padding: 5px 10px; background: linear-gradient(#5a3ad8, #34208a); color: #fff; border-color: #b8a8ff; }
 .btn.forge small { display: inline-flex; align-items: center; gap: 2px; font-size: 11px; color: #e8dcff; } .btn.forge .ic { width: 13px; height: 13px; } .btn.forge.off { opacity: .55; }
+
+/* ===== Carte des Failles (19/11, Lot 1C) : les 6 îles flottantes, reliées par un chemin d'étoiles (remplace la liste des mondes) ===== */
+.wmap { position: fixed; inset: 0; z-index: 55; max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; animation: fadein .25s; transition: opacity .25s;
+  background: radial-gradient(120% 70% at 50% 100%, #1a2a7a 0%, #0b1240 45%, #050818 100%); }
+.wmap.off { opacity: 0; }
+.wm-head { position: relative; z-index: 3; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: calc(12px + var(--safe-t, 0px)) 14px 10px;
+  background: linear-gradient(#050818 60%, rgba(5, 8, 24, 0)); }
+.wm-head h2 { margin: 0; font-family: var(--title); color: var(--or, #e9c877); font-size: 22px; letter-spacing: .5px; text-shadow: 0 0 12px rgba(233, 200, 119, .4); }
+.wm-head small { color: var(--lune, #cfd8f0); font-weight: 800; font-size: 12px; } .wm-head .hd-close { position: static; flex: none; }
+.wm-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding-bottom: var(--safe-b, 0px); }
+.wm-map { position: relative; width: 100%; overflow: hidden; }
+.wm-st { position: absolute; border-radius: 50%; background: #fff; opacity: .7; animation: wmtw 3s ease-in-out infinite; }
+@keyframes wmtw { 50% { opacity: .15; } }
+.wm-neb { position: absolute; border-radius: 50%; filter: blur(30px); opacity: .45; pointer-events: none; animation: wmneb 14s ease-in-out infinite alternate; }
+.wm-neb.n1 { width: 70%; height: 300px; left: -15%; top: 18%; background: radial-gradient(closest-side, #6a3ad8, transparent); }
+.wm-neb.n2 { width: 80%; height: 340px; right: -25%; top: 48%; background: radial-gradient(closest-side, #1f8ac8, transparent); animation-delay: -5s; }
+.wm-neb.n3 { width: 70%; height: 260px; left: 5%; top: 78%; background: radial-gradient(closest-side, #2a5ae0, transparent); animation-delay: -9s; }
+@keyframes wmneb { to { transform: translate(6%, -4%) scale(1.12); } }
+.wm-svg, .wm-path { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.wp-base { fill: none; stroke: rgba(207, 216, 240, .38); stroke-width: 3; stroke-dasharray: 2 9; stroke-linecap: round; }
+.wp-lit { fill: none; stroke: #7fe9ff; stroke-width: 9; stroke-linecap: round; opacity: .35; filter: blur(2px); }
+.wp-core { fill: none; stroke: #fff6cc; stroke-width: 3.5; stroke-linecap: round; filter: drop-shadow(0 0 4px #ffd36a); }
+.wm-isle { position: absolute; z-index: 2; width: min(46%, 230px); transform: translate(-50%, -56%); display: flex; flex-direction: column; align-items: center; background: none; border: 0; padding: 0; color: #fff; }
+.wm-art { display: block; width: 100%; animation: wmfloat 5s ease-in-out infinite; animation-delay: calc(var(--d) * -1); filter: drop-shadow(0 10px 14px rgba(0, 0, 0, .55)); }
+.wm-art svg { display: block; width: 100%; height: auto; overflow: visible; }
+@keyframes wmfloat { 50% { transform: translateY(-8px); } }
+.wm-halo { position: absolute; left: 50%; top: 38%; width: 120%; aspect-ratio: 1.6; transform: translate(-50%, -50%); border-radius: 50%; pointer-events: none;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--fc) 55%, transparent), transparent); opacity: .55; animation: wmhalo 3.5s ease-in-out infinite; }
+@keyframes wmhalo { 50% { opacity: .85; transform: translate(-50%, -50%) scale(1.06); } }
+.wm-isle.here .wm-halo { background: radial-gradient(closest-side, rgba(255, 214, 110, .75), transparent); opacity: .9; }
+.wm-isle.locked .wm-art { filter: grayscale(.85) brightness(.55) drop-shadow(0 10px 14px rgba(0, 0, 0, .55)); }
+.wm-isle.locked .wm-halo { opacity: .15; }
+.wm-mist { position: absolute; left: -6%; right: -6%; top: 22%; height: 46%; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(180, 190, 230, .38), transparent); filter: blur(6px); animation: wmmist 7s ease-in-out infinite alternate; }
+@keyframes wmmist { to { transform: translateX(6%); opacity: .7; } }
+.wm-tag { margin-top: -6px; display: flex; flex-direction: column; align-items: center; padding: 4px 12px 5px; border-radius: 12px; min-width: 70%;
+  background: linear-gradient(rgba(14, 22, 78, .92), rgba(8, 12, 44, .92)); border: 1.5px solid color-mix(in srgb, var(--fc) 70%, #e9c877); box-shadow: 0 4px 10px rgba(0, 0, 0, .45); }
+.wm-tag small { font-size: 9.5px; letter-spacing: 1px; text-transform: uppercase; color: var(--or, #e9c877); font-weight: 800; }
+.wm-tag b { font-family: var(--title); font-size: 14px; line-height: 1.15; text-align: center; }
+.wm-tag em { font-style: normal; font-size: 11px; font-weight: 800; color: #7dff9a; display: inline-flex; align-items: center; gap: 2px; } .wm-tag em .ic { width: 13px; height: 13px; }
+.wm-isle.locked .wm-tag { border-color: rgba(207, 216, 240, .35); } .wm-isle.locked .wm-tag em { color: var(--lune, #cfd8f0); } .wm-isle.locked .wm-tag b { color: #cfd8f0; }
+.wm-isle.here .wm-tag { border-color: #ffd36a; box-shadow: 0 0 14px rgba(255, 210, 110, .5); } .wm-isle.here .wm-tag em { color: #ffd36a; }
+.wm-me { position: absolute; left: 50%; top: -26%; width: 46px; height: 46px; transform: translateX(-50%); border-radius: 50%; overflow: hidden; z-index: 3;
+  border: 3px solid #ffd36a; box-shadow: 0 0 0 2px #3e2404, 0 0 16px rgba(255, 210, 110, .9); background: #1b2766; animation: wmme 1.6s ease-in-out infinite; }
+.wm-me img { width: 100%; height: 100%; object-fit: cover; }
+.wm-me::after { content: ''; position: absolute; }
+@keyframes wmme { 50% { transform: translate(-50%, -6px); } }
+.wm-isle:active .wm-art { transform: scale(.96); }
+.wm-sheet { text-align: center; } .wm-sheet .w-meta { justify-content: center; margin: 4px 0 6px; } .wm-sheet h4 { margin: 10px 0 2px; }
+.wm-art.big { width: 180px; margin: -6px auto 0; }
+.home-prog { cursor: pointer; }
+@media (prefers-reduced-motion: reduce) { .wm-art, .wm-halo, .wm-mist, .wm-me, .wm-neb, .wm-st { animation: none !important; } }

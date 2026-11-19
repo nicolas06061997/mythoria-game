@@ -9,6 +9,7 @@ import { modeIcon } from './modeart.js';
 import { initProgress, conquestRow, missionsButton, loginPopup, shopScreen, heroProgress, eclatIcon } from './progress.js';
 import { initKingdom, kingdomScreen, leaveKingdom } from './kingdom.js';
 import { story } from './story.js';
+import { openWorldMap } from './worldmap.js';
 import { initModes, openCampaign, playSurvival, playEvent, playTourney, currentEvent, eventWinsLeft } from './modes.js';
 import { Battle, spellIcon } from '../battle.js';
 import { HeroMode } from '../heromode.js';
@@ -141,7 +142,7 @@ function homeScreen() {
       h('button', { class: 'home-hero', onclick: () => openHero(fav.id) },
         h('span', { class: 'rar', style: { '--rc': RARITIES[fav.rar].color } }, RARITIES[fav.rar].name),
         h('b', {}, fav.name), h('small', {}, fav.title)),
-      h('div', { class: 'home-prog' },
+      h('div', { class: 'home-prog', role: 'button', onclick: () => { sfx('click'); openWorlds(); } },
         next ? [h('div', { class: 'tbar' }, h('i', { style: { width: prog * 100 + '%' } })), h('small', {}, icon('n_star'), P.trophies + ' / ' + next.trophies + ' Gloire → ' + next.name)]
           : h('small', {}, 'Tu as atteint le dernier monde !'))),
     h('button', { class: 'btn-battle', onclick: openModes }, h('i', { class: 'bb-aura' }), h('i', { class: 'bb-rays' }), svgEl('bb-art', battleSVG()), h('i', { class: 'bb-glow' }), h('i', { class: 'bb-shine' }), battleSparks(), h('b', {}, 'COMBATTRE'), h('small', {}, 'Mode Arène • ' + AI_LEVELS[botLevelFor(P)].name)),
@@ -454,21 +455,8 @@ function openBag(hero, slot, reopen) {
     h('div', { class: 'bag-list' }, list.map(row))));
 }
 
-// ---------- Mondes ----------
-function openWorlds() {
-  const page = h('div', { class: 'worlds' },
-    h('div', { class: 'w-head' }, h('h2', {}, 'Les Mondes de Mythoria'), h('button', { class: 'hd-close', onclick: () => page.remove() }, icon('close'))),
-    WORLDS.map(w => {
-      const T = THEMES[w.key], open = P.trophies >= w.trophies;
-      return h('div', { class: 'wcard' + (open ? '' : ' locked'), style: { '--s1': T.skyTop, '--s2': T.skyBot, '--g': T.ground, '--fc': FACTIONS[w.fac].color } },
-        h('div', { class: 'w-art' }, h('div', { class: 'w-isle' }), h('span', { class: 'w-n' }, w.id + 1)),
-        h('div', { class: 'w-txt' }, h('b', {}, w.name), h('small', {}, w.tag),
-          h('div', { class: 'w-meta' }, h('span', { class: 'chip on', style: { '--fc': FACTIONS[w.fac].color } }, FACTIONS[w.fac].name), open ? h('span', { class: 'chip on', style: { '--fc': '#7dff9a' } }, 'Ouvert') : h('span', { class: 'chip' }, icon('n_star'), w.trophies + ' Gloire')),
-          h('div', { class: 'mini-row' }, (UNLOCKS[w.id] || []).slice(0, 5).map(id => h('div', { class: 'mini sm', style: { '--rc': RARITIES[HERO[id].rar].color } }, portraitImg(id)))),
-          open ? h('button', { class: 'btn small gold', onclick: () => { page.remove(); trainingIn(w); } }, 'S’entraîner ici') : null));
-    }));
-  document.body.append(page);
-}
+// ---------- Mondes : carte cosmique des 6 îles (worldmap.js, Lot 1C) ----------
+function openWorlds() { openWorldMap({ P, portraitImg, onTrain: trainingIn }); }
 function trainingIn(w) {
   const s = sheet(h('div', { class: 'modes' }, h('h3', {}, w.name), h('p', { class: 'muted' }, 'Entraînement (sans Gloire). Choisis le niveau de l’IA :'),
     h('div', { class: 'lvls' }, AI_LEVELS.map((L, i) => h('button', { class: 'btn', onclick: () => { s.close(); play('training', i, w); } }, (i + 1) + '. ' + L.name)))));

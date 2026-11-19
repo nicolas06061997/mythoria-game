@@ -1092,3 +1092,6 @@ body::after { background: radial-gradient(60% 22% at 30% 16%, rgba(80, 255, 190,
 .bag-bar { height: 5px; margin-top: 3px; border-radius: 3px; background: rgba(255, 255, 255, .1); overflow: hidden; } .bag-bar i { display: block; height: 100%; background: linear-gradient(90deg, #ffcf5a, #ffe9a0); }
 .btn.forge { display: flex; flex-direction: column; align-items: center; line-height: 1.05; padding: 5px 10px; background: linear-gradient(#5a3ad8, #34208a); color: #fff; border-color: #b8a8ff; }
 .btn.forge small { display: inline-flex; align-items: center; gap: 2px; font-size: 11px; color: #e8dcff; } .btn.forge .ic { width: 13px; height: 13px; } .btn.forge.off { opacity: .55; }
+
+/* Petits écrans : la ligne de progression « 0 / 120 Gloire → monde suivant » n'est plus coupée */
+@media (max-width: 400px) { .home-prog { left: 10%; right: 10%; } }

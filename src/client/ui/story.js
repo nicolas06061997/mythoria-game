@@ -8,7 +8,7 @@ const STORIES = {
   arene: { title: 'L’Arène des Failles', pages: [
     { t: 'Il y a longtemps, le Cœur de Mythe gardait les six royaumes en paix. Un jour, il s’est brisé : des Failles se sont ouvertes partout, et les héros de chaque monde se disputent maintenant ses éclats.' },
     { t: 'Dans l’Arène, deux Sanctuaires s’affrontent. Le tien est en bas (bleu), celui de l’adversaire en haut (rouge).', steps: ['Invoque des héros (2 éther) : ils arrivent sur ton Cercle, en bas.', 'Touche un héros, puis touche l’île : il part se battre tout seul.', 'Pose un héros sur un héros identique : ils fusionnent et deviennent bien plus forts.'] },
-    { t: 'Pourquoi te battre ? Chaque victoire rapporte des trophées : ils ouvrent de nouveaux mondes et de nouveaux héros, plus rares et plus puissants. Tu gagnes aussi de l’or et des coffres.', goal: 'Détruis le Sanctuaire rouge, ou garde le plus de vie au bout de 3 minutes.' },
+    { t: 'Pourquoi te battre ? Chaque victoire rapporte de la Gloire : elle ouvre de nouveaux mondes et de nouveaux héros, plus rares et plus puissants. Tu arraches aussi des Éclats de Faille, à purifier à l’Autel de ton Royaume, et ta jauge de conquête se remplit.', goal: 'Détruis le Sanctuaire rouge, ou garde le plus de vie au bout de 3 minutes.' },
   ] },
   royaume: { title: 'Ton Royaume', pages: [
     { t: 'Quand les Failles se sont ouvertes, ton peuple a fui sur cette petite île qui flotte au-dessus des nuages. C’est tout ce qu’il reste de ton royaume… pour l’instant.' },

@@ -1,7 +1,9 @@
 // MYTHORIA — écran du Royaume (phase 4).
 import { BUILDINGS, BUILD_ORDER, DECOS, DECO_SLOTS, buildCost, buildTime, speedupGems, produced, perHour, canBuild } from '../../shared/kingdom.js';
 const affordable = (P, id) => { const K = P.kingdom, l = K.b[id] || 0; if (canBuild(K, id)) return false; const c = buildCost(id, l + 1); return P.gold >= c.gold && P.stone >= c.stone; };
-import { startBuild, speedup, collectAll, buyDeco, finishJob, worldOf, maxHeroLevel } from '../store.js';
+import { startBuild, speedup, collectAll, buyDeco, finishJob, worldOf, maxHeroLevel, purifyLeft } from '../store.js';
+import { purifyPerDay } from '../../shared/economy.js';
+import { openAutel, eclatIcon } from './progress.js';
 import { PSPOTS, IMG_W, IMG_H, bArt, BADGE_SVG, badgeDefs } from '../three/kingdompainted.js';
 import { KingdomPainted } from '../three/kingdompainted.js';
 import { h, toast, sheet } from './dom.js';
@@ -21,6 +23,7 @@ function effectText(id, lvl) {
   const P = C.P();
   if (id === 'chateau') return 'Niveau maximum des autres bâtiments : ' + lvl;
   if (BUILDINGS[id].prod) return '+' + perHour(P.kingdom, id) + ' ' + resName[BUILDINGS[id].prod] + ' / heure (stockage 8 h)';
+  if (id === 'autel') return purifyPerDay(lvl) + ' purifications d’Éclats par jour' + (lvl > 1 ? ' · contenu +' + 6 * (lvl - 1) + ' %' : '');
   if (id === 'academie') return 'Héros jusqu’au niveau ' + maxHeroLevel(P);
   if (id === 'caserne') return '+' + 4 * lvl + ' % de vie pour tes héros (hors Arène)';
   if (id === 'tour') return 'Sanctuaire +' + 8 * lvl + ' % de dégâts (hors Arène)';
@@ -97,6 +100,7 @@ function openBuilding(id) {
     h('h3', {}, b.name + (l ? ' — niveau ' + l : '')),
     h('p', {}, b.desc),
     l ? h('p', { class: 'tip' }, effectText(id, l)) : null,
+    id === 'autel' ? h('button', { class: 'btn big gold k-autel', onclick: () => { s.close(); openAutel(); } }, eclatIcon('arcane', 'xs'), ' Purifier (' + P.eclats.length + ' Éclats)') : null,
     cost ? h('div', { class: 'k-cost' }, h('b', {}, l ? 'Améliorer au niveau ' + to : 'Construire'),
       h('div', { class: 'rchips' }, h('span', { class: 'rchip' }, icon('coin'), cost.gold), h('span', { class: 'rchip' }, '🪨 ' + cost.stone), h('span', { class: 'rchip' }, '⏱ ' + fmt(buildTime(id, to)))),
       err ? h('p', { class: 'muted' }, err) : null,

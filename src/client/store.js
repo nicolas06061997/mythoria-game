@@ -2,7 +2,7 @@
 // Sauvegardé sur ce téléphone (localStorage) en attendant le serveur (phase 3) : même interface ensuite.
 
 import { STARTER_DECK, STARTER_SPELL, unlockedHeroes, unlockedSpells, worldFor, WORLDS, HERO, PLAYABLE, validateDeck } from '../shared/content.js';
-import { upgradeCost, MAX_LEVEL, CHESTS, CHEST_CYCLE, CHEST_SLOTS, rollChest, gemsToOpen, dayKey, weekKey, dailyShop, makeMissions, LOGIN, SKINS, botHeroLevel } from '../shared/economy.js';
+import { upgradeCost, MAX_LEVEL, ECLATS, ECLAT_CYCLE, ECLAT_MAX, eclatType, rollEclat, purifyPerDay, CONQUEST_MAX, conquestPoints, conquestReward, dayKey, weekKey, dailyShop, makeMissions, LOGIN, SKINS, botHeroLevel } from '../shared/economy.js';
 import { makeRng, shuffle } from '../shared/rng.js';
 import { BUILDINGS, DECOS, newKingdom, canBuild, buildCost, buildTime, speedupGems, produced, kingdomBonus } from '../shared/kingdom.js';
 
@@ -12,12 +12,12 @@ const now = () => Date.now();
 
 function defaults() {
   return {
-    v: 3, name: 'Héros' + Math.floor(1000 + Math.random() * 9000), avatar: 'ecuyer',
+    v: 4, name: 'Héros' + Math.floor(1000 + Math.random() * 9000), avatar: 'ecuyer',
     trophies: 0, best: 0, gold: 150, gems: 20, crystals: 0, stone: 100, xp: 0, lvl: 1,
     deck: STARTER_DECK.slice(), spell: STARTER_SPELL, stats: { w: 0, l: 0, d: 0, played: 0, hearts: 0 },
     hist: [], sound: true, created: now(),
     levels: {}, shards: {},
-    chests: [{ type: 'bois', seed: 1, start: 0, end: 0 }, null, null, null], chestIdx: 0,
+    eclats: [{ type: 'brut', seed: 1 }], eclatIdx: 0, seedN: 0, autel: { day: 0, used: 0 }, conquest: { pts: 0, n: 0 },
     missions: null, shop: null, login: { day: 0, streak: 0, pending: null },
     skins: { owned: [], eq: {} },
     kingdom: null, campaign: { done: 0, stars: {} }, records: { survival: 0, hero: 0, tournament: 0 },
@@ -32,16 +32,41 @@ export function loadProfile() {
     try { const o = JSON.parse(localStorage.getItem('myt_profile_v1') || 'null'); if (o) Object.assign(d, { name: o.name || d.name, gold: o.gold || d.gold, gems: o.gems || d.gems, xp: o.xp || 0, lvl: o.lvl || 1 }); } catch (e) {}
     p = d;
   }
+  const raw = p;
   p = { ...d, ...p, stats: { ...d.stats, ...(p.stats || {}) }, skins: { ...d.skins, ...(p.skins || {}) }, campaign: { ...d.campaign, ...(p.campaign || {}) }, records: { ...d.records, ...(p.records || {}) }, login: { ...d.login, ...(p.login || {}) } };
-  if (!Array.isArray(p.chests) || p.chests.length !== CHEST_SLOTS) p.chests = d.chests;
+  migrateEclats(p, d, raw);
   if (validateDeck(p.deck, owned(p))) p.deck = STARTER_DECK.slice();
   if (!ownedSpells(p).includes(p.spell)) p.spell = STARTER_SPELL;
   if (!HERO[p.avatar]) p.avatar = 'ecuyer';
-  if (!p.kingdom) p.kingdom = newKingdom(now());
+  if (!p.kingdom || typeof p.kingdom !== 'object' || !p.kingdom.b) p.kingdom = newKingdom(now());
+  if (!p.kingdom.b.autel) p.kingdom.b.autel = 1; // l'Autel des Failles est offert (sauvegardes d'avant le 19/11)
   refreshDaily(p);
   finishJob(p);
   return p;
 }
+
+// Coffres (avant le 19/11) → Éclats de Faille ; contrôle des valeurs (sauvegarde abîmée ou modifiée)
+function migrateEclats(p, d, raw) {
+  const num = (v, a = 0) => Number.isFinite(v) ? v : a;
+  if (!Array.isArray(raw.eclats)) {
+    p.eclats = Array.isArray(p.chests) ? p.chests.filter(c => c && eclatType(c.type)).map(c => ({ type: eclatType(c.type), seed: num(c.seed, 1) | 0 })) : d.eclats;
+    p.eclatIdx = num(p.chestIdx);
+  }
+  delete p.chests; delete p.chestIdx;
+  p.eclats = p.eclats.filter(e => e && ECLATS[e.type]).map(e => ({ type: e.type, seed: num(e.seed, 1) | 0 })).slice(0, ECLAT_MAX);
+  p.eclatIdx = Math.max(0, num(p.eclatIdx)); p.seedN = Math.max(0, num(p.seedN));
+  if (!p.autel || typeof p.autel !== 'object') p.autel = { ...d.autel };
+  p.autel = { day: num(p.autel.day), used: Math.max(0, num(p.autel.used)) };
+  if (!p.conquest || typeof p.conquest !== 'object') p.conquest = { ...d.conquest };
+  p.conquest = { pts: Math.min(CONQUEST_MAX, Math.max(0, num(p.conquest.pts))), n: Math.max(0, num(p.conquest.n)) };
+  for (const m of [...(p.missions?.list || []), ...(p.missions?.wlist || [])]) {
+    if (m.k === 'chest') { m.k = 'purify'; m.txt = 'Purifie ' + m.n + ' Éclats de Faille'; }
+    if (m.reward && m.reward.chest) { m.reward.eclat = eclatType(m.reward.chest); delete m.reward.chest; }
+  }
+  if (p.login && p.login.pending && p.login.pending.chest) p.login.pending = { eclat: eclatType(p.login.pending.chest) };
+}
+// graine reproductible par joueur (le futur serveur pourra refaire les mêmes tirages)
+function nextSeed(p) { p.seedN = (p.seedN || 0) + 1; return ((p.created || 1) % 2147483647 + Math.imul(p.seedN, 2654435761)) >>> 0; }
 
 export function saveProfile(p) { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch (e) {} }
 export function resetProfile() { try { localStorage.removeItem(KEY); localStorage.removeItem('myt_profile_v1'); } catch (e) {} }
@@ -68,12 +93,13 @@ export function track(p, k, n = 1) {
   for (const m of [...(p.missions?.list || []), ...(p.missions?.wlist || [])]) if (m.k === k && !m.claimed) m.prog = Math.min(m.n, m.prog + n);
 }
 
-// Donne une récompense { gold, gems, crystals, stone, chest, shards:{id:n} } ; renvoie le coffre ajouté éventuel.
+// Donne une récompense { gold, gems, crystals, stone, eclat, shards:{id:n} } ; renvoie l'Éclat ajouté éventuel.
 export function give(p, r) {
   if (!r) return null;
   p.gold += r.gold || 0; p.gems += r.gems || 0; p.crystals += r.crystals || 0; p.stone += r.stone || 0;
   for (const id in r.shards || {}) p.shards[id] = (p.shards[id] || 0) + r.shards[id];
-  if (r.chest) return addChest(p, r.chest);
+  const t = eclatType(r.eclat || r.chest); // « chest » : anciennes récompenses enregistrées
+  if (t) return addEclat(p, t) || (p.gold += 15, null);
   return null;
 }
 
@@ -96,33 +122,36 @@ export function upgradeHero(p, id) {
   return { ok: true, lvl: p.levels[id] };
 }
 
-// ---------- Coffres ----------
-export function addChest(p, type) {
-  const i = p.chests.indexOf(null);
-  if (i < 0) return null;
-  p.chests[i] = { type, seed: (Math.random() * 1e9) | 0, start: 0, end: 0 };
-  return p.chests[i];
+// ---------- Éclats de Faille et Autel ----------
+export function addEclat(p, type) {
+  if (p.eclats.length >= ECLAT_MAX) return null;
+  const e = { type, seed: nextSeed(p) }; p.eclats.push(e); return e;
 }
-export function chestState(c) {
-  if (!c) return 'empty';
-  if (!c.start) return 'locked';
-  return now() >= c.end ? 'ready' : 'opening';
+export const autelLevel = p => p.kingdom?.b?.autel || 1;
+export const purifyMax = p => purifyPerDay(autelLevel(p));
+export const purifyLeft = p => Math.max(0, purifyMax(p) - (p.autel.day === dayKey() ? p.autel.used : 0));
+export const eclatCounts = p => p.eclats.reduce((o, e) => (o[e.type] = (o[e.type] || 0) + 1, o), {});
+// Purifie un Éclat (de la sorte demandée, sinon le plus précieux) : récompense tout de suite.
+export function purify(p, type) {
+  if (!p.eclats.length) return { err: 'Aucun Éclat à purifier : gagne des combats en Arène.' };
+  if (!purifyLeft(p)) return { err: 'L’Autel a assez purifié pour aujourd’hui. Reviens demain, ou améliore l’Autel dans ton Royaume.' };
+  let i = type ? p.eclats.findIndex(e => e.type === type) : -1;
+  if (i < 0) i = p.eclats.reduce((b, e, k) => ECLATS[e.type].shards > ECLATS[p.eclats[b].type].shards ? k : b, 0);
+  const e = p.eclats.splice(i, 1)[0];
+  if (p.autel.day !== dayKey()) p.autel = { day: dayKey(), used: 0 };
+  p.autel.used++;
+  const r = rollEclat(e.type, e.seed, owned(p), autelLevel(p));
+  give(p, r); track(p, 'purify'); saveProfile(p);
+  return { type: e.type, ...r };
 }
-export function startChest(p, i) {
-  if (p.chests.some(c => c && chestState(c) === 'opening')) return 'Un coffre est déjà en train de s’ouvrir.';
-  const c = p.chests[i]; c.start = now(); c.end = now() + CHESTS[c.type].time * 1000; saveProfile(p); return null;
-}
-export function chestGemCost(c) { return gemsToOpen(c.start ? Math.max(0, (c.end - now()) / 1000) : CHESTS[c.type].time); }
-export function openChest(p, i, withGems) {
-  const c = p.chests[i]; if (!c) return null;
-  if (chestState(c) !== 'ready') {
-    if (!withGems) return null;
-    const g = chestGemCost(c); if (p.gems < g) return { err: 'Pas assez de gemmes' };
-    p.gems -= g;
-  }
-  const r = rollChest(c.type, c.seed, owned(p));
-  give(p, r); p.chests[i] = null; track(p, 'chest'); saveProfile(p);
-  return { type: c.type, ...r };
+// Jauge de conquête pleine : la Relique se récupère tout de suite.
+export const conquestReady = p => p.conquest.pts >= CONQUEST_MAX;
+export function claimConquest(p) {
+  if (!conquestReady(p)) return null;
+  const r = conquestReward(p.conquest.n, nextSeed(p), owned(p));
+  p.conquest.pts -= CONQUEST_MAX; p.conquest.n++;
+  give(p, r); saveProfile(p);
+  return r;
 }
 
 // ---------- Boutique ----------
@@ -132,12 +161,11 @@ export function buy(p, offer) {
   const pr = offer.price || {};
   if ((pr.gold || 0) > p.gold) return 'Pas assez d’or.';
   if ((pr.gems || 0) > p.gems) return 'Pas assez de gemmes.';
-  if (offer.kind === 'chest' && !p.chests.includes(null)) return 'Tes emplacements de coffres sont pleins.';
   if (offer.kind === 'skin' && p.skins.owned.includes(offer.hero + ':' + offer.skin)) return 'Tu as déjà cette apparence.';
   p.gold -= pr.gold || 0; p.gems -= pr.gems || 0;
   if (offer.kind === 'gift') give(p, offer.reward);
   if (offer.kind === 'shards') give(p, { shards: { [offer.hero]: offer.n } });
-  if (offer.kind === 'chest') addChest(p, offer.chest);
+  if (offer.kind === 'eclat') offer.got = { type: offer.eclat, ...rollEclat(offer.eclat, nextSeed(p), owned(p), autelLevel(p)) }, give(p, offer.got); // déjà purifié
   if (offer.kind === 'crystals') give(p, { crystals: offer.n });
   if (offer.kind === 'skin') { p.skins.owned.push(offer.hero + ':' + offer.skin); p.skins.eq[offer.hero] = offer.skin; }
   p.shop.bought.push(offer.id); saveProfile(p); return null;
@@ -176,7 +204,7 @@ function levelUp(p) {
 // r : { result, mode, myHp, oppHp, heart, stats:{deployed,fuses,spells,hearts}, opp, world, reward? }
 export function applyResult(p, r) {
   const before = worldOf(p).id, beforeOwned = owned(p), beforeSp = ownedSpells(p);
-  const rew = { trophies: 0, gold: 0, xp: 0, lvlUp: false, newWorld: null, newHeroes: [], newSpells: [], chest: null, extra: null };
+  const rew = { trophies: 0, gold: 0, xp: 0, lvlUp: false, newWorld: null, newHeroes: [], newSpells: [], eclat: null, eclatFull: false, conquest: 0, extra: null };
   const ranked = r.mode === 'arena';
   const margin = Math.round(((r.myHp || 0) - (r.oppHp || 0)) * 10);
   if (r.result === 'win') { rew.trophies = ranked ? 26 + Math.max(0, Math.min(8, margin)) : 0; rew.gold = ranked ? 25 + (r.heart ? 10 : 0) : 8; rew.xp = ranked ? 24 : 8; }
@@ -187,9 +215,11 @@ export function applyResult(p, r) {
   p.gold += rew.gold; p.xp += rew.xp;
   rew.lvlUp = levelUp(p);
   if (ranked && r.result === 'win') {
-    const type = CHEST_CYCLE[p.chestIdx % CHEST_CYCLE.length];
-    if (addChest(p, type)) { rew.chest = type; p.chestIdx++; }
+    const type = ECLAT_CYCLE[p.eclatIdx % ECLAT_CYCLE.length];
+    if (addEclat(p, type)) { rew.eclat = type; p.eclatIdx++; } else { rew.eclatFull = true; p.gold += 15; rew.gold += 15; }
   }
+  rew.conquest = conquestPoints(r.mode, r.result, r.heart);
+  p.conquest.pts = Math.min(CONQUEST_MAX, p.conquest.pts + rew.conquest);
   if (ranked) {
     p.stats.played++; if (r.heart) p.stats.hearts++;
     if (r.result === 'win') p.stats.w++; else if (r.result === 'loss') p.stats.l++; else p.stats.d++;
@@ -212,7 +242,7 @@ export function applyResult(p, r) {
 export const missionsReady = p => [...(p.missions?.list || []), ...(p.missions?.wlist || [])].filter(m => m.prog >= m.n && !m.claimed).length;
 export function claimMission(p, m) { if (m.claimed || m.prog < m.n) return null; m.claimed = true; const c = give(p, m.reward); saveProfile(p); return c; }
 export function claimLogin(p) { const r = p.login.pending; if (!r) return null; p.login.pending = null; give(p, r); saveProfile(p); return r; }
-export { SKINS, CHESTS, upgradeCost, MAX_LEVEL };
+export { SKINS, ECLATS, CONQUEST_MAX, upgradeCost, MAX_LEVEL };
 
 // ---------- Royaume ----------
 export function finishJob(p) {

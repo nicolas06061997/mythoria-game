@@ -21,7 +21,7 @@ export const FACTIONS = {
   neutre: { name: 'Neutre',            short: 'Neutre', color: '#b8c0cc', bonus: null },
 };
 
-// Mondes : débloqués avec les trophées. Chacun a son décor, son ambiance et ses adversaires.
+// Mondes : débloqués avec la Gloire (champ « trophies » gardé pour les sauvegardes). Chacun a son décor, son ambiance et ses adversaires.
 export const WORLDS = [
   { id: 0, key: 'aurore', name: "Royaume d'Aurore",     trophies: 0,    fac: 'aube',
     tag: 'Châteaux blancs, bannières d’or et prairies au lever du soleil.' },
@@ -276,7 +276,7 @@ export const DECK_SIZE = 8;
 
 // Déblocage : chaque monde débloque les héros de sa faction (et le neutre au départ).
 // Progression par rareté : on commence avec des héros communs (+ 3 rares du deck de départ),
-// les épiques, légendaires et mythiques se gagnent en montant en trophées.
+// les épiques, légendaires et mythiques se gagnent en montant en Gloire.
 export const UNLOCKS = {
   0: ['ecuyer', 'archeres', 'loups', 'follets', 'jarl', 'squelettes', 'osseuse', 'frere', 'apprenti', 'brann'],
   1: ['belier', 'damne', 'tourelle', 'dragonnet', 'frimas', 'tortue', 'salamandre', 'hibou'],

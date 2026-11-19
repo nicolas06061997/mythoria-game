@@ -11,7 +11,7 @@ import { sfx } from '../audio.js';
 let C;
 export function initModes(ctx) { C = ctx; } // { P(), render(), play(mode, level, world, extra) }
 
-const rew = r => [r.gold ? r.gold + ' or' : '', r.gems ? r.gems + ' gemmes' : '', r.crystals ? r.crystals + ' cristaux' : '', r.chest ? 'un coffre' : ''].filter(Boolean).join(' · ');
+const rew = r => [r.gold ? r.gold + ' or' : '', r.gems ? r.gems + ' gemmes' : '', r.crystals ? r.crystals + ' cristaux' : '', r.eclat ? 'un Éclat de Faille' : ''].filter(Boolean).join(' · ');
 
 // ---------- Campagne ----------
 export function openCampaign() {

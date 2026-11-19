@@ -4,6 +4,7 @@
 
 export const BUILDINGS = {
   chateau:  { name: 'Château',            max: 10, desc: 'Le cœur de ton Royaume. Son niveau limite celui des autres bâtiments.', base: [0, 0, 0] },
+  autel:    { name: 'Autel des Failles',  max: 10, desc: 'Purifie les Éclats de Faille arrachés en combat. Chaque niveau : +1 purification par jour et des Éclats 6 % plus riches.', needs: 1 },
   mine:     { name: 'Mine d’or',          max: 10, desc: 'Produit de l’or en continu, même quand tu ne joues pas.', prod: 'gold', rate: 40, store: 8, needs: 1 },
   carriere: { name: 'Carrière',           max: 10, desc: 'Produit la pierre qui sert à construire.', prod: 'stone', rate: 30, store: 8, needs: 1 },
   cristal:  { name: 'Mine de cristal',    max: 10, desc: 'Produit des cristaux pour les héros de haut niveau.', prod: 'crystals', rate: 5, store: 8, needs: 3 },
@@ -13,7 +14,7 @@ export const BUILDINGS = {
   temple:   { name: 'Temple des Sorts',   max: 10, desc: 'Ta jauge d’Éveil se remplit +5 % plus vite par niveau (Campagne, Survie, Défense).', needs: 4 },
   marche:   { name: 'Marché',             max: 10, desc: '+5 % d’or gagné en combat par niveau.', needs: 3 },
 };
-export const BUILD_ORDER = ['chateau', 'mine', 'carriere', 'academie', 'caserne', 'tour', 'cristal', 'temple', 'marche'];
+export const BUILD_ORDER = ['chateau', 'autel', 'mine', 'carriere', 'academie', 'caserne', 'tour', 'cristal', 'temple', 'marche'];
 
 export const DECOS = {
   moulin:  { name: 'Moulin',          price: 600, model: 'Windmill_FirstAge' },
@@ -35,7 +36,7 @@ export const buildTime = (id, to) => Math.round(TIMES[Math.min(TIMES.length - 1,
 export const speedupGems = sec => Math.max(1, Math.ceil(sec / 300)); // 1 gemme / 5 min
 
 export function newKingdom(t) {
-  return { b: { chateau: 1, mine: 1, carriere: 1 }, last: { mine: t, carriere: t, cristal: t }, job: null, deco: Array(DECO_SLOTS).fill(null) };
+  return { b: { chateau: 1, autel: 1, mine: 1, carriere: 1 }, last: { mine: t, carriere: t, cristal: t }, job: null, deco: Array(DECO_SLOTS).fill(null) };
 }
 
 export function canBuild(K, id) {

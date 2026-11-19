@@ -49,15 +49,17 @@ const OWNER = { loups: 'de la Meute', squelettes: 'des Os-Errants', follets: 'de
 const of = c => OWNER[c.id] || (/^[AEIOUYÉÈÊÂÎÔH]/i.test(c.name) ? 'd’' : 'de ') + c.name;
 // noms propres inventés (uniques dans tout le jeu), au son de chaque famille
 const SYL = {
-  aube: [['Sol', 'Aur', 'Lumi', 'Clar', 'Héli', 'Orif', 'Séra', 'Aubr'], ['aniel', 'ance', 'ys', 'ion', 'aël', 'ine', 'elle', 'and']],
-  sylve: [['Syl', 'Ronc', 'Mous', 'Verd', 'Folw', 'Ély', 'Fern', 'Brum'], ['wen', 'ice', 'ane', 'dor', 'ith', 'iel', 'ale', 'ombre']],
-  arcane: [['Astr', 'Myr', 'Sél', 'Vey', 'Orl', 'Zéph', 'Céle', 'Ith'], ['oria', 'anis', 'ys', 'eth', 'ion', 'ine', 'aë', 'ax']],
-  braise: [['Pyr', 'Cendr', 'Ign', 'Braz', 'Flam', 'Tiz', 'Vulc', 'Ard'], ['ade', 'or', 'ys', 'ane', 'ex', 'eline', 'iss', 'orn']],
-  givre: [['Givr', 'Fris', 'Neiv', 'Bor', 'Cryst', 'Hiv', 'Glas', 'Ysk'], ['ane', 'al', 'eth', 'ys', 'ra', 'or', 'ïa', 'ild']],
-  ombre: [['Nyx', 'Mor', 'Umbr', 'Vel', 'Nox', 'Sép', 'Drak', 'Fun'], ['ane', 'oth', 'ys', 'ra', 'ith', 'ul', 'esse', 'ark']],
-  neutre: [['Ferr', 'Roc', 'Gran', 'Tit', 'Forg', 'Bast', 'Murm', 'Brisc'], ['ane', 'or', 'ys', 'ion', 'ade', 'eth', 'ail', 'ond']],
+  aube: [['Sol', 'Aur', 'Lum', 'Clar', 'Hél', 'Ser', 'Aub', 'Ori', 'Céle', 'Ald', 'Alb', 'Lys'], ['aniel', 'ence', 'ys', 'ion', 'aël', 'ine', 'elle', 'aride', 'ora', 'ian', 'ée', 'orie']],
+  sylve: [['Syl', 'Ron', 'Fern', 'Ver', 'Fol', 'Él', 'Myr', 'Brum', 'Lia', 'Ond', 'Thal', 'Neth'], ['wen', 'ice', 'ane', 'dor', 'ith', 'iel', 'ale', 'ombre', 'ria', 'enn', 'aïs', 'evane']],
+  arcane: [['Astr', 'Myr', 'Sél', 'Vey', 'Orl', 'Zéph', 'Cél', 'Ith', 'Lyr', 'Ner', 'Xan', 'Ilm'], ['oria', 'anis', 'ys', 'eth', 'ion', 'ine', 'aë', 'ax', 'ielle', 'ondre', 'ara', 'ith']],
+  braise: [['Pyr', 'Cendr', 'Ign', 'Braz', 'Flam', 'Tiz', 'Vulc', 'Ard', 'Fér', 'Sal', 'Rub', 'Kar'], ['ade', 'or', 'ys', 'ane', 'ex', 'eline', 'iss', 'orn', 'iel', 'ance', 'ak', 'ombe']],
+  givre: [['Giv', 'Fris', 'Neiv', 'Bor', 'Cryst', 'Hiv', 'Glas', 'Ysk', 'Frim', 'Lun', 'Sval', 'Ang'], ['ane', 'al', 'eth', 'ys', 'ra', 'or', 'ïa', 'ild', 'elle', 'ondre', 'ir', 'aë']],
+  ombre: [['Nyx', 'Mor', 'Umbr', 'Vel', 'Nox', 'Sép', 'Drak', 'Fun', 'Mal', 'Ner', 'Vesp', 'Thar'], ['ane', 'oth', 'ys', 'ra', 'ith', 'ivane', 'esse', 'ark', 'iel', 'ombe', 'iane', 'ève']],
+  neutre: [['Ferr', 'Roc', 'Gran', 'Tit', 'Forg', 'Bast', 'Murm', 'Brisc', 'Dur', 'Mart', 'Bron', 'Arg'], ['ane', 'or', 'ys', 'ion', 'ade', 'eth', 'ail', 'ond', 'ière', 'ance', 'ak', 'ombe']],
 };
 const USED = new Set();
+// mots ou noms qui existent déjà (ou maladroits) : refusés
+const BAN = new Set(['Salade', 'Morane', 'Lysandre', 'Sérée', 'Serée', 'Salor', 'Salys', 'Malane', 'Malys', 'Rubis', 'Rubane', 'Nyxax', 'Velul', 'Aurore', 'Lumine', 'Céline', 'Célane', 'Ferrane', 'Durane', 'Gravys', 'Karak', 'Kardor', 'Solange', 'Orion', 'Hélion', 'Martine', 'Martane', 'Granade', 'Bastion', 'Lunelle', 'Givrée', 'Angora', 'Angra', 'Myriam', 'Sylvain', 'Vulcain', 'Ignis', 'Pyrane', 'Titane', 'Rocade', 'Tarys', 'Morys', 'Ithith', 'Crystal', 'Serine', 'Clarée', 'Hélée', 'Aubée', 'Solée', 'Boror', 'Salak', 'Saleline', 'Karor', 'Ilmax', 'Lysaride', 'Albaride', 'Aubaride', 'Tiziss', 'Rubiss', 'Ardiss', 'Braziss', 'Flamiss', 'Rubor', 'Ardor', 'Rocak', 'Titail', 'Frimra', 'Funra', 'Nyxra', 'Velra', 'Funane', 'Funève', 'Ardak', 'Vulcak', 'Rubak', 'Tizak', 'Neroth', 'Nerark']);
 const hash = str => { let x = 2166136261; for (const ch of str) x = Math.imul(x ^ ch.charCodeAt(0), 16777619); return x >>> 0; };
 function properName(fac, seed) {
   const [A, B] = SYL[fac] || SYL.neutre;
@@ -66,7 +68,7 @@ function properName(fac, seed) {
     const v = hash(seed + ':' + t), a = A[v % A.length], b = B[(v >>> 8) % B.length], n = a + b;
     // sonorités maladroites refusées : deux voyelles ou la même lettre à la jointure
     if ((V.test(a.slice(-1)) && V.test(b[0])) || a.slice(-1).toLowerCase() === b[0].toLowerCase()) continue;
-    if (!USED.has(n)) { USED.add(n); return n; }
+    if (!USED.has(n) && !BAN.has(n) && !/x.*x/i.test(n)) { USED.add(n); return n; }
   }
   return A[0] + B[0];
 }
@@ -80,12 +82,8 @@ const DESC = [
 ];
 const CACHE = new Map();
 // noms : commun = simple ; rare / épique = nom propre unique entre guillemets ; légendaire = au nom du héros
-function nameOf(c, noun, k, slot) {
-  if (k === 0) return noun + (slot === 'arme' ? ' de Fer' : ' de Voyage');
-  if (k === 4) return noun + ' ' + of(c);
-  return noun + ' « ' + properName(c.fac, c.id + slot + k) + ' »';
-}
-function descOf(c, k) { return k === 0 ? DESC[0] : k === 4 ? DESC[4] : k === 3 ? DESC[3] : 'Forgé par ' + (FAMILY[c.fac] || FAMILY.neutre) + '.'; }
+function nameOf(c, noun, k, slot) { return properName(c.fac, c.id + slot + k); }
+function descOf(c, k) { return k === 0 ? DESC[0] : k === 4 ? 'L’objet légendaire ' + of(c) + '.' : k === 3 ? DESC[3] : 'Forgé par ' + (FAMILY[c.fac] || FAMILY.neutre) + '.'; }
 // Les 10 objets d'un héros : [arme0, talisman0, arme1, talisman1, …] ; id = « héros:a2 » ou « héros:t4 »
 export function itemsFor(hero) {
   if (CACHE.has(hero)) return CACHE.get(hero);
@@ -93,8 +91,8 @@ export function itemsFor(hero) {
   const cl = classOf(c), tn = cl === 'beast' ? TNOUN.beast : TNOUN.other, out = [];
   for (let k = 0; k < 5; k++) {
     const [an, aic] = NOUN[cl][k], [tnn, tic] = tn[k];
-    out.push({ id: hero + ':a' + k, hero, slot: 'arme', k, rar: IRAR[k], ic: aic, b: B_ARME[k], name: nameOf(c, an, k, 'arme'), desc: descOf(c, k), unlock: UNLOCK.arme[k], forge: FORGE[k] });
-    out.push({ id: hero + ':t' + k, hero, slot: 'talisman', k, rar: IRAR[k], ic: tic, b: B_TAL[k], name: nameOf(c, tnn, k, 'talisman'), desc: descOf(c, k), unlock: UNLOCK.talisman[k], forge: FORGE[k] });
+    out.push({ id: hero + ':a' + k, hero, slot: 'arme', k, rar: IRAR[k], ic: aic, b: B_ARME[k], name: nameOf(c, an, k, 'arme'), type: an, desc: descOf(c, k), unlock: UNLOCK.arme[k], forge: FORGE[k] });
+    out.push({ id: hero + ':t' + k, hero, slot: 'talisman', k, rar: IRAR[k], ic: tic, b: B_TAL[k], name: nameOf(c, tnn, k, 'talisman'), type: tnn, desc: descOf(c, k), unlock: UNLOCK.talisman[k], forge: FORGE[k] });
   }
   CACHE.set(hero, out); return out;
 }

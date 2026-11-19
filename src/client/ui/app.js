@@ -426,7 +426,7 @@ function gearBlock(id, reopen) {
       const it = ids[i] && itemById(ids[i]);
       return h('button', { class: 'gb-slot' + (it ? ' full' : ''), style: it ? { '--rc': RARITIES[it.rar].color } : {}, onclick: () => { sfx('click'); openBag(id, i, reopen); } },
         it ? itemEl(it.id) : h('span', { class: 'gb-empty' }, '+'),
-        h('div', { class: 'gb-txt' }, h('small', {}, S.name), h('b', {}, it ? it.name : 'Vide'), h('em', {}, it ? bonusTxt(it.b) : S.hint)));
+        h('div', { class: 'gb-txt' }, h('small', {}, it ? S.name + ' · ' + it.type : S.name), h('b', {}, it ? it.name : 'Vide'), h('em', {}, it ? bonusTxt(it.b) : S.hint)));
     })),
     h('div', { class: 'gb-coll' }, h('small', {}, 'Collection de ' + HERO[id].name + ' · ' + n + ' / 10'),
       h('div', { class: 'gb-grid' }, all.map(it => { const st = itemState(P, it.id), e = itemEl(it.id, 'sm' + (st.ok ? '' : ' locked')); e.title = it.name; e.onclick = () => { sfx('click'); openBag(id, it.slot === 'arme' ? 0 : 1, reopen); }; return e; }))),
@@ -444,7 +444,7 @@ function openBag(hero, slot, reopen) {
       : st.ok ? h('button', { class: 'btn small gold', onclick: () => { equipItem(P, hero, it.id); sfx('fuse'); toast(it.name + ' équipé ✓'); s.close(); reopen(); } }, 'Équiper')
       : h('button', { class: 'btn small forge' + (P.crystals >= it.forge ? '' : ' off'), onclick: () => { const e = forgeItem(P, it.id); if (e) return toast(e, 'bad'); sfx('fuse'); toast(it.name + ' forgé ✓'); s.close(); openBag(hero, slot, reopen); } }, h('span', {}, 'Forger'), h('small', {}, icon('crystal'), it.forge));
     return h('div', { class: 'bag-row' + (mine ? ' on' : '') + (st.ok ? '' : ' locked'), style: { '--rc': RARITIES[it.rar].color } }, itemEl(it.id, st.ok ? '' : 'locked'),
-      h('div', { class: 'bag-txt' }, h('b', {}, it.name), h('small', { class: 'irar' }, RARITIES[it.rar].name + ' · ' + bonusTxt(it.b)), h('em', {}, it.desc),
+      h('div', { class: 'bag-txt' }, h('b', {}, it.name), h('small', { class: 'irar' }, it.type + ' · ' + RARITIES[it.rar].name + ' · ' + bonusTxt(it.b)), h('em', {}, it.desc),
         st.ok ? (diff.length && !mine ? h('div', { class: 'bag-diff' }, diff) : null)
           : h('div', { class: 'bag-lock' }, h('small', {}, icon('lock'), ' ' + st.txt + (st.now ? ' · ' + st.now : '')), h('div', { class: 'bag-bar' }, h('i', { style: { width: Math.round(st.prog * 100) + '%' } })))),
       act);

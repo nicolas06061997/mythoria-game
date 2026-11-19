@@ -14,20 +14,21 @@ export const TEAM = ['#3da9ff', '#ff4f5e'];
 // Arènes « peintes » : une illustration sert de décor, la 3D (héros, effets) est posée dessus avec une caméra
 // calculée pour coller exactement à l'image (sol, Sanctuaires, Cœur). Paramètres trouvés par ajustement.
 // Arènes peintes. Paramètres de caméra trouvés par ajustement sur des points de l'image (centre du Cœur, Sanctuaires, bords, socles).
-// sylve (19/11) : capture peinte de l'utilisateur nettoyée de son interface, agrandie 1,5× (Real-ESRGAN) ; coordonnées en pixels de l'image d'origine (W = 1176).
-const ARENA_ART = { sylve: { src: 'assets/arenas/sylve.webp', fx: 'sylve', W: 1176, H: 1920, fov: 40.4914, th: 0.7958, D: 39.1892, zt: 2.5842, off: -132.2128, k: 0.9082, imgH: 1880, benchY: 1759, benchZ: 13.818, benchX: [-5.3, -2.64, 0, 2.64, 5.3] },
+// sylve (19/11) : capture peinte de l'utilisateur nettoyée de son interface, voûte sombre ajoutée en haut (top = 320 px, pour les écrans longs), agrandie 1,5× (Real-ESRGAN) ;
+// coordonnées en pixels de l'image d'origine (W = 1176), décalées de `top` dans l'image finale.
+const ARENA_ART = { sylve: { src: 'assets/arenas/sylve.webp', fx: 'sylve', W: 1176, H: 1920, fov: 40.4914, th: 0.7958, D: 39.1892, zt: 2.5842, off: -452.2128, k: 0.9082, imgH: 2200, benchY: 2079, top: 320, benchZ: 13.818, benchX: [-5.3, -2.64, 0, 2.64, 5.3] },
   aurore: { src: 'assets/arenas/aurore.webp', W: 1176, H: 1920, fov: 40.4914, th: 0.8884, D: 44.3774, zt: 2.5842, off: -213.3714, k: 0.8555, imgH: 2190, benchY: 2050, benchZ: 17.705, benchX: [-6.211, -3.079, 0, 3.079, 6.158] } };
 // Sylve vivante : champignons et runes qui pulsent, feuillage qui ondule, poussière dorée autour du Cœur, étoiles qui scintillent
-const SYLVE_FS = `uniform sampler2D map; uniform float t, cheer; uniform vec2 res; varying vec2 vu;
+const SYLVE_FS = `uniform sampler2D map; uniform float t, cheer, top; uniform vec2 res; varying vec2 vu;
   float h21(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
   void main(){
-    vec2 p = vec2(vu.x, 1.0 - vu.y), P = p * res, Q = P;
+    vec2 p = vec2(vu.x, 1.0 - vu.y), P = p * res - vec2(0.0, top), Q = P;
     vec4 c0 = texture2D(map, vu);
     // feuillage des grands arbres (haut et bords) : ondulation lente
     float leaf = clamp((c0.g - max(c0.r, c0.b)) * 4.0, 0.0, 1.0) * (1.0 - smoothstep(420.0, 620.0, P.y) * (1.0 - smoothstep(60.0, 0.0, min(P.x, res.x - P.x) - 120.0)));
     Q.x += leaf * (1.6 * sin(t * 1.3 + P.y * 0.035 + P.x * 0.012) + 0.8 * sin(t * 2.1 + P.x * 0.05));
     Q.y += leaf * 0.9 * sin(t * 1.7 + P.x * 0.03);
-    vec4 c = texture2D(map, vec2(Q.x / res.x, 1.0 - Q.y / res.y));
+    vec4 c = texture2D(map, vec2(Q.x / res.x, 1.0 - (Q.y + top) / res.y));
     // champignons et runes cyan : chaque touffe pulse à son rythme (plus fort quand le public acclame)
     float cy = clamp((min(c.g, c.b) - c.r) * 3.0, 0.0, 1.0) * smoothstep(0.45, 0.8, max(c.g, c.b));
     float ph = h21(floor(P / 46.0));
@@ -36,10 +37,18 @@ const SYLVE_FS = `uniform sampler2D map; uniform float t, cheer; uniform vec2 re
     vec2 dH = (P - vec2(588.0, 955.0)) / vec2(250.0, 170.0); float ring = smoothstep(1.35, 1.0, length(dH)) * smoothstep(0.55, 0.8, length(dH));
     float gold = clamp((c.r + c.g) * 0.5 - c.b, 0.0, 1.0) * smoothstep(0.65, 0.9, c.r);
     c.rgb += vec3(1.0, 0.85, 0.45) * gold * ring * 0.55 * pow(0.5 + 0.5 * sin(t * 3.0 + h21(floor(P / 9.0)) * 40.0), 3.0);
-    // étoiles du ciel
+    // ciel : étoiles qui scintillent + nébuleuse qui respire doucement
     float sky = clamp((c.b - max(c.r, c.g)) * 3.0, 0.0, 1.0) * step(dot(c.rgb, vec3(0.33)), 0.45);
     vec2 sc = floor(p * vec2(120.0, 190.0)); float st = h21(sc + 7.0);
     if (st > 0.985) { vec2 fr = fract(p * vec2(120.0, 190.0)) - 0.5; float tw = pow(max(0.0, sin(t * (1.5 + st * 3.0) + st * 40.0)), 6.0); c.rgb += sky * tw * smoothstep(0.25, 0.0, length(fr)) * vec3(0.9, 0.95, 1.0); }
+    c.rgb *= 1.0 + sky * 0.08 * sin(t * 0.5 + P.x * 0.004 + P.y * 0.003);
+    // brume derrière le château ennemi : elle glisse lentement
+    float mist = smoothstep(300.0, 380.0, P.y) * (1.0 - smoothstep(440.0, 480.0, P.y)) * smoothstep(200.0, 330.0, P.x) * (1.0 - smoothstep(850.0, 980.0, P.x));
+    float mn = h21(floor(vec2(P.x * 0.012 + t * 0.15, P.y * 0.03)));
+    c.rgb += mist * vec3(0.35, 0.45, 0.6) * 0.06 * (0.5 + 0.5 * sin(t * 0.6 + P.x * 0.01)) * (0.6 + 0.4 * mn);
+    // lanternes du château ennemi : flamme qui vacille
+    float warm = clamp((c.r - c.b) * 2.0, 0.0, 1.0) * smoothstep(0.55, 0.85, c.r) * step(P.y, 720.0) * step(420.0, P.y);
+    c.rgb += vec3(1.0, 0.6, 0.25) * warm * 0.25 * (0.6 + 0.4 * sin(t * 9.0 + h21(floor(P / 20.0)) * 20.0));
     gl_FragColor = c;
   }`;
 const BENCH_Z = RY + 3.1, BENCH_X = [-4.6, -2.3, 0, 2.3, 4.6];
@@ -183,7 +192,7 @@ export class BattleView {
     this.bgU = { map: { value: tex }, t: { value: 0 }, cheer: { value: 0 },
       outE: { value: E(588, 1090, 575, 520) }, inE: { value: E(588, 1095, 455, 352) }, floorE: { value: E(588, 1095, 440, 340) },
       castA: { value: new THREE.Vector4(470 / A.W, 530 / A.imgH, 710 / A.W, 780 / A.imgH) }, castB: { value: new THREE.Vector4(380 / A.W, 1390 / A.imgH, 800 / A.W, 1790 / A.imgH) },
-      islE: { value: E(588, 1480, 590, 470) }, res: { value: new THREE.Vector2(A.W, A.imgH) } };
+      islE: { value: E(588, 1480, 590, 470) }, res: { value: new THREE.Vector2(A.W, A.imgH) }, top: { value: A.top || 0 } };
     const mat = new THREE.ShaderMaterial({ uniforms: this.bgU, transparent: true, depthWrite: false, toneMapped: false,
       vertexShader: 'varying vec2 vu; void main(){ vu = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
       fragmentShader: A.fx === 'sylve' ? SYLVE_FS : `uniform sampler2D map; uniform float t, cheer; uniform vec4 outE, inE, floorE, castA, castB, islE; uniform vec2 res; varying vec2 vu;

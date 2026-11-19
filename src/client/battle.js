@@ -5,7 +5,7 @@ import { createBot, botThink, AI_LEVELS } from '../shared/ai.js';
 import { BattleView } from './three/battleview.js';
 import { h, toast, confirmBox } from './ui/dom.js';
 import { icon } from './ui/icons.js';
-import { sfx } from './audio.js';
+import { sfx, playMusic, setMusicIntensity } from './audio.js';
 import { Tuto } from './tuto.js';
 
 // ?speed=4 dans l'adresse accélère le combat (sert aux tests automatiques).
@@ -43,6 +43,7 @@ export class Battle {
     this.onResize = () => this.view.resize(); addEventListener('resize', this.onResize);
     this.raf = requestAnimationFrame(t => this.loop(t));
     this.countdown();
+    playMusic(this.o.world.key); // musique du monde (D-20261117-1)
     setTimeout(() => this.elHint && this.elHint.classList.add('off'), 9000);
   }
 
@@ -218,7 +219,7 @@ export class Battle {
       else if (e.type === 'bossDown') { this.banner('Boss vaincu ! Détruis le Sanctuaire', 'good'); sfx('boom'); setTimeout(() => !this.ended && this.banner(''), 1600); }
       else if (e.type === 'overtime') { this.banner('Prolongation !', 'go'); setTimeout(() => !this.ended && this.banner(''), 1800); }
     }
-    if (!this.dbl && this.s.t >= DOUBLE_AT) { this.dbl = true; this.banner('Éther ×2 !', 'go'); setTimeout(() => !this.ended && this.banner(''), 1500); }
+    if (!this.dbl && this.s.t >= DOUBLE_AT) { setMusicIntensity(1); this.dbl = true; this.banner('Éther ×2 !', 'go'); setTimeout(() => !this.ended && this.banner(''), 1500); }
   }
 
   // Barres de vie des Sanctuaires : suivent la tour à l'écran (au-dessus de la tour ennemie, au pied de la tienne)
@@ -293,6 +294,7 @@ export class Battle {
   stats() { const P = this.s.players[this.me]; return { deployed: P.deployed, fuses: P.fuses, spells: P.spells, hearts: P.hearts }; }
 
   destroy() {
+    playMusic('menu');
     this.dead = true; cancelAnimationFrame(this.raf);
     removeEventListener('resize', this.onResize);
     removeEventListener('pointermove', this.mv); removeEventListener('pointerup', this.up); removeEventListener('pointercancel', this.up);

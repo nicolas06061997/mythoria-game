@@ -1089,3 +1089,7 @@ body::after { background: radial-gradient(60% 22% at 30% 16%, rgba(80, 255, 190,
 .cslot .ci-empty { background: url(assets/ui/chest-c3.webp) center / contain no-repeat !important; filter: grayscale(1) brightness(.45) !important; opacity: .35 !important; }
 .cslot.ready .chest-ic { animation: slotglow 1.3s ease-in-out infinite; }
 @media (max-width: 370px) { .cslot .chest-ic { width: var(--cw); height: var(--th); } }
+
+/* Réglages : curseurs Musique / Bruitages (D-20261117-1) */
+.settings .vol { display: flex; align-items: center; gap: 10px; margin: 6px 2px; font-weight: 800; font-size: 14px; }
+.settings .vol span { width: 110px; flex: none; } .settings .vol input { flex: 1; accent-color: var(--gold, #ffd36a); }

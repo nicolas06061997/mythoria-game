@@ -16,7 +16,7 @@ import { webglOk, GFX_LEVELS, gfxChoice, setGfx, autoLevel, showFps, setShowFps 
 import { THEMES } from '../three/world.js';
 import { h, toast, sheet, confirmBox } from './dom.js';
 import { icon } from './icons.js';
-import { sfx, setSound, unlockAudio } from '../audio.js';
+import { sfx, setSound, unlockAudio, playMusic, stopMusic, getVolumes, setVolumes } from '../audio.js';
 import { playIntro } from '../intro.js';
 import { tutoDone } from '../tuto.js';
 
@@ -74,6 +74,7 @@ function render() {
   leaveKingdom();
   root.innerHTML = '';
   try { document.body.dataset.world = worldFor(P.trophies).key; } catch (e) {}
+  playMusic('menu'); // ambiance douce des menus (D-20261117-1)
   root.append(topBar(), h('main', { class: 'screen s-' + tab + (tab !== lastTab ? ' enter' : '') }, screen()), navBar());
   lastTab = tab;
 }
@@ -458,6 +459,7 @@ function openSettings() {
   const s = sheet(h('div', { class: 'settings' },
     h('h3', {}, 'Réglages'),
     h('button', { class: 'btn ghost wide', onclick: () => { P.sound = !P.sound; setSound(P.sound); saveProfile(P); s.close(); openSettings(); } }, icon('sound'), P.sound ? ' Son : activé' : ' Son : coupé'),
+    ...['m', 's'].map(k => { const V = getVolumes(); return h('label', { class: 'vol' }, h('span', {}, k === 'm' ? '🎵 Musique' : '🔊 Bruitages'), h('input', { type: 'range', min: 0, max: 100, value: Math.round(V[k] * 100), oninput: e => { const W = getVolumes(); W[k] = e.target.value / 100; setVolumes(W.m, W.s); }, onchange: () => k === 's' && sfx('coin') })); }),
     h('h4', {}, '🎨 Graphismes'),
     h('div', { class: 'gfx' }, GFX_LEVELS.map(l => h('button', { class: 'gfxb' + (gfxChoice() === l.id ? ' on' : ''), onclick: () => { setGfx(l.id); sfx('click'); s.close(); openSettings(); render(); toast('Graphismes : ' + l.name + (l.id === 'auto' ? ' (' + GFX_LEVELS.find(x => x.id === autoLevel()).name + ')' : '')); } }, l.name))),
     h('p', { class: 'muted small' }, (GFX_LEVELS.find(l => l.id === gfxChoice()) || GFX_LEVELS[0]).desc + (gfxChoice() === 'auto' ? ' Sur ce téléphone : ' + GFX_LEVELS.find(x => x.id === autoLevel()).name + '.' : '') + ' S’applique au prochain écran 3D (combat, menu).'),
@@ -465,7 +467,7 @@ function openSettings() {
     h('h4', {}, '⚙️ Général'),
     h('button', { class: 'btn ghost wide', onclick: install }, icon('install'), ' Installer le jeu sur l’écran d’accueil'),
     h('button', { class: 'btn ghost wide', onclick: share }, icon('share'), ' Partager le jeu'),
-    h('button', { class: 'btn ghost wide', onclick: () => { s.close(); if (stage) { stage.dispose(); stage = null; } playIntro({ force: true }).then(() => render()); } }, icon('play'), ' Revoir l’introduction (Saison 1)'),
+    h('button', { class: 'btn ghost wide', onclick: () => { s.close(); if (stage) { stage.dispose(); stage = null; } stopMusic(); playIntro({ force: true }).then(() => render()); } }, icon('play'), ' Revoir l’introduction (Saison 1)'),
     h('button', { class: 'btn ghost wide', onclick: () => { s.close(); play('training', 0, worldOf(P), { tuto: true, title: 'Tutoriel' }); } }, icon('play'), ' Revoir le tutoriel'),
     h('button', { class: 'btn ghost wide', onclick: openRoadmap }, icon('map'), ' Le plan du jeu'),
     h('button', { class: 'btn ghost wide', onclick: () => window.__checkUpdate && window.__checkUpdate(true) }, icon('summon'), ' Chercher une mise à jour'),

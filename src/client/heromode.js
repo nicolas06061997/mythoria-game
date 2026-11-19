@@ -12,7 +12,7 @@ import { createComposer, blobShadow } from './three/look.js';
 import { glowSprite } from './three/procedural.js';
 import { h, confirmBox } from './ui/dom.js';
 import { icon } from './ui/icons.js';
-import { sfx } from './audio.js';
+import { sfx, playMusic } from './audio.js';
 
 const R = 10.5; // rayon de l'arène
 const SUPERS = {
@@ -71,6 +71,7 @@ export class HeroMode {
     const ids = [this.o.heroId, 'squelette', 'pousse', 'loups', 'golemet', 'osseuse', 'follets', ...BOSSES.map(b => b.base)];
     await Promise.all([buildWorld(this.scene, this.o.world.key, { light: q.low ? 'low' : 'high', shadow: q.shadowSize }).then(w => { this.world = w; }), preload(ids, k => { this.elLoadBar.style.width = Math.round(k * 100) + '%'; })]);
     this.r.toneMappingExposure = this.world.theme.exposure;
+    playMusic(this.o.world.key);
     this.post = createComposer(this.r, this.scene, this.cam, { bloom: q.bloom, strength: 0.45, threshold: 1.15, samples: q.msaa });
     this.perf = new PerfWatch(this.r, () => this.resize(), this.cv.parentElement);
     this.hero = await makeHero(this.o.heroId, { skin: this.o.skin, lite: q.lite });
@@ -257,6 +258,7 @@ export class HeroMode {
     this.ended = true; this.destroy(); this.o.onEnd({ wave: this.wave, kills: this.kills, time: Math.round(this.t) });
   }
   destroy() {
+    playMusic('menu');
     if (this.perf) this.perf.dispose();
     this.dead = true; cancelAnimationFrame(this.raf);
     removeEventListener('pointermove', this.mv); removeEventListener('pointerup', this.up); removeEventListener('pointercancel', this.up); removeEventListener('resize', this.onResize);

@@ -13,7 +13,35 @@ import { createComposer, blobShadow } from './look.js';
 export const TEAM = ['#3da9ff', '#ff4f5e'];
 // Arènes « peintes » : une illustration sert de décor, la 3D (héros, effets) est posée dessus avec une caméra
 // calculée pour coller exactement à l'image (sol, Sanctuaires, Cœur). Paramètres trouvés par ajustement.
-const ARENA_ART = { aurore: { src: 'assets/arenas/aurore.webp', W: 1176, H: 1920, fov: 40.4914, th: 0.8884, D: 44.3774, zt: 2.5842, off: -213.3714, k: 0.8555, imgH: 2190, benchY: 2050, benchZ: 17.705, benchX: [-6.211, -3.079, 0, 3.079, 6.158] } };
+// Arènes peintes. Paramètres de caméra trouvés par ajustement sur des points de l'image (centre du Cœur, Sanctuaires, bords, socles).
+// sylve (19/11) : capture peinte de l'utilisateur nettoyée de son interface, agrandie 1,5× (Real-ESRGAN) ; coordonnées en pixels de l'image d'origine (W = 1176).
+const ARENA_ART = { sylve: { src: 'assets/arenas/sylve.webp', fx: 'sylve', W: 1176, H: 1920, fov: 40.4914, th: 0.7958, D: 39.1892, zt: 2.5842, off: -132.2128, k: 0.9082, imgH: 1880, benchY: 1759, benchZ: 13.818, benchX: [-5.3, -2.64, 0, 2.64, 5.3] },
+  aurore: { src: 'assets/arenas/aurore.webp', W: 1176, H: 1920, fov: 40.4914, th: 0.8884, D: 44.3774, zt: 2.5842, off: -213.3714, k: 0.8555, imgH: 2190, benchY: 2050, benchZ: 17.705, benchX: [-6.211, -3.079, 0, 3.079, 6.158] } };
+// Sylve vivante : champignons et runes qui pulsent, feuillage qui ondule, poussière dorée autour du Cœur, étoiles qui scintillent
+const SYLVE_FS = `uniform sampler2D map; uniform float t, cheer; uniform vec2 res; varying vec2 vu;
+  float h21(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  void main(){
+    vec2 p = vec2(vu.x, 1.0 - vu.y), P = p * res, Q = P;
+    vec4 c0 = texture2D(map, vu);
+    // feuillage des grands arbres (haut et bords) : ondulation lente
+    float leaf = clamp((c0.g - max(c0.r, c0.b)) * 4.0, 0.0, 1.0) * (1.0 - smoothstep(420.0, 620.0, P.y) * (1.0 - smoothstep(60.0, 0.0, min(P.x, res.x - P.x) - 120.0)));
+    Q.x += leaf * (1.6 * sin(t * 1.3 + P.y * 0.035 + P.x * 0.012) + 0.8 * sin(t * 2.1 + P.x * 0.05));
+    Q.y += leaf * 0.9 * sin(t * 1.7 + P.x * 0.03);
+    vec4 c = texture2D(map, vec2(Q.x / res.x, 1.0 - Q.y / res.y));
+    // champignons et runes cyan : chaque touffe pulse à son rythme (plus fort quand le public acclame)
+    float cy = clamp((min(c.g, c.b) - c.r) * 3.0, 0.0, 1.0) * smoothstep(0.45, 0.8, max(c.g, c.b));
+    float ph = h21(floor(P / 46.0));
+    c.rgb += vec3(0.25, 0.75, 0.65) * cy * (0.18 + cheer * 0.25) * (0.5 + 0.5 * sin(t * (1.6 + ph * 1.8) + ph * 6.283));
+    // poussière dorée autour du Cœur : scintillement
+    vec2 dH = (P - vec2(588.0, 955.0)) / vec2(250.0, 170.0); float ring = smoothstep(1.35, 1.0, length(dH)) * smoothstep(0.55, 0.8, length(dH));
+    float gold = clamp((c.r + c.g) * 0.5 - c.b, 0.0, 1.0) * smoothstep(0.65, 0.9, c.r);
+    c.rgb += vec3(1.0, 0.85, 0.45) * gold * ring * 0.55 * pow(0.5 + 0.5 * sin(t * 3.0 + h21(floor(P / 9.0)) * 40.0), 3.0);
+    // étoiles du ciel
+    float sky = clamp((c.b - max(c.r, c.g)) * 3.0, 0.0, 1.0) * step(dot(c.rgb, vec3(0.33)), 0.45);
+    vec2 sc = floor(p * vec2(120.0, 190.0)); float st = h21(sc + 7.0);
+    if (st > 0.985) { vec2 fr = fract(p * vec2(120.0, 190.0)) - 0.5; float tw = pow(max(0.0, sin(t * (1.5 + st * 3.0) + st * 40.0)), 6.0); c.rgb += sky * tw * smoothstep(0.25, 0.0, length(fr)) * vec3(0.9, 0.95, 1.0); }
+    gl_FragColor = c;
+  }`;
 const BENCH_Z = RY + 3.1, BENCH_X = [-4.6, -2.3, 0, 2.3, 4.6];
 
 // Forteresse des Sanctuaires (remplace le simple temple)
@@ -158,7 +186,7 @@ export class BattleView {
       islE: { value: E(588, 1480, 590, 470) }, res: { value: new THREE.Vector2(A.W, A.imgH) } };
     const mat = new THREE.ShaderMaterial({ uniforms: this.bgU, transparent: true, depthWrite: false, toneMapped: false,
       vertexShader: 'varying vec2 vu; void main(){ vu = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
-      fragmentShader: `uniform sampler2D map; uniform float t, cheer; uniform vec4 outE, inE, floorE, castA, castB, islE; uniform vec2 res; varying vec2 vu;
+      fragmentShader: A.fx === 'sylve' ? SYLVE_FS : `uniform sampler2D map; uniform float t, cheer; uniform vec4 outE, inE, floorE, castA, castB, islE; uniform vec2 res; varying vec2 vu;
         float ell(vec2 p, vec4 e){ vec2 d = (p - e.xy) / e.zw; return dot(d, d); }
         float box(vec2 p, vec4 b){ return step(b.x, p.x) * step(p.x, b.z) * step(b.y, p.y) * step(p.y, b.w); }
         float h21(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -214,11 +242,11 @@ export class BattleView {
     this.bg = { scene, camera: new THREE.OrthographicCamera(0, 1, 0, -1, -1, 1), plane };
     this.artUps = [];
     const dg = new THREE.Group(); this.scene.add(dg);
-    dragons(dg, this.artUps, [{ c: '#e8b04a', b: '#fff0b8', horns: true, s: 1.4, r: 17, h: 15, sp: 0.12, dir: 1, cz: -18 }]);
+    if (A.fx !== 'sylve') dragons(dg, this.artUps, [{ c: '#e8b04a', b: '#fff0b8', horns: true, s: 1.4, r: 17, h: 15, sp: 0.12, dir: 1, cz: -18 }]);
     const nd = this.q.low ? 40 : 90, n = nd, pg = new THREE.BufferGeometry(), pp = new Float32Array(n * 3);
     for (let i = 0; i < n; i++) { const a = Math.random() * 6.28, r = 3 + Math.random() * 9; pp[i * 3] = Math.cos(a) * r; pp[i * 3 + 1] = Math.random() * 6; pp[i * 3 + 2] = Math.sin(a) * r * this.zk; }
     pg.setAttribute('position', new THREE.BufferAttribute(pp, 3));
-    this.scene.add(new THREE.Points(pg, new THREE.PointsMaterial({ size: 0.22, map: glowTexture(), color: '#bfe0ff', transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })));
+    this.scene.add(new THREE.Points(pg, new THREE.PointsMaterial({ size: A.fx === 'sylve' ? 0.26 : 0.22, map: glowTexture(), color: A.fx === 'sylve' ? '#d8ffa8' : '#bfe0ff', transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })));
     this.artUps.push(dt => { for (let i = 0; i < n; i++) { pp[i * 3 + 1] += dt * 0.5; if (pp[i * 3 + 1] > 6) pp[i * 3 + 1] = 0; } pg.attributes.position.needsUpdate = true; });
   }
   // Caméra calée sur l'image : l'image prend toute la largeur, le banc reste à la même hauteur qu'avant

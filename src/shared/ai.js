@@ -3,7 +3,7 @@
 // Toujours affichée comme « IA » : jamais présentée comme un vrai joueur.
 
 import { HERO, SPELL, MAX_STAR } from './content.js';
-import { CY, HEART, SUMMON_COST, MYTH, check, sanctOf, inIsland } from './sim.js';
+import { CY, HEART, SUMMON_COST, MYTH, check, sanctOf, inIsland, hazardAt } from './sim.js';
 import { makeRng } from './rng.js';
 
 // orders : chance de penser aux ordres tactiques à chaque décision (la Recrue n'en donne jamais) ;
@@ -77,6 +77,8 @@ export function botThink(bot, s, dt) {
     x = clamp(x, 1.5, 14.5);
     y = p === 0 ? clamp(y, CY + 1.2, 22) : clamp(y, 2, CY - 1.2);
     if (!inIsland(x, y, 0.6)) x = 8 + (x - 8) * 0.6;
+    // éviter la lave et la Faille-Tempête (Lot 3) : essayer de l'autre côté, puis plus au centre
+    if (hazardAt(s, x, y)) { const alt = [[16 - x, y], [8, y], [8 + (x - 8) * 0.3, y + home * 1.5]].find(([ax, ay]) => !hazardAt(s, ax, ay) && inIsland(ax, ay, 0.6)); if (alt) [x, y] = alt; }
     return ok({ p, t: 'deploy', slot: h.slot, x, y });
   };
 

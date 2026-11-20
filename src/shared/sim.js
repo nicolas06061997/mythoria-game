@@ -27,6 +27,19 @@ export const ORDER_FX = { defendArmor: 0.8, assaultSiege: 1.25 }; // Défense : 
 // Décharge du Mythe : tenir le Cœur (au moins un de ses héros au sol dessus, aucun ennemi) MYTH.need secondes au total -> rayon qui frappe le Sanctuaire adverse
 // (et les ennemis sur sa trajectoire), puis le compteur repart à zéro.
 export const MYTH = { need: 30, sanctPct: 0.07, unitDmg: 400, width: 1.3 };
+// Failles dynamiques (Lot 3, 20/11) : une vers 1:20-1:40, une autre au début de la prolongation, 15 s chacune, pour les deux camps.
+export const RIFT = { dur: 15, r: 2.4, at: [80, 100], otDelay: 6, kinds: ['fureur', 'source', 'tempete'],
+  fureur: 1.3,        // +30 % de dégâts pour les héros dedans
+  source: 0.045,      // soin : 4,5 % de la vie max par seconde
+  tempete: 2.4 };     // poussée vers l'extérieur (unités / s) + ralentissement
+// Événement de monde (Lot 3) : toutes les ~30 s, annoncé 2 s avant, change de moitié d'île à chaque fois.
+export const WEV = { first: 26, every: 30, warn: 2,
+  givre:  { k: 'bourrasque', dur: 3, slow: 0.45, h: 2.6 },
+  braise: { k: 'lave', dur: 6, dps: 0.035 },             // 3,5 % de la vie max / s sur un bord de l'île
+  sylve:  { k: 'spores', dur: 6, heal: 0.04, r: 2.4 },
+  aurore: { k: 'halo', dur: 4, shield: 0.15, r: 2.4 },   // bouclier = 15 % de la vie max (une fois par événement)
+  arcane: { k: 'hate', dur: 6, k2: 1.3, r: 2.6 },        // déplacement et attaques 30 % plus rapides
+  ombre:  { k: 'eclipse', dur: 4 } };                     // les Sanctuaires ne tirent plus
 
 const sq = x => x * x;
 const dist = (a, b) => Math.sqrt(sq(a.x - b.x) + sq(a.y - b.y));
@@ -49,11 +62,12 @@ function clampIsland(e) {
   if (d > lim) { e.x = CX + dx / d * lim * RX; e.y = CY + dy / d * lim * RY; }
 }
 
-export function createBattle({ seed = 1, decks, spells = ['meteore', 'meteore'], levels = [{}, {}], gear = [{}, {}], names = ['Joueur 1', 'Joueur 2'], mode = 'duel', boss = null, waves = null, mods = null, bonus = null, botMana = 0 }) {
+export function createBattle({ world = null, seed = 1, decks, spells = ['meteore', 'meteore'], levels = [{}, {}], gear = [{}, {}], names = ['Joueur 1', 'Joueur 2'], mode = 'duel', boss = null, waves = null, mods = null, bonus = null, botMana = 0 }) {
   const s = {
     tick: 0, t: 0, seed, rng: (seed >>> 0) || 1, nextId: 1, ents: [], proj: [], pend: [], ev: [],
     over: false, winner: -1, reason: '', overtime: false, mode, mods: mods || {}, wave: 0, waveT: 6, wavesDef: waves,
     heart: { ctl: 0, owner: -1 },
+    world, rift: null, riftN: 0, riftAt: 0, wev: null, wevN: 0, wevAt: WEV.first, wevSide: 1,
     players: [0, 1].map(p => ({
       name: names[p], mana: MANA_START, eveil: 0, bench: Array(BENCH).fill(null), deck: decks[p].slice(),
       spell: spells[p] || 'meteore', levels: levels[p] || {}, gear: gear[p] || {}, syn: deckSynergies(decks[p]).tiers, summons: 0, deployed: 0, fuses: 0, spells: 0, hearts: 0,
@@ -68,6 +82,7 @@ export function createBattle({ seed = 1, decks, spells = ['meteore', 'meteore'],
   // Chaque camp commence avec 2 héros sur son cercle.
   for (const p of [0, 1]) for (let k = 0; k < 2; k++) summonHero(s, p);
   if (boss) spawnBoss(s, 1, boss, CX, 6.2);
+  s.riftAt = RIFT.at[0] + rnd(s) * (RIFT.at[1] - RIFT.at[0]); s.wevSide = rnd(s) < 0.5 ? 1 : -1;
   s.ev = [];
   return s;
 }
@@ -222,6 +237,8 @@ function deployHero(s, p, h, x, y) {
 function damage(s, t, amount, src) {
   if (t.dead || amount <= 0 || t.invuln) return;
   if (t.fly && src && src.proj) amount *= 1.35; // les tirs à distance sont efficaces contre les volants
+  // Faille de Fureur : +30 % de dégâts pour les héros qui frappent depuis la faille
+  if (src && src.kind === 'unit' && s.rift && s.rift.k === 'fureur' && dist(src, s.rift) <= s.rift.r) amount *= RIFT.fureur;
   // effets des ordres tactiques
   if (src && src.kind === 'unit' && t.kind !== 'unit' && orderOf(s, src) === 'assault') amount *= ORDER_FX.assaultSiege;
   if (t.kind === 'unit' && orderOf(s, t) === 'defend' && (t.p === 0 ? t.y > CY : t.y < CY)) amount *= ORDER_FX.defendArmor;
@@ -353,6 +370,7 @@ export function step(s, cmds = []) {
   }
   const dt = DT;
   updateHeart(s, dt);
+  fieldTick(s, dt);
   if (s.mode === 'survival') waveTick(s, dt);
   for (const [p, P] of s.players.entries()) {
     const bonus = s.heart.owner === p ? 1.35 : 1;
@@ -371,7 +389,9 @@ export function step(s, cmds = []) {
     if (e.frozen > 0) { e.frozen -= dt; continue; }
     if (e.slowT > 0) { e.slowT -= dt; if (e.slowT <= 0) e.slowK = 0; }
     if (e.deploy > 0) { e.deploy -= dt; if (e.deploy <= 0) onLand(s, e); continue; }
+    if (e.kind === 'sanct' && s.wev && s.wev.on && s.wev.k === 'eclipse') { if (e.cd > 0) e.cd -= dt; continue; } // Éclipse : les Sanctuaires ne tirent plus
     const c = e.card ? HERO[e.card] : null;
+    const hk = e.haste ? WEV.arcane.k2 : 1;
     if (e.regen && e.hp < e.maxHp) e.hp = Math.min(e.maxHp, e.hp + e.maxHp * e.regen * dt);
     if (e.kind === 'building' && e.life) { e.hp -= e.maxHp / e.life * dt; if (e.hp <= 0) { kill(s, e); continue; } }
     if (c && c.aura) for (const o of s.ents) if (!o.dead && o.p === e.p && o.kind === 'unit' && o !== e && dist(o, e) <= c.aura.radius) o.hp = Math.min(o.maxHp, o.hp + c.aura.heal * STAR_MULT[e.star] * dt);
@@ -402,13 +422,13 @@ export function step(s, cmds = []) {
     if (!t || t.dead || !canTarget(e, t) || e.retarget <= 0 || (e.kind !== 'unit' && gap(e, t) > e.range)) {
       t = acquire(s, e); e.retarget = 0.25; e.target = t ? t.id : 0;
     }
-    if (e.cd > 0) e.cd -= dt * (e.slowK ? 1 - e.slowK : 1);
+    if (e.cd > 0) e.cd -= dt * (e.slowK ? 1 - e.slowK : 1) * hk;
     if (!t) {
       // aucun ennemi à combattre : rejoindre le point de l'ordre (Cœur ou repli)
       const dst = e.kind === 'unit' ? orderDest(s, e) : null;
       if (dst) {
         const mx = dst.x - e.x, my = dst.y - e.y, md = Math.sqrt(mx * mx + my * my);
-        if (md > 0.35) { const stp = Math.min(md, e.spd * (e.slowK ? 1 - e.slowK : 1) * dt); e.x += mx / md * stp; e.y += my / md * stp; e.moving = true; e.faceX = mx / md; e.faceY = my / md; }
+        if (md > 0.35) { const stp = Math.min(md, e.spd * (e.slowK ? 1 - e.slowK : 1) * hk * dt); e.x += mx / md * stp; e.y += my / md * stp; e.moving = true; e.faceX = mx / md; e.faceY = my / md; }
       }
       continue;
     }
@@ -425,7 +445,7 @@ export function step(s, cmds = []) {
         e.x += dx * k; e.y += dy * k; e.dashReady = false; e.bonus = true; e.cd = 0;
         continue;
       }
-      const sp = e.spd * (e.slowK ? 1 - e.slowK : 1) * (e.chargeReady && dd < 6 ? 1.8 : 1);
+      const sp = e.spd * (e.slowK ? 1 - e.slowK : 1) * hk * (e.chargeReady && dd < 6 ? 1.8 : 1);
       const stp = Math.min(dd, sp * dt);
       e.x += dx / dd * stp; e.y += dy / dd * stp; e.moving = true;
     }
@@ -540,6 +560,7 @@ function checkTime(s) {
   if (s.t >= MATCH_TIME && !s.overtime) {
     if (Math.abs(a - b) >= 0.01) return finish(s, a > b ? 0 : 1, 'time');
     s.overtime = true; s.ev.push({ type: 'overtime' });
+    if (s.riftN < 2) s.riftAt = s.t + RIFT.otDelay; // 2e faille : au début de la prolongation
   }
   if (s.overtime && Math.abs(a - b) >= 0.01) return finish(s, a > b ? 0 : 1, 'overtime');
   if (s.t >= MATCH_TIME + OVERTIME) finish(s, -1, 'draw');
@@ -552,8 +573,90 @@ export function hashState(s) {
   const add = n => { h ^= Math.round(n * 1000) | 0; h = Math.imul(h, 16777619) >>> 0; };
   add(s.tick);
   for (const e of s.ents) { add(e.id); add(e.x); add(e.y); add(e.hp); }
+  if (s.rift) { add(s.rift.x); add(s.rift.y); add(s.rift.end); } if (s.wev) { add(s.wev.at); add(s.wev.on ? 1 : 0); }
   for (const P of s.players) { add(P.mana); add(P.eveil); add(P.myth); add(ORDERS.indexOf(P.order)); for (const b of P.bench) add(b ? b.star * 7 + b.id.length : 0); }
   return h.toString(16);
+}
+
+// ---------- Failles dynamiques et événements de monde (Lot 3) ----------
+// zone : { shape: 'circle', x, y, r } | { shape: 'band', y0, y1 } | { shape: 'side', side } | { shape: 'all' }
+export function inZone(z, x, y) {
+  if (!z) return false;
+  if (z.shape === 'circle') return sq(x - z.x) + sq(y - z.y) <= z.r * z.r;
+  if (z.shape === 'band') return y >= z.y0 && y <= z.y1;
+  if (z.shape === 'side') return z.side < 0 ? x < CX - RX * 0.55 : x > CX + RX * 0.55;
+  return z.shape === 'all';
+}
+// une zone touche-t-elle la faille ? (pour ne jamais les superposer : lisibilité)
+function overlapsRift(s, z) {
+  const R = s.rift; if (!R || !z) return false;
+  if (z.shape === 'circle') return dist(z, R) < z.r + R.r + 0.8;
+  if (z.shape === 'band') return R.y + R.r + 0.6 > z.y0 && R.y - R.r - 0.6 < z.y1;
+  if (z.shape === 'side') return z.side < 0 ? R.x - R.r < CX - RX * 0.55 + 0.6 : R.x + R.r > CX + RX * 0.55 - 0.6;
+  return false;
+}
+// zone dangereuse (l'IA évite d'y poser ses héros)
+export function hazardAt(s, x, y) {
+  if (s.rift && s.rift.k === 'tempete' && dist({ x, y }, s.rift) <= s.rift.r + 0.5) return true;
+  return !!(s.wev && s.wev.k === 'lave' && inZone(s.wev.zone, x, y));
+}
+function riftOpen(s) {
+  s.riftN++;
+  const k = RIFT.kinds[Math.floor(rnd(s) * RIFT.kinds.length)];
+  let x = CX, y = CY;
+  for (let tries = 0; tries < 12; tries++) {
+    x = CX + (rnd(s) - 0.5) * 8; y = CY + (rnd(s) - 0.5) * 6.4;
+    if (!inIsland(x, y, RIFT.r + 0.4)) continue;
+    const z = s.wev && s.wev.zone; // pas sur l'événement de monde en cours
+    if (z && (z.shape === 'circle' ? dist({ x, y }, z) < z.r + RIFT.r + 0.8 : z.shape === 'band' ? y + RIFT.r + 0.6 > z.y0 && y - RIFT.r - 0.6 < z.y1 : z.shape === 'side' ? inZone(z, x - RIFT.r, y) || inZone(z, x + RIFT.r, y) : false)) continue;
+    break;
+  }
+  s.rift = { k, x, y, r: RIFT.r, end: s.t + RIFT.dur, n: s.riftN };
+  s.ev.push({ type: 'rift', k, x, y, r: RIFT.r, dur: RIFT.dur, n: s.riftN });
+}
+function wevZone(s, def, side) {
+  const cyHalf = y => CY + side * y;
+  if (def.k === 'bourrasque') { for (let i = 0; i < 6; i++) { const yc = cyHalf(1.8 + rnd(s) * 3.4), z = { shape: 'band', y0: yc - def.h / 2, y1: yc + def.h / 2 }; if (!overlapsRift(s, z)) return z; } return { shape: 'band', y0: cyHalf(4.5) - def.h / 2, y1: cyHalf(4.5) + def.h / 2 }; }
+  if (def.k === 'lave') { let z = { shape: 'side', side }; if (overlapsRift(s, z)) z = { shape: 'side', side: -side }; return z; }
+  if (def.k === 'eclipse') return { shape: 'all' };
+  for (let i = 0; i < 8; i++) { const z = { shape: 'circle', x: CX + (rnd(s) - 0.5) * 7, y: cyHalf(2.2 + rnd(s) * 4.6), r: def.r }; if (inIsland(z.x, z.y, def.r * 0.6) && !overlapsRift(s, z)) return z; }
+  return { shape: 'circle', x: CX, y: cyHalf(4), r: def.r };
+}
+function fieldTick(s, dt) {
+  if (s.over) return;
+  // Failles
+  if (!s.rift && s.riftN < 2 && s.riftAt && s.t >= s.riftAt) { s.riftAt = 0; riftOpen(s); }
+  const R = s.rift;
+  if (R && s.t >= R.end) { s.rift = null; s.ev.push({ type: 'riftEnd', n: R.n }); }
+  else if (R) for (const e of s.ents) {
+    if (e.dead || e.kind !== 'unit' || e.deploy > 0) continue;
+    const d = dist(e, R); if (d > R.r) continue;
+    if (R.k === 'source') e.hp = Math.min(e.maxHp, e.hp + e.maxHp * RIFT.source * dt);
+    else if (R.k === 'tempete' && !e.boss) { const k = RIFT.tempete * dt / (d || 1); e.x += (e.x - R.x) * k; e.y += (e.y - R.y) * k; if (!d) e.x += RIFT.tempete * dt; clampIsland(e); e.slowT = Math.max(e.slowT, 0.3); e.slowK = Math.max(e.slowK || 0, 0.3); }
+  }
+  // Événement de monde
+  const def = s.world && WEV[s.world];
+  for (const e of s.ents) e.haste = false;
+  if (!def) return;
+  let W = s.wev;
+  if (!W && s.t >= s.wevAt - WEV.warn) {
+    const side = s.wevN % 2 ? -s.wevSide : s.wevSide;
+    W = s.wev = { k: def.k, at: s.wevAt, end: s.wevAt + def.dur, on: false, zone: wevZone(s, def, side), n: ++s.wevN };
+    s.ev.push({ type: 'wevWarn', k: W.k, zone: W.zone, at: W.at, n: W.n });
+  }
+  if (!W) return;
+  if (!W.on && s.t >= W.at) { W.on = true; s.ev.push({ type: 'wev', k: W.k, zone: W.zone, dur: def.dur, n: W.n }); }
+  if (W.on && s.t >= W.end) { s.ev.push({ type: 'wevEnd', k: W.k, n: W.n }); s.wev = null; s.wevAt = W.at + WEV.every; return; }
+  if (!W.on) return;
+  W.tick = (W.tick || 0) + dt; const pulse = W.tick >= 0.5; if (pulse) W.tick -= 0.5;
+  for (const e of s.ents) {
+    if (e.dead || e.kind !== 'unit' || e.deploy > 0 || !inZone(W.zone, e.x, e.y)) continue;
+    if (W.k === 'bourrasque') { e.slowT = Math.max(e.slowT, 0.25); e.slowK = Math.max(e.slowK || 0, def.slow); }
+    else if (W.k === 'lave') { if (pulse) damage(s, e, e.maxHp * def.dps * 0.5, null); }
+    else if (W.k === 'spores') e.hp = Math.min(e.maxHp, e.hp + e.maxHp * def.heal * dt);
+    else if (W.k === 'halo' && e.halo !== W.n) { e.halo = W.n; e.shield = Math.max(e.shield || 0, Math.round(e.maxHp * def.shield)); s.ev.push({ type: 'halo', id: e.id }); }
+    else if (W.k === 'hate') e.haste = true;
+  }
 }
 
 // ---------- Boss (campagne) ----------

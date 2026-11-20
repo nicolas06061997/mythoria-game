@@ -1172,3 +1172,8 @@ body::after { background: radial-gradient(60% 22% at 30% 16%, rgba(80, 255, 190,
 .b-myth.hot .me::after { background: linear-gradient(90deg, #ffc04a, #fff1b8); animation: mythhot .5s ease-in-out infinite alternate; }
 @keyframes mythhot { to { filter: brightness(1.6); } }
 @media (max-height: 640px) { .b-orders { top: 40%; } .b-ord { width: 44px; height: 44px; } .b-ord .oi { width: 20px; height: 20px; } }
+
+/* ===== Lot 3 (20/11) : Éclipse (Royaume des Ombres) — l'arène s'assombrit, les Sanctuaires se taisent ===== */
+.battle::after { content: ''; position: absolute; inset: 0; z-index: 4; pointer-events: none; opacity: 0; transition: opacity .6s;
+  background: radial-gradient(70% 55% at 50% 45%, rgba(20, 8, 40, .25), rgba(5, 2, 14, .72)); }
+.battle.eclipse::after { opacity: 1; }

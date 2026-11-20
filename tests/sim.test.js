@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createBattle, step, check, hashState, TICK_RATE, MATCH_TIME, OVERTIME, SUMMON_COST, sanctOf, HEART, MYTH, ORDER_CD } from '../src/shared/sim.js';
+import { createBattle, step, check, hashState, TICK_RATE, MATCH_TIME, OVERTIME, SUMMON_COST, sanctOf, HEART, MYTH, ORDER_CD, RIFT, WEV, inZone } from '../src/shared/sim.js';
 import { STARTER_DECK, HERO } from '../src/shared/content.js';
 import { createBot, botThink } from '../src/shared/ai.js';
 
@@ -158,4 +158,53 @@ test('Décharge du Mythe : tenir le Cœur 30 s au total frappe le Sanctuaire adv
   assert.ok(hp0 - op.hp >= Math.round(op.maxHp * MYTH.sanctPct) - 1, 'Sanctuaire touché');
   assert.ok(s.players[0].myth < 1, 'le compteur repart à zéro');
   assert.equal(s.players[0].discharges, 1);
+});
+
+// ---------- Lot 3 : failles dynamiques et événements de monde ----------
+const mkW = (world, seed = 42) => createBattle({ world, seed, decks: [STARTER_DECK, DECK2], spells: ['meteore', 'givre'] });
+const run = (s, sec, fn) => { for (let i = 0; i < TICK_RATE * sec && !s.over; i++) { step(s); if (fn) fn(s.ev); } };
+
+test('faille : s’ouvre entre 1:20 et 1:40 pour 15 s, au même moment pour la même graine', () => {
+  const opened = seed => { const s = mkW(null, seed); let at = -1, end = -1; run(s, 130, ev => { for (const e of ev) { if (e.type === 'rift' && at < 0) at = s.t; if (e.type === 'riftEnd' && end < 0) end = s.t; } }); return { at, end }; };
+  const a = opened(7), b = opened(7);
+  assert.deepEqual(a, b);
+  assert.ok(a.at >= RIFT.at[0] && a.at <= RIFT.at[1] + 0.1, 'ouverture à ' + a.at);
+  assert.ok(Math.abs(a.end - a.at - RIFT.dur) < 0.2);
+});
+
+test('faille : une 2e au début de la prolongation', () => {
+  const s = mkW(null, 3); let n = 0;
+  run(s, MATCH_TIME - 1, ev => { n += ev.filter(e => e.type === 'rift').length; });
+  assert.equal(n, 1);
+  for (const q of [0, 1]) sanctOf(s, q).hp = 9000; // égalité parfaite -> prolongation
+  run(s, 20, ev => { n += ev.filter(e => e.type === 'rift').length; });
+  assert.ok(s.overtime, 'prolongation');
+  assert.equal(n, 2);
+});
+
+test('événement de monde : annoncé, toutes les ~30 s, jamais sur la faille', () => {
+  for (const w of Object.keys(WEV).filter(k => WEV[k].k)) {
+    const s = mkW(w, 11); const seen = []; let warn = 0;
+    run(s, 140, ev => { for (const e of ev) { if (e.type === 'wevWarn') warn++; if (e.type === 'wev') { seen.push(s.t); if (s.rift && e.zone.shape !== 'all') { const R = s.rift; assert.ok(!inZone(e.zone, R.x, R.y), w + ' : événement sur la faille'); } } } });
+    assert.equal(seen[0] >= WEV.first - 0.1 && seen[0] <= WEV.first + 0.2, true, w);
+    assert.ok(seen.length >= 3 && warn >= seen.length, w);
+    assert.equal(s.wevN >= 3, true);
+  }
+});
+
+test('Éclipse : les Sanctuaires ne tirent plus ; lave : dégâts sur le bord', () => {
+  const s = mkW('ombre', 5);
+  run(s, WEV.first + 0.5);
+  assert.equal(s.wev && s.wev.on && s.wev.k, 'eclipse');
+  const bolts = s.proj.length; s.players[1].bench[0] = { id: 'frere', star: 1 };
+  const t = sanctOf(s, 0); run(s, 2);
+  assert.ok(!s.proj.some(p => p.src === t.id || p.src === sanctOf(s, 1).id), 'aucun tir de Sanctuaire pendant l’Éclipse');
+  const L = mkW('braise', 5); run(L, WEV.first + 0.2);
+  assert.equal(L.wev.k, 'lave');
+  L.players[0].bench[0] = { id: 'frere', star: 1 };
+  const x = L.wev.zone.side < 0 ? 1.6 : 14.4;
+  step(L, [{ p: 0, t: 'deploy', slot: 0, x, y: 13 }]); run(L, 1.2);
+  const u = L.ents.find(e => e.p === 0 && e.kind === 'unit');
+  u.frozen = 3; u.x = x; const hp = u.hp + u.shield; run(L, 1.1); // immobile sur le bord
+  assert.ok(u.dead || u.hp + u.shield < hp, 'la lave brûle');
 });

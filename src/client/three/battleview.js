@@ -94,6 +94,39 @@ function medallion() {
   halo.rotation.x = -Math.PI / 2; halo.position.y = 0.02; g.add(halo);
   return { g, rune, halo, rim };
 }
+// ---------- Zones des failles et des événements de monde (Lot 3) : un seul programme pour toutes ----------
+// Plan qui couvre l'île ; le shader calcule la zone en coordonnées du combat (cercle, bande, bord) et dessine l'effet du type k.
+const ZONE_K = { fureur: 0, source: 1, tempete: 2, bourrasque: 3, lave: 4, spores: 5, halo: 6, hate: 7 };
+const ZONE_VS = 'varying vec2 vP; uniform float zk; void main(){ vec4 w = modelMatrix * vec4(position, 1.0); vP = vec2(w.x + ' + CX.toFixed(1) + ', w.z / zk + ' + CY.toFixed(1) + '); gl_Position = projectionMatrix * viewMatrix * w; }';
+const ZONE_FS = `varying vec2 vP; uniform float t, a, warn, k, shape, zr; uniform vec4 z; uniform vec3 col;
+  float h2(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f); return mix(mix(h2(i), h2(i+vec2(1,0)), f.x), mix(h2(i+vec2(0,1)), h2(i+vec2(1,1)), f.x), f.y); }
+  void main(){
+    vec2 P = vP;
+    vec2 e = (P - vec2(${CX.toFixed(1)}, ${CY.toFixed(1)})) / vec2(${RX.toFixed(2)}, ${RY.toFixed(2)});
+    if (dot(e, e) > 1.0) discard;                       // seulement sur l'île
+    float d, edge;                                       // d : 0 au centre .. 1 au bord de la zone ; edge : liseré
+    if (shape < 0.5) { d = length(P - z.xy) / zr; }
+    else if (shape < 1.5) { d = abs(P.y - (z.x + z.y) * 0.5) / ((z.y - z.x) * 0.5); }
+    else { float lim = ${(RX * 0.55).toFixed(2)}; float dx = (P.x - ${CX.toFixed(1)}) * z.x - lim; d = dx > 0.0 ? 1.0 - min(1.0, dx / 1.2) * 0.6 : 2.0; }
+    if (d > 1.0) discard;
+    edge = smoothstep(0.82, 0.97, d) * (1.0 - smoothstep(0.97, 1.0, d));
+    vec2 q = P - z.xy; float ang = atan(q.y, q.x), r = length(q) / max(zr, 0.01);
+    float v = 0.0;
+    if (k < 0.5) v = 0.55 + 0.45 * sin(ang * 3.0 + r * 9.0 - t * 4.0);                       // Fureur : tourbillon rouge
+    else if (k < 1.5) v = 0.5 + 0.5 * sin(r * 14.0 - t * 2.5) * 0.6 + 0.2 * vn(P * 2.0 + t);    // Source : ondes vertes
+    else if (k < 2.5) v = 0.5 + 0.5 * sin(ang * 4.0 - r * 12.0 + t * 7.0);                    // Tempête : spirale rapide
+    else if (k < 3.5) v = 0.55 + 0.9 * smoothstep(0.45, 1.0, vn(vec2(P.x * 1.2 - t * 6.0, P.y * 5.0))); // Bourrasque : rafales
+    else if (k < 4.5) v = 0.45 + 0.55 * vn(P * 1.6 + vec2(0.0, t * 0.8)) + 0.3 * vn(P * 4.0 - t);  // Lave : coulée
+    else if (k < 5.5) { vec2 g = fract(P * 1.6 + vec2(0.0, -t * 0.4)) - 0.5; v = 0.25 + smoothstep(0.18, 0.0, length(g)) * (0.5 + 0.5 * sin(t * 3.0 + h2(floor(P * 1.6)) * 6.0)); } // Spores
+    else if (k < 6.5) v = 0.35 + 0.65 * smoothstep(0.35, 0.0, abs(fract(r * 2.0 - t * 0.8) - 0.5));  // Halo : anneaux qui s'élargissent
+    else v = 0.3 + 0.7 * step(0.6, fract(ang * 1.909 + t * 0.6)) * smoothstep(0.72, 0.8, r) * (1.0 - smoothstep(0.92, 0.98, r)) + 0.25 * smoothstep(0.4, 0.0, abs(r - 0.5)); // Hâte : cercle de runes
+    float fill = (1.0 - warn) * v * (0.55 + 0.45 * (1.0 - d)) ;
+    float glow = edge * (warn > 0.5 ? 0.6 + 0.4 * sin(t * 10.0) : 1.0);
+    // couleur posée par-dessus (pas additive : reste visible sur la neige ou le sol doré), liseré plus clair
+    float al = clamp(fill * (k > 2.5 && k < 3.5 ? 1.1 : 0.55) + glow * 0.9, 0.0, 0.85) * a;
+    gl_FragColor = vec4(mix(col, vec3(1.0), glow * 0.35), al);
+  }`;
 // Bandeau de runes qui relie les socles (courbe passant par les 5 médaillons), motif qui défile
 const ARC_VS = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }';
 const ARC_FS = `varying vec2 vUv; uniform float t; uniform vec3 col;
@@ -220,6 +253,13 @@ export class BattleView {
       const arc = new THREE.Mesh(geo, new THREE.ShaderMaterial({ uniforms: this.arcU, vertexShader: ARC_VS, fragmentShader: ARC_FS, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
       arc.renderOrder = -1; this.scene.add(arc);
     }
+    // zones des failles / événements de monde (cachées tant qu'il n'y en a pas)
+    this.zones = [0, 1].map(() => {
+      const u = { t: { value: 0 }, a: { value: 0 }, warn: { value: 0 }, k: { value: 0 }, shape: { value: 0 }, zr: { value: 1 }, z: { value: new THREE.Vector4() }, col: { value: new THREE.Color() }, zk: { value: this.zk } };
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(RX * 2 + 1, (RY * 2 + 1) * this.zk).rotateX(-Math.PI / 2), new THREE.ShaderMaterial({ uniforms: u, vertexShader: ZONE_VS, fragmentShader: ZONE_FS, transparent: true, depthWrite: false }));
+      m.position.y = 0.08; m.visible = false; m.renderOrder = 1; this.scene.add(m);
+      return { m, u, fade: 0, key: '' };
+    });
     // Zone de déploiement (moitié de l'île du joueur)
     const sh = new THREE.Shape(); sh.absellipse(0, 0, RX - 0.3, RY - 0.3, Math.PI, 2 * Math.PI, false, 0);
     this.zone = new THREE.Mesh(new THREE.ShapeGeometry(sh, 40), new THREE.MeshBasicMaterial({ color: TEAM[0], transparent: true, opacity: 0.2, depthWrite: false, side: THREE.DoubleSide }));
@@ -407,6 +447,33 @@ export class BattleView {
   }
   highlightSlot(i) { this.bench.forEach((b, k) => { b.sel = k === i; b.rune.material.color.set(b.sel ? '#ffd166' : '#8fd8ff'); b.halo.material.color.set(b.sel ? '#ffc04a' : '#5fb8ff'); b.halo.material.opacity = b.sel ? 0.7 : 0.35; }); }
 
+  // Zones des failles et des événements de monde (Lot 3) : 0 = faille, 1 = événement du monde
+  syncZones(s, dt) {
+    const COL = { fureur: '#ff4a3a', source: '#4dff9a', tempete: '#b46bff', bourrasque: '#2f80e8', lave: '#ff5a10', spores: '#3ee07a', halo: '#ffb52e', hate: '#c08aff' };
+    const R = s.rift, Wv = s.wev && s.wev.k !== 'eclipse' ? s.wev : null;
+    const items = [R ? { key: 'r' + R.n, k: R.k, zone: { shape: 'circle', x: R.x, y: R.y, r: R.r }, warn: false } : null, Wv ? { key: 'w' + Wv.n, k: Wv.k, zone: Wv.zone, warn: !Wv.on } : null];
+    this.zones.forEach((Z, i) => {
+      const it = items[i];
+      if (it) {
+        Z.last = it; Z.fade = Math.min(1, Z.fade + dt * 2.5);
+        const u = Z.u, zz = it.zone; u.k.value = ZONE_K[it.k]; u.col.value.set(COL[it.k]); u.warn.value = it.warn ? 1 : 0;
+        if (zz.shape === 'circle') { u.shape.value = 0; u.z.value.set(zz.x, zz.y, 0, 0); u.zr.value = zz.r; }
+        else if (zz.shape === 'band') { u.shape.value = 1; u.z.value.set(zz.y0, zz.y1, 0, 0); u.zr.value = 1; }
+        else { u.shape.value = 2; u.z.value.set(zz.side, 0, 0, 0); u.zr.value = 1; }
+        // particules légères (moins en qualité « eco »)
+        if (!it.warn && Math.random() < dt * (this.q.low ? 4 : 10)) this.zoneSpark(it, COL[it.k]);
+      } else Z.fade = Math.max(0, Z.fade - dt * 2);
+      Z.m.visible = Z.fade > 0.01; Z.u.a.value = Z.fade * (i === 0 ? 0.9 : 0.75); Z.u.t.value = this.time;
+    });
+  }
+  zoneSpark(it, col) {
+    const z = it.zone; let x, y;
+    if (z.shape === 'circle') { const a = Math.random() * 6.28, r = Math.sqrt(Math.random()) * z.r; x = z.x + Math.cos(a) * r; y = z.y + Math.sin(a) * r; }
+    else if (z.shape === 'band') { x = CX + (Math.random() - 0.5) * RX * 1.6; y = z.y0 + Math.random() * (z.y1 - z.y0); }
+    else { x = CX + z.side * (RX * 0.62 + Math.random() * RX * 0.3); y = CY + (Math.random() - 0.5) * RY * 1.4; }
+    const w = this.toWorld(x, y), up = { lave: 1.2, spores: 0.6, halo: 1.5, source: 0.8, fureur: 1, tempete: 0.4, hate: 0.6, bourrasque: 0.1 }[it.k] || 0.5;
+    this.fx.emit(w.x, 0.3, w.z, { n: it.k === 'bourrasque' ? 1 : 2, color: [col, '#ffffff'], size: it.k === 'spores' ? 0.35 : 0.3, life: 1.1, speed: it.k === 'bourrasque' ? 0.2 : 0.5, up, alpha: 0.8 });
+  }
   // Rayon du Mythe (Lot 2) : faisceau du Cœur jusqu'au Sanctuaire visé, éclair, explosion, secousse
   mythBeam(e, team) {
     const a = this.toWorld(e.x0, e.y0), b = this.toWorld(e.x1, e.y1), col = TEAM[team];
@@ -452,6 +519,8 @@ export class BattleView {
         case 'shieldBreak': { const ent = s.ents.find(o => o.id === e.id); if (ent) { const q = this.toWorld(ent.x, ent.y); this.fx.emit(q.x, 1, q.z, { n: 14, color: ['#cfe8ff', '#ffffff'], size: 0.35, life: 0.5, speed: 3 }); } break; }
         case 'boss': this.shake = 0.6; break;
         case 'discharge': this.mythBeam(e, team); break;
+        case 'rift': this.fx.flash(w.x, 1.5, w.z, 5, '#ffffff', 0.5); this.fx.ring(w.x, w.z, e.r * 1.4, '#ffffff', 0.7); this.shake = Math.max(this.shake, 0.25); break;
+        case 'halo': { const v = this.views.get(e.id); if (v && v.actor) { const p = v.actor.holder.position; this.fx.ring(p.x, p.z, 0.9, '#ffd36a', 0.5); } break; }
         case 'order': if (e.p === this.me) this.orderT = 2.5; break;
         case 'bossSkill': {
           const v = this.views.get(e.id); if (v && v.actor) v.actor.play(e.k === 'slam' ? 'attack' : 'cast', { force: true });
@@ -572,6 +641,7 @@ export class BattleView {
       if (k < 0.5 && !S.dead) { S.smokeT -= dt; if (S.smokeT <= 0) { S.smokeT = 0.15 + k * 0.4; this.fx.emit(S.g.position.x + (Math.random() - 0.5) * 2, 2.5, S.g.position.z, { n: 1, color: k < 0.25 ? ['#ff8a3d', '#5a5050'] : ['#6a6464'], size: 1.2, life: 1.6, speed: 0.4, up: 1, gravity: 1, alpha: 0.4 }); } }
     }
     this.heart.update(this.time, this.me === 0 ? s.heart.ctl : -s.heart.ctl, s.heart.owner < 0 ? -1 : s.heart.owner === this.me ? 0 : 1, TEAM);
+    if (this.zones) this.syncZones(s, dt);
     if (this.beams) this.beams = this.beams.filter(b => this.beamTick(b, dt));
     this.fx.syncProjectiles(s.proj, (x, y) => this.toWorld(x, y));
     this.fx.update(dt);

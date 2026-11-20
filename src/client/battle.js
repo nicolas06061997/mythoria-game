@@ -15,6 +15,10 @@ const ORDER_UI = {
   defend: { name: 'Défense', tip: 'Tes héros se replient devant ton Sanctuaire', svg: '<svg viewBox="0 0 24 24"><path d="M12 2.5l8 3v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10v-6z" fill="#6fc8ff" stroke="#08204a" stroke-width="1.4" stroke-linejoin="round"/><path d="M12 5.5v13" stroke="#fff" stroke-width="1.6" opacity=".8"/></svg>' },
 };
 const ORDER_ROW = ['heart', 'assault', 'defend'];
+// Failles et événements de monde (Lot 3) : nom + effet annoncés en bannière
+const RIFT_UI = { fureur: ['🔥 Faille de Fureur', '+30 % de dégâts pour les héros dedans'], source: ['💧 Source de Vie', 'soigne les héros dedans'], tempete: ['🌪 Faille-Tempête', 'repousse et ralentit les héros'] };
+const WEV_UI = { bourrasque: ['❄️ Bourrasque', 'les héros dans le vent sont ralentis'], lave: ['🌋 Coulée de lave', 'le bord de l’île brûle'], spores: ['🌿 Spores de soin', 'les héros dedans sont soignés'],
+  halo: ['☀️ Halo d’aurore', 'bouclier pour les héros dedans'], hate: ['🔮 Glyphe de hâte', 'héros 30 % plus rapides dedans'], eclipse: ['🌑 Éclipse', 'les Sanctuaires ne tirent plus'] };
 
 // ?speed=4 dans l'adresse accélère le combat (sert aux tests automatiques).
 const SPEED = Math.min(8, Math.max(1, Number(new URLSearchParams(location.search).get('speed')) || 1));
@@ -24,7 +28,7 @@ export class Battle {
   constructor(root, opts) {
     this.o = opts; this.root = root;
     const seed = (Math.random() * 1e9) | 0;
-    this.s = createBattle({ seed, decks: [opts.deck, opts.oppDeck], spells: [opts.spell, opts.oppSpell], levels: [opts.levels || {}, opts.oppLevels || {}], gear: [opts.gear || {}, opts.oppGear || {}], names: [opts.myName, 'IA ' + AI_LEVELS[opts.botLevel].name], mode: opts.simMode || 'duel', boss: opts.boss, waves: opts.waves, mods: opts.mods, bonus: opts.bonus, botMana: opts.simMode === 'survival' ? 0 : AI_LEVELS[opts.botLevel].mana });
+    this.s = createBattle({ world: opts.world.key, seed, decks: [opts.deck, opts.oppDeck], spells: [opts.spell, opts.oppSpell], levels: [opts.levels || {}, opts.oppLevels || {}], gear: [opts.gear || {}, opts.oppGear || {}], names: [opts.myName, 'IA ' + AI_LEVELS[opts.botLevel].name], mode: opts.simMode || 'duel', boss: opts.boss, waves: opts.waves, mods: opts.mods, bonus: opts.bonus, botMana: opts.simMode === 'survival' ? 0 : AI_LEVELS[opts.botLevel].mana });
     this.bot = opts.simMode === 'survival' ? null : createBot(1, opts.botLevel, seed ^ 0x5bd1e995);
     // ?autoplay : une IA joue à ta place (tests automatiques)
     if (new URLSearchParams(location.search).has('autoplay')) this.bot0 = createBot(0, 4, seed ^ 0x1234567);
@@ -239,6 +243,10 @@ export class Battle {
       else if (e.type === 'boss') { this.banner('☠ ' + e.name, 'bad'); sfx('tower'); setTimeout(() => !this.ended && this.banner(''), 1800); }
       else if (e.type === 'bossSkill') sfx(e.k === 'freeze' ? 'freeze' : e.k === 'heal' ? 'heal' : 'boom', 200);
       else if (e.type === 'bossDown') { this.banner('Boss vaincu ! Détruis le Sanctuaire', 'good'); sfx('boom'); setTimeout(() => !this.ended && this.banner(''), 1600); }
+      else if (e.type === 'rift') { const [n, d] = RIFT_UI[e.k]; sfx('spell'); this.banner(n + (e.n > 1 ? ' (prolongation)' : ''), 'go'); setTimeout(() => !this.ended && this.banner(''), 1700); toast(d); }
+      else if (e.type === 'wevWarn') sfx('tick');
+      else if (e.type === 'wev') { const [n, d] = WEV_UI[e.k]; this.banner(n, 'go'); setTimeout(() => !this.ended && this.banner(''), 1300); if (e.n === 1) toast(d); if (e.k === 'eclipse') this.el.classList.add('eclipse'); }
+      else if (e.type === 'wevEnd') { if (e.k === 'eclipse') this.el.classList.remove('eclipse'); }
       else if (e.type === 'discharge') { sfx('boom'); setTimeout(() => sfx('spell'), 120); this.banner(e.p === this.me ? 'Rayon du Mythe !' : 'Rayon du Mythe ennemi !', e.p === this.me ? 'good big' : 'bad big'); setTimeout(() => !this.ended && this.banner(''), 1500); }
       else if (e.type === 'overtime') { this.banner('Prolongation !', 'go'); setTimeout(() => !this.ended && this.banner(''), 1800); }
     }

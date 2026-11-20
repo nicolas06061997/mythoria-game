@@ -3,17 +3,16 @@
 // Toujours affichée comme « IA » : jamais présentée comme un vrai joueur.
 
 import { HERO, SPELL, MAX_STAR } from './content.js';
-import { CY, HEART, SUMMON_COST, MYTH, check, sanctOf, inIsland } from './sim.js';
+import { CY, HEART, SUMMON_COST, check, sanctOf, inIsland } from './sim.js';
 import { makeRng } from './rng.js';
 
-// orders : chance de penser aux ordres tactiques à chaque décision (la Recrue n'en donne jamais) ;
 // think : secondes entre deux décisions ; mana : vitesse de l'éther de l'IA ; mistake : chance d'agir au hasard / de rester passive.
 export const AI_LEVELS = [
-  { name: 'Recrue',    think: 3.6, merge: 0.1, defend: 0.35, heart: 0.15, spellSmart: 0.2, reserve: 0, mana: 0.6, mistake: 0.45, orders: 0.0 },
-  { name: 'Soldat',    think: 3.1, merge: 0.3, defend: 0.5, heart: 0.3, spellSmart: 0.35, reserve: 0, mana: 0.68, mistake: 0.36, orders: 0.08 },
-  { name: 'Capitaine', think: 2.8, merge: 0.45, defend: 0.6, heart: 0.45, spellSmart: 0.55, reserve: 0, mana: 0.72, mistake: 0.3, orders: 0.1 },
-  { name: 'Champion',  think: 2.6, merge: 0.55, defend: 0.65, heart: 0.55, spellSmart: 0.7, reserve: 0, mana: 0.76, mistake: 0.25, orders: 0.13 },
-  { name: 'Seigneur',  think: 2.2, merge: 0.7, defend: 0.8, heart: 0.7, spellSmart: 0.85, reserve: 0, mana: 0.84, mistake: 0.16, orders: 0.18 },
+  { name: 'Recrue',    think: 3.6, merge: 0.1, defend: 0.35, heart: 0.15, spellSmart: 0.2, reserve: 0, mana: 0.6, mistake: 0.45 },
+  { name: 'Soldat',    think: 3.1, merge: 0.3, defend: 0.5, heart: 0.3, spellSmart: 0.35, reserve: 0, mana: 0.68, mistake: 0.36 },
+  { name: 'Capitaine', think: 2.8, merge: 0.45, defend: 0.6, heart: 0.45, spellSmart: 0.55, reserve: 0, mana: 0.72, mistake: 0.3 },
+  { name: 'Champion',  think: 2.6, merge: 0.55, defend: 0.65, heart: 0.55, spellSmart: 0.7, reserve: 0, mana: 0.76, mistake: 0.25 },
+  { name: 'Seigneur',  think: 2.2, merge: 0.7, defend: 0.8, heart: 0.7, spellSmart: 0.85, reserve: 0, mana: 0.84, mistake: 0.16 },
 ];
 
 export function createBot(p, level = 1, seed = 7) {
@@ -52,18 +51,6 @@ export function botThink(bot, s, dt) {
       const danger = enemies.some(e => d2(e, sanct) < 49);
       if (c.n >= 3 || danger || bot.rng() > L.spellSmart) return ok({ p, t: 'spell', x: c.x, y: c.y });
     }
-  }
-  // 1 bis) Ordre tactique (mêmes ordres que le joueur) : défendre si le Sanctuaire est menacé,
-  // tenir le Cœur quand on a du monde sur l'île, pousser quand on domine. Plus l'IA est forte, plus elle y pense.
-  if (L.orders && mine.length && P.orderCd <= 0 && bot.rng() < L.orders) {
-    const near = enemies.filter(e => d2(e, sanct) < 64).length, guard = mine.filter(e => d2(e, sanct) < 64).length;
-    const H = s.heart, myHeart = H.owner === p;
-    let want = P.order;
-    // le Cœur est l'objectif principal ; défendre si le Sanctuaire est menacé ; pousser seulement en net avantage
-    if (near >= 2 && near > guard) want = 'defend';
-    else if (mine.length >= enemies.length + 4 || (s.t > 150 && sanct.hp / sanct.maxHp < sanctOf(s, 1 - p).hp / sanctOf(s, 1 - p).maxHp - 0.1)) want = 'assault';
-    else want = 'heart';
-    if (want !== P.order) { const cm = ok({ p, t: 'order', o: want }); if (cm) return cm; }
   }
   // 2) Fusion sur le cercle
   if (bot.rng() < L.merge) {

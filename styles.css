@@ -1146,29 +1146,3 @@ body::after { background: radial-gradient(60% 22% at 30% 16%, rgba(80, 255, 190,
 @media (prefers-reduced-motion: reduce) { .wm-art, .wm-halo, .wm-mist, .wm-me, .wm-neb, .wm-st { animation: none !important; } }
 /* Petits écrans : la ligne de progression « 0 / 120 Gloire → monde suivant » n'est plus coupée */
 @media (max-width: 400px) { .home-prog { left: 10%; right: 10%; } }
-
-/* ===== Lot 2 (20/11) : ordres tactiques (bord droit, à portée du pouce) + jauge de la Décharge du Mythe ===== */
-.b-orders { position: absolute; right: 6px; top: 50%; z-index: 6; display: flex; flex-direction: column; gap: 7px; padding: 6px 4px; border-radius: 30px;
-  background: rgba(8, 12, 40, .55); border: 1px solid rgba(233, 200, 119, .35); backdrop-filter: blur(3px); }
-.b-ord { position: relative; width: 50px; height: 50px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; padding: 0;
-  background: radial-gradient(circle at 40% 30%, #26346f, #0d1440); border: 2px solid rgba(207, 216, 240, .3); color: #cfd8f0; transition: transform .12s, border-color .2s, box-shadow .2s; }
-.b-ord .oi { display: block; width: 24px; height: 24px; opacity: .75; } .b-ord .oi svg { width: 100%; height: 100%; display: block; }
-.b-ord small { font-size: 8.5px; font-weight: 900; letter-spacing: .3px; line-height: 1; margin-top: 1px; text-shadow: 0 1px 2px #000; }
-.b-ord:active { transform: scale(.92); }
-.b-ord.on .oi { opacity: 1; }
-.b-ord.o-heart.on { border-color: #ffd36a; box-shadow: 0 0 12px rgba(255, 211, 106, .75); color: #ffe6a0; }
-.b-ord.o-assault.on { border-color: #ff7a4a; box-shadow: 0 0 12px rgba(255, 122, 74, .75); color: #ffd2bf; }
-.b-ord.o-defend.on { border-color: #6fc8ff; box-shadow: 0 0 12px rgba(111, 200, 255, .75); color: #d2eeff; }
-/* délai avant le prochain ordre : anneau qui se vide sur les boutons inactifs */
-.b-ord .cd { position: absolute; inset: -2px; border-radius: 50%; pointer-events: none; opacity: 0; }
-.b-orders.wait .b-ord:not(.on) { opacity: .55; }
-.b-orders.wait .b-ord:not(.on) .cd { opacity: 1; background: conic-gradient(rgba(5, 8, 24, .6) calc(var(--cd) * 360deg), transparent 0); }
-/* Décharge du Mythe : deux fines barres sous le chrono (toi en bleu, l'ennemi en rouge) */
-.b-myth { position: relative; height: 7px; margin: 3px auto 0; width: 64px; display: flex; flex-direction: column; gap: 1px; }
-.b-myth i { display: block; height: 3px; border-radius: 2px; background: rgba(255, 255, 255, .12); position: relative; overflow: hidden; }
-.b-myth i::after { content: ''; position: absolute; inset: 0; transform-origin: left; border-radius: 2px; }
-.b-myth .me::after { background: linear-gradient(90deg, #3da9ff, #9fe2ff); transform: scaleX(var(--m, 0)); }
-.b-myth .op::after { background: linear-gradient(90deg, #ff4f5e, #ff9aa2); transform: scaleX(var(--o, 0)); }
-.b-myth.hot .me::after { background: linear-gradient(90deg, #ffc04a, #fff1b8); animation: mythhot .5s ease-in-out infinite alternate; }
-@keyframes mythhot { to { filter: brightness(1.6); } }
-@media (max-height: 640px) { .b-orders { top: 40%; } .b-ord { width: 44px; height: 44px; } .b-ord .oi { width: 20px; height: 20px; } }

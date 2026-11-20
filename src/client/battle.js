@@ -1,5 +1,5 @@
 // MYTHORIA — écran de combat : simulation + IA (plus tard : réseau) + vue 3D + toucher + interface.
-import { createBattle, step, check, timeLeft, sanctOf, DT, MANA_MAX, DOUBLE_AT, SUMMON_COST, deployOk } from '../shared/sim.js';
+import { createBattle, step, check, timeLeft, sanctOf, DT, MANA_MAX, DOUBLE_AT, SUMMON_COST, deployOk, ORDERS, ORDER_CD, MYTH } from '../shared/sim.js';
 import { HERO, SPELL } from '../shared/content.js';
 import { createBot, botThink, AI_LEVELS } from '../shared/ai.js';
 import { BattleView } from './three/battleview.js';
@@ -7,6 +7,14 @@ import { h, toast, confirmBox } from './ui/dom.js';
 import { icon } from './ui/icons.js';
 import { sfx, playMusic, setMusicIntensity } from './audio.js';
 import { Tuto } from './tuto.js';
+
+// Ordres tactiques (Lot 2) : icônes et noms des 3 boutons du bord droit
+const ORDER_UI = {
+  heart: { name: 'Cœur', tip: 'Tes héros tiennent le Cœur de Mythe', svg: '<svg viewBox="0 0 24 24"><path d="M12 2l5 7-5 13-5-13z" fill="#ffd36a" stroke="#3e2404" stroke-width="1.3" stroke-linejoin="round"/><path d="M12 2l5 7h-10z" fill="#fff4c4" opacity=".7"/><circle cx="12" cy="10" r="1.6" fill="#fff"/></svg>' },
+  assault: { name: 'Assaut', tip: 'Tes héros foncent sur le Sanctuaire ennemi', svg: '<svg viewBox="0 0 24 24"><path d="M4 20L15 9l1.5-5L21 2.5 19.5 7 15 9" fill="none" stroke="#ffe2d0" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.5 13.5l4 4M4 20l2.5-1" stroke="#ff7a4a" stroke-width="2.4" stroke-linecap="round"/></svg>' },
+  defend: { name: 'Défense', tip: 'Tes héros se replient devant ton Sanctuaire', svg: '<svg viewBox="0 0 24 24"><path d="M12 2.5l8 3v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10v-6z" fill="#6fc8ff" stroke="#08204a" stroke-width="1.4" stroke-linejoin="round"/><path d="M12 5.5v13" stroke="#fff" stroke-width="1.6" opacity=".8"/></svg>' },
+};
+const ORDER_ROW = ['heart', 'assault', 'defend'];
 
 // ?speed=4 dans l'adresse accélère le combat (sert aux tests automatiques).
 const SPEED = Math.min(8, Math.max(1, Number(new URLSearchParams(location.search).get('speed')) || 1));
@@ -61,7 +69,8 @@ export class Battle {
             h('span', { class: 'tp-n' }, '')),
           h('div', { class: 'tp-bar' }, h('i', { class: 'tp-lag' }), h('i', { class: 'tp-fill' }), h('u'))); return { el, name: el.querySelector('.tp-name'), n: el.querySelector('.tp-n'), fill: el.querySelector('.tp-fill'), lag: el.querySelector('.tp-lag'), hp: -1, lagK: 1, hitT: 0 }; })).map(t => t.el)),
       h('div', { class: 'b-top' },
-        h('div', { class: 'b-clock' }, this.elTimer = h('b', {}, '3:00'), this.elHeart = h('small', {}, 'Cœur : libre')),
+        h('div', { class: 'b-clock' }, this.elTimer = h('b', {}, '3:00'), this.elHeart = h('small', {}, 'Cœur : libre'),
+          this.elMyth = h('div', { class: 'b-myth', title: 'Décharge du Mythe' }, h('i', { class: 'me' }), h('i', { class: 'op' }))),
         this.elBoss = h('div', { class: 'b-boss' }, h('b', {}, ''), h('div', { class: 'b-hp red' }, h('i'), h('span', {}, ''))),
         h('button', { class: 'b-quit', onclick: () => this.quit(), 'aria-label': 'Quitter' }, icon('close'))),
       h('div', { class: 'b-bottom' },
@@ -76,7 +85,9 @@ export class Battle {
             h('span', { class: 'sm-ic' }, icon('summon')), h('b', {}, 'Invoquer'), h('small', {}, icon('ether'), SUMMON_COST)))),
       this.elLoad = h('div', { class: 'b-load' }, h('div', { class: 'logo' }, 'MYTHORIA'), h('b', {}, 'Ouverture de la Faille…'),
         h('small', {}, w.name), h('div', { class: 'lbar' }, this.elLoadBar = h('i'))),
-      this.elHint = h('div', { class: 'b-hint' }, '👆 Touche un héros du Cercle, puis l’île'));
+      this.elHint = h('div', { class: 'b-hint' }, '👆 Touche un héros du Cercle, puis l’île'),
+      // ordres tactiques : colonne de 3 boutons ronds au bord droit, à portée du pouce
+      this.elOrders = h('div', { class: 'b-orders' }, ...ORDER_ROW.map(o => { const b = h('button', { class: 'b-ord o-' + o, 'data-o': o, 'aria-label': ORDER_UI[o].name, onclick: () => this.order(o) }, h('span', { class: 'oi', html: ORDER_UI[o].svg }), h('small', {}, ORDER_UI[o].name), h('i', { class: 'cd' })); return b; })));
     this.gems = [...this.el.querySelectorAll('.eth-gems i')];
     this.root.innerHTML = ''; this.root.append(this.el);
     this.cv.addEventListener('pointerdown', e => this.down(e));
@@ -89,7 +100,12 @@ export class Battle {
     const tick = () => {
       if (this.ended) return;
       if (n > 0) { this.banner(String(n), 'count'); sfx('tick'); n--; setTimeout(tick, 700); }
-      else { this.banner('Combat !', 'go'); sfx('go'); this.started = true; setTimeout(() => this.banner(''), 900); }
+      else {
+        this.banner('Combat !', 'go'); sfx('go'); this.started = true; setTimeout(() => this.banner(''), 900);
+        // présentation des ordres et de la Décharge, une seule fois (Lot 2)
+        let seen = true; try { seen = !!localStorage.getItem('myt_ord'); if (!seen) localStorage.setItem('myt_ord', '1'); } catch (e) {}
+        if (!seen && !this.tuto) setTimeout(() => !this.ended && toast('Nouveau : donne des ordres à tes héros (boutons à droite). Tiens le Cœur 30 s pour lancer le Rayon du Mythe !'), 1600);
+      }
     };
     setTimeout(tick, 200);
   }
@@ -103,6 +119,12 @@ export class Battle {
     this.pending.push(cm); return true;
   }
   summon() { if (this.send({ p: this.me, t: 'summon' })) sfx('summon'); }
+  order(o) {
+    if (!this.started || this.ended) return;
+    const P = this.s.players[this.me];
+    if (P.order === o) { toast(ORDER_UI[o].tip); return; }
+    if (this.send({ p: this.me, t: 'order', o })) { sfx('click'); toast(ORDER_UI[o].name + ' : ' + ORDER_UI[o].tip.toLowerCase()); }
+  }
   toggleAim() {
     if (this.s.players[this.me].eveil < 100) { toast('La jauge d’Éveil se remplit avec le temps (2× plus vite si tu tiens le Cœur)'); return; }
     this.aiming = !this.aiming; this.elSpell.classList.toggle('aim', this.aiming);
@@ -217,6 +239,7 @@ export class Battle {
       else if (e.type === 'boss') { this.banner('☠ ' + e.name, 'bad'); sfx('tower'); setTimeout(() => !this.ended && this.banner(''), 1800); }
       else if (e.type === 'bossSkill') sfx(e.k === 'freeze' ? 'freeze' : e.k === 'heal' ? 'heal' : 'boom', 200);
       else if (e.type === 'bossDown') { this.banner('Boss vaincu ! Détruis le Sanctuaire', 'good'); sfx('boom'); setTimeout(() => !this.ended && this.banner(''), 1600); }
+      else if (e.type === 'discharge') { sfx('boom'); setTimeout(() => sfx('spell'), 120); this.banner(e.p === this.me ? 'Rayon du Mythe !' : 'Rayon du Mythe ennemi !', e.p === this.me ? 'good big' : 'bad big'); setTimeout(() => !this.ended && this.banner(''), 1500); }
       else if (e.type === 'overtime') { this.banner('Prolongation !', 'go'); setTimeout(() => !this.ended && this.banner(''), 1800); }
     }
     if (!this.dbl && this.s.t >= DOUBLE_AT) { setMusicIntensity(1); this.dbl = true; this.banner('Éther ×2 !', 'go'); setTimeout(() => !this.ended && this.banner(''), 1500); }
@@ -262,6 +285,12 @@ export class Battle {
     if (!P.deployed && s.t > 12 && nb && this.elHint.classList.contains('off') && !this.hintAgain) { this.hintAgain = true; this.elHint.textContent = 'Astuce : touche un héros en bas, puis l’île'; this.elHint.classList.remove('off'); setTimeout(() => this.elHint.classList.add('off'), 6000); }
     this.elSpell.style.setProperty('--p', P.eveil / 100);
     this.elSpell.classList.toggle('ready', P.eveil >= 100);
+    // ordres : bouton actif + délai avant le prochain changement
+    if (this.ordShown !== P.order) { this.ordShown = P.order; this.elOrders.querySelectorAll('.b-ord').forEach(b => b.classList.toggle('on', b.dataset.o === P.order)); }
+    const cdk = P.orderCd / ORDER_CD; if (this.ordCd !== cdk) { this.ordCd = cdk; this.elOrders.style.setProperty('--cd', cdk); this.elOrders.classList.toggle('wait', cdk > 0); }
+    // Décharge du Mythe : progression des deux camps sous le chrono
+    const mk = Math.min(1, P.myth / MYTH.need), ok = Math.min(1, s.players[1 - this.me].myth / MYTH.need);
+    this.elMyth.style.setProperty('--m', mk); this.elMyth.style.setProperty('--o', ok); this.elMyth.classList.toggle('hot', mk > 0.8);
     const hs = s.heart.owner < 0 ? 'Cœur : libre' : s.heart.owner === this.me ? 'Cœur : à toi ✦' : 'Cœur : ennemi';
     if (this.elHeart.textContent !== hs) { this.elHeart.textContent = hs; this.elHeart.className = s.heart.owner < 0 ? '' : s.heart.owner === this.me ? 'blue' : 'red'; }
   }

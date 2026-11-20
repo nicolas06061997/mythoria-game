@@ -17,6 +17,16 @@ export const SUMMON_COST = 2, BENCH = 5, EVEIL_TIME = 35;
 export const HEART = { x: CX, y: CY, r: 2.6, rate: 0.45 };
 export const SANCT = { hp: 12000, dmg: 100, hit: 0.85, range: 6.5, r: 1.7, splash: 1.0, y: [21.8, 2.2] };
 const DEPLOY_TIME = 1.0, SIGHT = 5.5;
+// Ordres tactiques (Lot 2, 20/11) : comportement de TOUS les héros d'un camp déjà sur l'île (et des suivants).
+// heart = tenir le Cœur de Mythe ; assault = pousser vers le Sanctuaire adverse (comportement d'origine, ordre de départ) ;
+// defend = se replier devant son Sanctuaire sans poursuivre au-delà de sa moitié.
+export const ORDERS = ['heart', 'assault', 'defend'];
+export const ORDER_CD = 1.5;          // secondes entre deux changements d'ordre
+const DEF_R = 7.0, DEF_BACK = 3.4;
+export const ORDER_FX = { defendArmor: 0.8, assaultSiege: 1.25 }; // Défense : -20 % de dégâts reçus dans sa moitié ; Assaut : +25 % contre Sanctuaires et bâtiments    // rayon de défense autour du point de repli ; recul du point de repli devant le Sanctuaire
+// Décharge du Mythe : tenir le Cœur (au moins un de ses héros au sol dessus, aucun ennemi) MYTH.need secondes au total -> rayon qui frappe le Sanctuaire adverse
+// (et les ennemis sur sa trajectoire), puis le compteur repart à zéro.
+export const MYTH = { need: 30, sanctPct: 0.07, unitDmg: 400, width: 1.3 };
 
 const sq = x => x * x;
 const dist = (a, b) => Math.sqrt(sq(a.x - b.x) + sq(a.y - b.y));
@@ -47,6 +57,7 @@ export function createBattle({ seed = 1, decks, spells = ['meteore', 'meteore'],
     players: [0, 1].map(p => ({
       name: names[p], mana: MANA_START, eveil: 0, bench: Array(BENCH).fill(null), deck: decks[p].slice(),
       spell: spells[p] || 'meteore', levels: levels[p] || {}, gear: gear[p] || {}, syn: deckSynergies(decks[p]).tiers, summons: 0, deployed: 0, fuses: 0, spells: 0, hearts: 0,
+      order: 'assault', orderCd: 0, orders: 0, myth: 0, discharges: 0,
       bonus: (p === 0 && bonus) || (p === 1 && botMana ? { hp: 1, sanctDmg: 1, eveil: 1, mana: botMana } : { hp: 1, sanctDmg: 1, eveil: 1 }),
     })),
   };
@@ -96,6 +107,11 @@ export function check(s, cm) {
       if (P.eveil < 100 - 1e-6) return 'Jauge d’Éveil pas encore pleine.';
       if (!inIsland(cm.x, cm.y)) return 'Vise l’île.';
       return null;
+    case 'order':
+      if (!ORDERS.includes(cm.o)) return 'Ordre inconnu.';
+      if (P.order === cm.o) return 'C’est déjà l’ordre en cours.';
+      if (P.orderCd > 1e-9) return 'Attends un instant avant de changer d’ordre.';
+      return null;
   }
   return 'Commande inconnue.';
 }
@@ -123,6 +139,9 @@ function apply(s, cm) {
   } else if (cm.t === 'deploy') {
     const h = P.bench[cm.slot]; P.bench[cm.slot] = null; P.deployed++;
     deployHero(s, cm.p, h, cm.x, cm.y);
+  } else if (cm.t === 'order') {
+    P.order = cm.o; P.orderCd = ORDER_CD; P.orders++;
+    s.ev.push({ type: 'order', p: cm.p, o: cm.o });
   } else if (cm.t === 'spell') {
     P.eveil = 0; P.spells++;
     const c = SPELL[P.spell];
@@ -203,6 +222,9 @@ function deployHero(s, p, h, x, y) {
 function damage(s, t, amount, src) {
   if (t.dead || amount <= 0 || t.invuln) return;
   if (t.fly && src && src.proj) amount *= 1.35; // les tirs à distance sont efficaces contre les volants
+  // effets des ordres tactiques
+  if (src && src.kind === 'unit' && t.kind !== 'unit' && orderOf(s, src) === 'assault') amount *= ORDER_FX.assaultSiege;
+  if (t.kind === 'unit' && orderOf(s, t) === 'defend' && (t.p === 0 ? t.y > CY : t.y < CY)) amount *= ORDER_FX.defendArmor;
   amount = Math.round(amount);
   if (t.shield > 0) {
     const a = Math.min(t.shield, amount);
@@ -248,16 +270,30 @@ function canTarget(e, t) {
 }
 const gap = (a, b) => dist(a, b) - a.r - b.r;
 
+// Ordre suivi par un héros (les bâtiments et les boss gardent leur comportement)
+function orderOf(s, e) { return e.kind === 'unit' && !e.boss ? s.players[e.p].order : 'assault'; }
+// Point de repli devant son Sanctuaire
+function defPoint(e) { return { x: CX, y: e.p === 0 ? SANCT.y[0] - DEF_BACK : SANCT.y[1] + DEF_BACK }; }
+// Point où se rend un héros sans ennemi en vue (Cœur ou repli), un peu écarté selon son numéro pour ne pas s'empiler
+function orderDest(s, e) {
+  const o = orderOf(s, e); if (o === 'assault') return null;
+  const ox = ((e.id * 37) % 7 - 3) * 0.42, oy = ((e.id * 53) % 5 - 2) * 0.32;
+  if (o === 'heart') return { x: HEART.x + ox, y: HEART.y + oy + (e.p === 0 ? 0.4 : -0.4) };
+  const d = defPoint(e); return { x: d.x + ox * 1.4, y: d.y + oy };
+}
 function acquire(s, e) {
   let best = null, bd = Infinity;
   const isStatic = e.kind !== 'unit';
   const sight = isStatic ? e.range : Math.max(SIGHT, e.range + 1);
+  const o = orderOf(s, e), dp = o === 'defend' ? defPoint(e) : null;
   for (const t of s.ents) {
     if (!canTarget(e, t)) continue;
     const d = gap(e, t);
+    // en défense : seulement les ennemis proches du point de repli (ou à portée immédiate)
+    if (dp && d > e.range && dist(t, dp) > DEF_R) continue;
     if (d <= sight && d < bd) { bd = d; best = t; }
   }
-  if (!best && !isStatic) {
+  if (!best && !isStatic && o === 'assault') {
     for (const t of s.ents) {
       if (t.dead || t.p === e.p || t.kind === 'unit') continue;
       const d = dist(e, t);
@@ -321,6 +357,7 @@ export function step(s, cmds = []) {
   for (const [p, P] of s.players.entries()) {
     const bonus = s.heart.owner === p ? 1.35 : 1;
     P.mana = Math.min(MANA_MAX, P.mana + (s.t >= DOUBLE_AT && s.mode !== 'survival' ? 2 : 1) * bonus * (s.mods.mana || 1) * (P.bonus.mana || 1) / MANA_REGEN * dt);
+    if (P.orderCd > 0) P.orderCd = Math.max(0, P.orderCd - dt);
     P.eveil = Math.min(100, P.eveil + 100 / EVEIL_TIME * (s.heart.owner === p ? 1.6 : 1) * (s.mods.eveil || 1) * P.bonus.eveil * dt);
   }
   for (const sp of s.pend) if (sp.at <= s.tick) castSpell(s, sp);
@@ -366,7 +403,15 @@ export function step(s, cmds = []) {
       t = acquire(s, e); e.retarget = 0.25; e.target = t ? t.id : 0;
     }
     if (e.cd > 0) e.cd -= dt * (e.slowK ? 1 - e.slowK : 1);
-    if (!t) continue;
+    if (!t) {
+      // aucun ennemi à combattre : rejoindre le point de l'ordre (Cœur ou repli)
+      const dst = e.kind === 'unit' ? orderDest(s, e) : null;
+      if (dst) {
+        const mx = dst.x - e.x, my = dst.y - e.y, md = Math.sqrt(mx * mx + my * my);
+        if (md > 0.35) { const stp = Math.min(md, e.spd * (e.slowK ? 1 - e.slowK : 1) * dt); e.x += mx / md * stp; e.y += my / md * stp; e.moving = true; e.faceX = mx / md; e.faceY = my / md; }
+      }
+      continue;
+    }
     const dx = t.x - e.x, dy = t.y - e.y, dd = Math.sqrt(dx * dx + dy * dy) || 1;
     e.faceX = dx / dd; e.faceY = dy / dd;
     const g = gap(e, t);
@@ -405,6 +450,27 @@ function updateHeart(s, dt) {
   else if (H0.ctl <= -0.999) H0.owner = 1;
   else if ((H0.owner === 0 && H0.ctl <= 0) || (H0.owner === 1 && H0.ctl >= 0)) H0.owner = -1;
   if (H0.owner !== before) { s.ev.push({ type: 'heart', owner: H0.owner }); if (H0.owner >= 0) s.players[H0.owner].hearts++; }
+  // Décharge du Mythe : temps de contrôle cumulé
+  const active = H0.owner === 0 ? a > 0 && !b : H0.owner === 1 ? b > 0 && !a : false;
+  if (active && !s.over) {
+    const P = s.players[H0.owner];
+    P.myth += dt;
+    if (P.myth >= MYTH.need - 1e-9) { P.myth = 0; discharge(s, H0.owner); }
+  }
+}
+// Rayon du Mythe : part du Cœur, frappe le Sanctuaire adverse et les ennemis sur sa trajectoire
+function discharge(s, p) {
+  const tgt = sanctOf(s, 1 - p), x0 = HEART.x, y0 = HEART.y, x1 = tgt.x, y1 = tgt.y;
+  const vx = x1 - x0, vy = y1 - y0, L2 = vx * vx + vy * vy || 1;
+  s.players[p].discharges++;
+  s.ev.push({ type: 'discharge', p, x0, y0, x1, y1 });
+  for (const e of s.ents) {
+    if (e.dead || e.p === p || e.kind === 'sanct') continue;
+    const u = Math.max(0, Math.min(1, ((e.x - x0) * vx + (e.y - y0) * vy) / L2));
+    const dx = e.x - (x0 + vx * u), dy = e.y - (y0 + vy * u);
+    if (Math.sqrt(dx * dx + dy * dy) <= MYTH.width + e.r * 0.5) damage(s, e, MYTH.unitDmg, null);
+  }
+  if (!tgt.dead) damage(s, tgt, tgt.maxHp * MYTH.sanctPct, null);
 }
 
 function onLand(s, e) {
@@ -486,7 +552,7 @@ export function hashState(s) {
   const add = n => { h ^= Math.round(n * 1000) | 0; h = Math.imul(h, 16777619) >>> 0; };
   add(s.tick);
   for (const e of s.ents) { add(e.id); add(e.x); add(e.y); add(e.hp); }
-  for (const P of s.players) { add(P.mana); add(P.eveil); for (const b of P.bench) add(b ? b.star * 7 + b.id.length : 0); }
+  for (const P of s.players) { add(P.mana); add(P.eveil); add(P.myth); add(ORDERS.indexOf(P.order)); for (const b of P.bench) add(b ? b.star * 7 + b.id.length : 0); }
   return h.toString(16);
 }
 

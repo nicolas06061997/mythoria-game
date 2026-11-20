@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createBattle, step, check, hashState, TICK_RATE, MATCH_TIME, OVERTIME, SUMMON_COST, sanctOf, HEART } from '../src/shared/sim.js';
+import { createBattle, step, check, hashState, TICK_RATE, MATCH_TIME, OVERTIME, SUMMON_COST, sanctOf, HEART, MYTH, ORDER_CD } from '../src/shared/sim.js';
 import { STARTER_DECK, HERO } from '../src/shared/content.js';
 import { createBot, botThink } from '../src/shared/ai.js';
 
@@ -117,4 +117,45 @@ test('objets : bonus plafonnés et appliqués', async () => {
   assert.ok(a && b);
   assert.equal(Object.keys(botGear(deck, 0)).length, 0);
   assert.equal(Object.keys(botGear(deck, 900)).length, deck.length);
+});
+
+// ---------- Lot 2 : ordres tactiques et Décharge du Mythe ----------
+test('ordres : Assaut au départ, ordres mal formés ou trop rapprochés refusés', () => {
+  const s = mk();
+  assert.equal(s.players[0].order, 'assault');
+  assert.ok(check(s, { p: 0, t: 'order', o: 'charge' }));          // ordre inconnu
+  assert.ok(check(s, { p: 0, t: 'order', o: 'assault' }));         // déjà en cours
+  step(s, [{ p: 0, t: 'order', o: 'defend' }]);
+  assert.equal(s.players[0].order, 'defend');
+  assert.ok(check(s, { p: 0, t: 'order', o: 'heart' }));           // trop tôt
+  for (let i = 0; i < TICK_RATE * ORDER_CD + 2; i++) step(s);
+  assert.equal(check(s, { p: 0, t: 'order', o: 'heart' }), null);
+  assert.equal(s.players[1].order, 'assault');                     // l'autre camp n'est pas touché
+});
+
+test('ordre Défense : les héros reviennent devant leur Sanctuaire ; ordre Cœur : ils restent au centre', () => {
+  const s = mk();
+  s.players[0].bench[0] = { id: 'frere', star: 1 };
+  step(s, [{ p: 0, t: 'deploy', slot: 0, x: 8, y: 13 }, { p: 0, t: 'order', o: 'defend' }]);
+  for (let i = 0; i < TICK_RATE * 12; i++) step(s);
+  const u = s.ents.find(e => e.p === 0 && e.kind === 'unit');
+  assert.ok(u.y > 16, 'replié vers son Sanctuaire (y=' + u.y.toFixed(1) + ')');
+  for (let i = 0; i < TICK_RATE * ORDER_CD; i++) step(s);
+  step(s, [{ p: 0, t: 'order', o: 'heart' }]);
+  for (let i = 0; i < TICK_RATE * 15; i++) step(s);
+  assert.ok(Math.hypot(u.x - HEART.x, u.y - HEART.y) < HEART.r, 'au Cœur');
+});
+
+test('Décharge du Mythe : tenir le Cœur 30 s au total frappe le Sanctuaire adverse', () => {
+  const s = mk();
+  s.players[0].bench[0] = { id: 'frere', star: 1 };
+  step(s, [{ p: 0, t: 'deploy', slot: 0, x: 8, y: 13 }, { p: 0, t: 'order', o: 'heart' }]);
+  const op = sanctOf(s, 1), hp0 = op.hp;
+  let fired = null;
+  for (let i = 0; i < TICK_RATE * 45 && !fired; i++) { step(s); fired = s.ev.find(e => e.type === 'discharge'); }
+  assert.ok(fired, 'la Décharge part');
+  assert.equal(fired.p, 0);
+  assert.ok(hp0 - op.hp >= Math.round(op.maxHp * MYTH.sanctPct) - 1, 'Sanctuaire touché');
+  assert.ok(s.players[0].myth < 1, 'le compteur repart à zéro');
+  assert.equal(s.players[0].discharges, 1);
 });

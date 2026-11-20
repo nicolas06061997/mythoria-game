@@ -1,6 +1,6 @@
 // MYTHORIA — vue 3D d'un combat. N'applique AUCUNE règle : elle montre l'état de la simulation.
 import * as THREE from 'three';
-import { CX, CY, RX, RY, HEART, SANCT, BENCH } from '../../shared/sim.js';
+import { CX, CY, RX, RY, HEART, SANCT, BENCH, MYTH } from '../../shared/sim.js';
 import { HERO, SPELL, RARITIES } from '../../shared/content.js';
 import { createRenderer, quality, PerfWatch } from './stage.js';
 import { buildWorld } from './world.js';
@@ -407,12 +407,31 @@ export class BattleView {
   }
   highlightSlot(i) { this.bench.forEach((b, k) => { b.sel = k === i; b.rune.material.color.set(b.sel ? '#ffd166' : '#8fd8ff'); b.halo.material.color.set(b.sel ? '#ffc04a' : '#5fb8ff'); b.halo.material.opacity = b.sel ? 0.7 : 0.35; }); }
 
+  // Rayon du Mythe (Lot 2) : faisceau du Cœur jusqu'au Sanctuaire visé, éclair, explosion, secousse
+  mythBeam(e, team) {
+    const a = this.toWorld(e.x0, e.y0), b = this.toWorld(e.x1, e.y1), col = TEAM[team];
+    const A = new THREE.Vector3(a.x, 1.6, a.z), B = new THREE.Vector3(b.x, 2.2, b.z), len = A.distanceTo(B);
+    const mk = (r, c, op) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, 12, 1, true), new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false })); m.position.copy(A).add(B).multiplyScalar(0.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), B.clone().sub(A).normalize()); this.scene.add(m); return m; };
+    const core = mk(0.22, '#ffffff', 1), glow = mk(0.75, col, 0.55);
+    (this.beams = this.beams || []).push({ core, glow, t: 0, life: 1.1 });
+    this.fx.pillar(a.x, a.z, 1.6, col, 1.0, 9); this.fx.flash(a.x, 2, a.z, 7, col, 0.5);
+    this.fx.flash(b.x, 2.5, b.z, 8, '#ffffff', 0.6); this.fx.explosion(b.x, b.z, 2.4, 'magic'); this.fx.ring(b.x, b.z, 3.6, col, 0.8);
+    this.shake = Math.max(this.shake, 0.7);
+  }
+  beamTick(b, dt) {
+    b.t += dt; const k = 1 - b.t / b.life;
+    if (k <= 0) { for (const m of [b.core, b.glow]) { this.scene.remove(m); m.geometry.dispose(); } return false; }
+    const w = 1 + Math.sin(b.t * 40) * 0.12;
+    b.core.material.opacity = k; b.glow.material.opacity = 0.55 * k; b.core.scale.set(w * (0.4 + k * 0.6), 1, w * (0.4 + k * 0.6)); b.glow.scale.set(w * (0.5 + k), 1, w * (0.5 + k));
+    return true;
+  }
+
   // ---------- Effets à partir des événements ----------
   ingest(ev, s) {
     for (const e of ev) {
       const w = e.x !== undefined ? this.toWorld(e.x, e.y) : null;
       const team = e.p === this.me ? 0 : 1;
-      if (['fuse', 'heart', 'bossDown', 'boss'].includes(e.type) || (e.type === 'die' && e.kind === 'sanct') || e.type === 'end') { const k = e.type === 'end' || e.type === 'bossDown' ? 1.5 : 0.8; this.world.cheer(k); this.artCheer = Math.min(1.5, (this.artCheer || 0) + k); }
+      if (['fuse', 'heart', 'bossDown', 'boss', 'discharge'].includes(e.type) || (e.type === 'die' && e.kind === 'sanct') || e.type === 'end') { const k = e.type === 'end' || e.type === 'bossDown' ? 1.5 : 0.8; this.world.cheer(k); this.artCheer = Math.min(1.5, (this.artCheer || 0) + k); }
       switch (e.type) {
         case 'deploy': this.fx.ring(w.x, w.z, 1.4, TEAM[team], 0.6); this.fx.pillar(w.x, w.z, 0.6, TEAM[team], 0.7, 7); break;
         case 'land': { const v = this.views.get(e.id); if (v) { this.fx.dust(w.x, w.z, 12); this.fx.ring(w.x, w.z, 1.0, '#ffffff', 0.35); } break; }
@@ -432,6 +451,8 @@ export class BattleView {
         case 'heart': this.fx.flash(0, 2, 0, 6, e.owner < 0 ? '#ffffff' : TEAM[e.owner === this.me ? 0 : 1], 0.6); this.fx.ring(0, 0, 3.4, e.owner < 0 ? '#ffffff' : TEAM[e.owner === this.me ? 0 : 1], 0.8); break;
         case 'shieldBreak': { const ent = s.ents.find(o => o.id === e.id); if (ent) { const q = this.toWorld(ent.x, ent.y); this.fx.emit(q.x, 1, q.z, { n: 14, color: ['#cfe8ff', '#ffffff'], size: 0.35, life: 0.5, speed: 3 }); } break; }
         case 'boss': this.shake = 0.6; break;
+        case 'discharge': this.mythBeam(e, team); break;
+        case 'order': if (e.p === this.me) this.orderT = 2.5; break;
         case 'bossSkill': {
           const v = this.views.get(e.id); if (v && v.actor) v.actor.play(e.k === 'slam' ? 'attack' : 'cast', { force: true });
           if (e.k === 'slam') { this.fx.explosion(w.x, w.z, e.r, 'roar'); this.fx.ring(w.x, w.z, e.r * 1.3, '#ff5a3a', 0.6); this.shake = 0.45; }
@@ -551,6 +572,7 @@ export class BattleView {
       if (k < 0.5 && !S.dead) { S.smokeT -= dt; if (S.smokeT <= 0) { S.smokeT = 0.15 + k * 0.4; this.fx.emit(S.g.position.x + (Math.random() - 0.5) * 2, 2.5, S.g.position.z, { n: 1, color: k < 0.25 ? ['#ff8a3d', '#5a5050'] : ['#6a6464'], size: 1.2, life: 1.6, speed: 0.4, up: 1, gravity: 1, alpha: 0.4 }); } }
     }
     this.heart.update(this.time, this.me === 0 ? s.heart.ctl : -s.heart.ctl, s.heart.owner < 0 ? -1 : s.heart.owner === this.me ? 0 : 1, TEAM);
+    if (this.beams) this.beams = this.beams.filter(b => this.beamTick(b, dt));
     this.fx.syncProjectiles(s.proj, (x, y) => this.toWorld(x, y));
     this.fx.update(dt);
     this.world.update(dt, this.time);
@@ -609,6 +631,36 @@ export class BattleView {
       c.fillStyle = TEAM[team]; rr(c, p.x - w / 2, p.y, w * Math.max(0, e.hp / e.maxHp), hh, 2); c.fill();
       if (e.shield > 0) { c.fillStyle = '#d8ecff'; c.fillRect(p.x - w / 2, p.y - 3, Math.min(w, w * e.shield / e.maxHp * 2), 2); }
       if (e.star > 1) { c.font = '900 12px Nunito, sans-serif'; c.textAlign = 'center'; c.fillStyle = '#ffd166'; c.strokeStyle = 'rgba(20,10,30,.9)'; c.lineWidth = 3; const st = '★'.repeat(e.star); c.strokeText(st, p.x, p.y - 4); c.fillText(st, p.x, p.y - 4); }
+    }
+    // Jauge de la Décharge du Mythe autour du Cœur : arc bleu = toi, arc rouge = l'ennemi (temps de contrôle cumulé / 30 s)
+    {
+      const ctr = this.screenOf(HEART.x, HEART.y, 0.05), ex = this.screenOf(HEART.x + HEART.r, HEART.y, 0.05), ey = this.screenOf(HEART.x, HEART.y + HEART.r, 0.05);
+      const rx = Math.abs(ex.x - ctr.x), ry = Math.abs(ey.y - ctr.y), top = -Math.PI / 2;
+      const arc = (k, col, sc, w) => { if (k <= 0.005) return; c.beginPath(); c.ellipse(ctr.x, ctr.y, rx * sc, ry * sc, 0, top, top + Math.PI * 2 * k); c.strokeStyle = col; c.lineWidth = w; c.stroke(); };
+      c.save(); c.lineCap = 'round';
+      c.beginPath(); c.ellipse(ctr.x, ctr.y, rx * 1.08, ry * 1.08, 0, 0, 7); c.strokeStyle = 'rgba(10,14,40,.35)'; c.lineWidth = 5; c.stroke();
+      const mk = Math.min(1, s.players[this.me].myth / MYTH.need), ok = Math.min(1, s.players[1 - this.me].myth / MYTH.need);
+      c.globalCompositeOperation = 'lighter';
+      arc(mk, mk > 0.8 ? `rgba(255,214,110,${0.75 + 0.25 * Math.sin(this.time * 9)})` : 'rgba(80,180,255,.9)', 1.08, 4);
+      arc(ok, ok > 0.8 ? `rgba(255,120,120,${0.75 + 0.25 * Math.sin(this.time * 9)})` : 'rgba(255,79,94,.8)', 0.9, 3);
+      c.restore();
+    }
+    // Fanions d'ordre (discrets) : seulement au-dessus de TES héros, petits, presque transparents sauf juste après un changement d'ordre
+    {
+      const P = s.players[this.me], col = { heart: '#ffd36a', assault: '#ff7a4a', defend: '#6fc8ff' }[P.order];
+      this.orderT = Math.max(0, (this.orderT || 0) - dt);
+      const mine = s.ents.filter(e => e.p === this.me && e.kind === 'unit' && !e.dead && !(e.deploy > 0));
+      const a = (this.orderT > 0 ? 0.95 : mine.length > 6 ? 0.32 : 0.5);
+      c.save(); c.globalAlpha = a;
+      for (const e of mine) {
+        const v = this.views.get(e.id); if (!v || !v.actor) continue;
+        const x = e.px + (e.x - e.px) * alpha, y = e.py + (e.y - e.py) * alpha;
+        const p = this.screenOf(x, y, v.actor.height + (e.fly ? 1.2 : 0.25));
+        const bx = p.x + Math.max(13, e.r * 22) + 3, by = p.y - 2;
+        c.fillStyle = 'rgba(20,14,30,.85)'; c.fillRect(bx - 0.6, by - 9, 1.4, 10);
+        c.beginPath(); c.moveTo(bx + 0.8, by - 9); c.lineTo(bx + 7, by - 6.5); c.lineTo(bx + 0.8, by - 4); c.closePath(); c.fillStyle = col; c.fill();
+      }
+      c.restore();
     }
     // Cercle d'Invocation : rang (★) en petites gemmes sous chaque médaillon, éclairs entre deux héros prêts à fusionner
     const B = s.players[this.me].bench;

@@ -256,8 +256,8 @@ export const HEROES = [
 export const SPELLS = [
   { id: 'meteore', name: 'Météore Arcanique', fac: 'arcane', rar: 'epique', dmg: 620, radius: 2.4, sanctPct: 0.3, delay: 1.0, fx: 'meteor',
     desc: 'Un météore s’écrase après 1 seconde : énormes dégâts de zone.' },
-  { id: 'givre', name: 'Tempête de Givre', fac: 'givre', rar: 'epique', dmg: 120, freeze: 4, radius: 3.2, sanctPct: 0.3, fx: 'freeze',
-    desc: 'Gèle tous les ennemis de la zone pendant 4 secondes.' },
+  { id: 'givre', name: 'Tempête de Givre', fac: 'givre', rar: 'epique', dmg: 200, freeze: 4.5, radius: 3.4, sanctPct: 0.3, fx: 'freeze',
+    desc: 'Gèle tous les ennemis de la zone pendant 4,5 secondes.' },
   { id: 'benediction', name: "Bénédiction de l'Aube", fac: 'aube', rar: 'rare', heal: 600, shieldAdd: 300, radius: 3.4, fx: 'heal',
     desc: 'Soigne tes héros dans la zone et leur donne un bouclier.' },
   { id: 'foudre', name: 'Colère du Ciel', fac: 'arcane', rar: 'rare', dmg: 300, radius: 3.0, sanctPct: 0.3, strikes: 3, fx: 'storm',

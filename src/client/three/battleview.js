@@ -1,6 +1,6 @@
 // MYTHORIA — vue 3D d'un combat. N'applique AUCUNE règle : elle montre l'état de la simulation.
 import * as THREE from 'three';
-import { CX, CY, RX, RY, HEART, SANCT, BENCH, MYTH } from '../../shared/sim.js';
+import { CX, CY, RX, RY, HEART, SANCT, BENCH, MYTH, CMDR } from '../../shared/sim.js';
 import { HERO, SPELL, RARITIES } from '../../shared/content.js';
 import { createRenderer, quality, PerfWatch } from './stage.js';
 import { buildWorld } from './world.js';
@@ -394,7 +394,8 @@ export class BattleView {
   }
   // Recule la caméra jusqu'à voir toute l'île et le cercle d'invocation.
   fitCamera() {
-    const target = new THREE.Vector3(0, 0, 3.0), dir = new THREE.Vector3(0, 0.95, 1.0).normalize();
+    // Lot 4 : angle un peu plus bas qu'avant (0,95 -> 0,8) pour montrer le relief et le vide autour de l'île (mondes en vraie 3D seulement)
+    const target = new THREE.Vector3(0, 0, 3.0), dir = new THREE.Vector3(0, 0.8, 1.0).normalize();
     const pts = [[-RX + 0.9, 0, 2], [RX - 0.9, 0, 2], [0, 5.5, -RY + 2.7], [-5.6, 0, this.bz + 1], [5.6, 0, this.bz + 1], [0, 0, this.bz + 1.2]].map(p => new THREE.Vector3(...p));
     let lo = 10, hi = 120;
     for (let it = 0; it < 22; it++) {
@@ -474,6 +475,21 @@ export class BattleView {
     const w = this.toWorld(x, y), up = { lave: 1.2, spores: 0.6, halo: 1.5, source: 0.8, fureur: 1, tempete: 0.4, hate: 0.6, bourrasque: 0.1 }[it.k] || 0.5;
     this.fx.emit(w.x, 0.3, w.z, { n: it.k === 'bourrasque' ? 1 : 2, color: [col, '#ffffff'], size: it.k === 'spores' ? 0.35 : 0.3, life: 1.1, speed: it.k === 'bourrasque' ? 0.2 : 0.5, up, alpha: 0.8 });
   }
+  // Mouvements de caméra des temps forts (Lot 4) : petit zoom vers le point (image entière : 3D + calque, donc les arènes peintes restent alignées)
+  punch(x, y, k) {
+    let off = false; try { off = localStorage.getItem('myt_cam') === '0'; } catch (e) {}
+    if (off || !this.ow) return;
+    const p = this.screenOf(x, y, 0.5);
+    this.pz = { x: Math.max(0, Math.min(this.ow, p.x)), y: Math.max(0, Math.min(this.oh, p.y)), k: Math.max(k, this.pz ? this.pz.k * (1 - this.pz.t / 0.9) : 0), t: 0 };
+  }
+  punchTick(dt) {
+    const P = this.pz; if (!P) return;
+    P.t += dt; const u = P.t / 0.9;
+    const ease = u >= 1 ? 0 : P.k * (u < 0.18 ? Math.sin(u / 0.18 * Math.PI / 2) : Math.cos((u - 0.18) / 0.82 * Math.PI / 2));
+    const tr = ease > 0.0005 ? `scale(${1 + ease})` : '';
+    for (const el of [this.cv, this.ov]) { el.style.transformOrigin = `${P.x}px ${P.y}px`; el.style.transform = tr; }
+    if (u >= 1) this.pz = null;
+  }
   // Rayon du Mythe (Lot 2) : faisceau du Cœur jusqu'au Sanctuaire visé, éclair, explosion, secousse
   mythBeam(e, team) {
     const a = this.toWorld(e.x0, e.y0), b = this.toWorld(e.x1, e.y1), col = TEAM[team];
@@ -500,7 +516,7 @@ export class BattleView {
       const team = e.p === this.me ? 0 : 1;
       if (['fuse', 'heart', 'bossDown', 'boss', 'discharge'].includes(e.type) || (e.type === 'die' && e.kind === 'sanct') || e.type === 'end') { const k = e.type === 'end' || e.type === 'bossDown' ? 1.5 : 0.8; this.world.cheer(k); this.artCheer = Math.min(1.5, (this.artCheer || 0) + k); }
       switch (e.type) {
-        case 'deploy': this.fx.ring(w.x, w.z, 1.4, TEAM[team], 0.6); this.fx.pillar(w.x, w.z, 0.6, TEAM[team], 0.7, 7); break;
+        case 'deploy': if (e.star >= 3) this.punch(e.x, e.y, 0.05); this.fx.ring(w.x, w.z, 1.4, TEAM[team], 0.6); this.fx.pillar(w.x, w.z, 0.6, TEAM[team], 0.7, 7); break;
         case 'land': { const v = this.views.get(e.id); if (v) { this.fx.dust(w.x, w.z, 12); this.fx.ring(w.x, w.z, 1.0, '#ffffff', 0.35); } break; }
         case 'attack': { const v = this.views.get(e.id); if (v && v.actor) { v.actor.play('attack', { force: true }); const c = HERO[s.ents.find(o => o.id === e.id)?.card]; if (c && !c.proj && !c.chain) { const t = this.toWorld(e.tx, e.ty); this.fx.emit(t.x, 0.9, t.z, { n: 6, color: ['#ffffff', '#ffe9b0'], size: 0.3, life: 0.25, speed: 3 }); } } break; }
         case 'hit': { const v = this.views.get(e.id); if (v && v.actor) v.actor.flash(); const ent = s.ents.find(o => o.id === e.id); if (ent && ent.kind === 'sanct') { this.num(e.x, e.y, '-' + e.amount, 3.4); this.sanctFlash = 0.1; } break; }
@@ -510,15 +526,23 @@ export class BattleView {
         case 'impact': if (e.kind === 'arrow') this.fx.emit(w.x, 0.9, w.z, { n: 4, color: '#ffffff', size: 0.25, life: 0.2, speed: 2 }); else if (e.kind === 'ice') this.fx.emit(w.x, 0.9, w.z, { n: 8, color: ['#ffffff', '#9fe8ff'], size: 0.35, life: 0.4, speed: 2.5 }); else this.fx.emit(w.x, 0.9, w.z, { n: 8, color: ['#ffffff', '#ffd27a'], size: 0.4, life: 0.3, speed: 2.5 }); break;
         case 'zap': this.fx.bolt(e.pts.map(p => { const q = this.toWorld(p.x, p.y); return new THREE.Vector3(q.x, 1.1, q.z); })); break;
         case 'dash': { const a = this.toWorld(e.x0, e.y0), b = this.toWorld(e.x1, e.y1); for (let k = 0; k <= 8; k++) this.fx.emit(a.x + (b.x - a.x) * k / 8, 0.8, a.z + (b.z - a.z) * k / 8, { n: 3, color: ['#ffb48a', '#ff7a3d'], size: 0.5, life: 0.4, speed: 0.6, gravity: 0 }); break; }
-        case 'fuse': this.fx.pillar(w.x, w.z, 1.0, '#ffd166', 1.0, 9); this.fx.ring(w.x, w.z, 2.2, '#ffd166', 0.7); this.fx.emit(w.x, 1, w.z, { n: 40, color: ['#fff3c0', '#ffd166'], size: 0.45, life: 1, speed: 3, up: 0.9 }); this.num(e.x, e.y, '★'.repeat(e.star) + ' FUSION', 3.0, '#ffd166', true); break;
+        case 'fuse': if (e.star >= 3) this.punch(e.x, e.y, 0.05); this.fx.pillar(w.x, w.z, 1.0, '#ffd166', 1.0, 9); this.fx.ring(w.x, w.z, 2.2, '#ffd166', 0.7); this.fx.emit(w.x, 1, w.z, { n: 40, color: ['#fff3c0', '#ffd166'], size: 0.45, life: 1, speed: 3, up: 0.9 }); this.num(e.x, e.y, '★'.repeat(e.star) + ' FUSION', 3.0, '#ffd166', true); break;
         case 'conjure': { const v = this.views.get(e.id); if (v && v.actor) v.actor.play('cast', { force: true }); this.fx.ring(w.x, w.z, 2, FAC_COL[e.fac] || '#a0ffb0', 0.7); this.fx.emit(w.x, 0.3, w.z, { n: 20, color: [FAC_COL[e.fac] || '#a0ffb0', '#ffffff'], size: 0.4, life: 0.8, speed: 1.5, up: 1 }); break; }
         case 'nova': { const v = this.views.get(e.id); if (v && v.actor) v.actor.play('cast', { force: true }); this.fx.ring(w.x, w.z, e.r, '#bff0ff', 0.6); this.fx.shards(w.x, w.z, e.r); this.fx.emit(w.x, 0.6, w.z, { n: 30, color: ['#ffffff', '#bff0ff'], size: 0.4, life: 0.8, speed: 4, up: 0.3 }); break; }
         case 'cast': if (SPELL[e.spell].fx === 'meteor') { const w2 = this.toWorld(e.x, e.y); this.fx.meteor(w2.x, w2.z, e.delay); } break;
         case 'spell': this.spellFx(e, w); break;
-        case 'heart': this.fx.flash(0, 2, 0, 6, e.owner < 0 ? '#ffffff' : TEAM[e.owner === this.me ? 0 : 1], 0.6); this.fx.ring(0, 0, 3.4, e.owner < 0 ? '#ffffff' : TEAM[e.owner === this.me ? 0 : 1], 0.8); break;
+        case 'heart': this.punch(HEART.x, HEART.y, 0.04); this.fx.flash(0, 2, 0, 6, e.owner < 0 ? '#ffffff' : TEAM[e.owner === this.me ? 0 : 1], 0.6); this.fx.ring(0, 0, 3.4, e.owner < 0 ? '#ffffff' : TEAM[e.owner === this.me ? 0 : 1], 0.8); break;
         case 'shieldBreak': { const ent = s.ents.find(o => o.id === e.id); if (ent) { const q = this.toWorld(ent.x, ent.y); this.fx.emit(q.x, 1, q.z, { n: 14, color: ['#cfe8ff', '#ffffff'], size: 0.35, life: 0.5, speed: 3 }); } break; }
         case 'boss': this.shake = 0.6; break;
-        case 'discharge': this.mythBeam(e, team); break;
+        case 'discharge': this.mythBeam(e, team); this.punch(HEART.x, HEART.y, 0.07); break;
+        case 'cmdr': { this.fx.pillar(w.x, w.z, 1.2, '#ffd36a', 1.1, 9); this.fx.ring(w.x, w.z, 2.2, '#ffd36a', 0.8); this.fx.flash(w.x, 2, w.z, 6, '#fff3c0', 0.5); this.shake = Math.max(this.shake, 0.35); this.punch(e.x, e.y, 0.06); break; }
+        case 'cmdrEnd': this.fx.pillar(w.x, w.z, 0.9, '#ffd36a', 0.6, 7); this.fx.emit(w.x, 0.6, w.z, { n: 24, color: ['#fff3c0', '#ffd36a'], size: 0.4, life: 0.8, speed: 2, up: 1.5 }); break;
+        case 'csig': {
+          const col = e.k === 'heal' ? '#7dff9a' : e.k === 'volley' ? '#9fe8ff' : '#ffb04a';
+          this.fx.ring(w.x, w.z, e.k === 'volley' ? 6 : e.k === 'heal' ? 4 : 2.8, col, 0.7); this.fx.flash(w.x, 1.5, w.z, 5, col, 0.45);
+          if (e.k === 'wave') { this.fx.explosion(w.x, w.z, 2.6, 'roar'); this.shake = Math.max(this.shake, 0.45); }
+          this.punch(e.x, e.y, 0.045); break;
+        }
         case 'rift': this.fx.flash(w.x, 1.5, w.z, 5, '#ffffff', 0.5); this.fx.ring(w.x, w.z, e.r * 1.4, '#ffffff', 0.7); this.shake = Math.max(this.shake, 0.25); break;
         case 'halo': { const v = this.views.get(e.id); if (v && v.actor) { const p = v.actor.holder.position; this.fx.ring(p.x, p.z, 0.9, '#ffd36a', 0.5); } break; }
         case 'order': if (e.p === this.me) this.orderT = 2.5; break;
@@ -642,6 +666,7 @@ export class BattleView {
     }
     this.heart.update(this.time, this.me === 0 ? s.heart.ctl : -s.heart.ctl, s.heart.owner < 0 ? -1 : s.heart.owner === this.me ? 0 : 1, TEAM);
     if (this.zones) this.syncZones(s, dt);
+    this.punchTick(dt);
     if (this.beams) this.beams = this.beams.filter(b => this.beamTick(b, dt));
     this.fx.syncProjectiles(s.proj, (x, y) => this.toWorld(x, y));
     this.fx.update(dt);
@@ -730,6 +755,18 @@ export class BattleView {
         c.fillStyle = 'rgba(20,14,30,.85)'; c.fillRect(bx - 0.6, by - 9, 1.4, 10);
         c.beginPath(); c.moveTo(bx + 0.8, by - 9); c.lineTo(bx + 7, by - 6.5); c.lineTo(bx + 0.8, by - 4); c.closePath(); c.fillStyle = col; c.fill();
       }
+      c.restore();
+    }
+    // Couronne des Commandants (Lot 4) + anneau du temps restant (le tien en or, celui de l'ennemi en rouge)
+    for (const e of s.ents) {
+      if (!e.cmdr || e.dead || e.deploy > 0) continue;
+      const v = this.views.get(e.id); if (!v || !v.actor) continue;
+      const x = e.px + (e.x - e.px) * alpha, y = e.py + (e.y - e.py) * alpha, p = this.screenOf(x, y, v.actor.height + 0.9);
+      const mine = e.p === this.me, col = mine ? '#ffd36a' : '#ff6b6b', k = Math.max(0, e.cmdrT) / CMDR.life;
+      c.save(); c.translate(p.x, p.y - 4 + Math.sin(this.time * 3) * 2);
+      c.beginPath(); c.arc(0, 0, 13, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * k); c.strokeStyle = col; c.lineWidth = 2.5; c.stroke();
+      c.beginPath(); c.moveTo(-8, 4); c.lineTo(-8, -4); c.lineTo(-4, 0); c.lineTo(0, -6); c.lineTo(4, 0); c.lineTo(8, -4); c.lineTo(8, 4); c.closePath();
+      c.fillStyle = col; c.fill(); c.lineWidth = 1.4; c.strokeStyle = 'rgba(40,20,0,.9)'; c.stroke();
       c.restore();
     }
     // Cercle d'Invocation : rang (★) en petites gemmes sous chaque médaillon, éclairs entre deux héros prêts à fusionner

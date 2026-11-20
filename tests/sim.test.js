@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createBattle, step, check, hashState, TICK_RATE, MATCH_TIME, OVERTIME, SUMMON_COST, sanctOf, HEART, MYTH, ORDER_CD, RIFT, WEV, inZone } from '../src/shared/sim.js';
+import { createBattle, step, check, hashState, TICK_RATE, MATCH_TIME, OVERTIME, SUMMON_COST, sanctOf, HEART, MYTH, ORDER_CD, RIFT, WEV, inZone, CMDR, cmdrOf } from '../src/shared/sim.js';
 import { STARTER_DECK, HERO } from '../src/shared/content.js';
 import { createBot, botThink } from '../src/shared/ai.js';
 
@@ -207,4 +207,47 @@ test('Éclipse : les Sanctuaires ne tirent plus ; lave : dégâts sur le bord', 
   const u = L.ents.find(e => e.p === 0 && e.kind === 'unit');
   u.frozen = 3; u.x = x; const hp = u.hp + u.shield; run(L, 1.1); // immobile sur le bord
   assert.ok(u.dead || u.hp + u.shield < hp, 'la lave brûle');
+});
+
+// ---------- Lot 4 : Commandant ----------
+const mkC = (seed = 42) => createBattle({ seed, commanders: ['frere', 'myra'], decks: [STARTER_DECK, DECK2], spells: ['meteore', 'givre'] });
+
+test('Commandant : Éveil plein requis, posé sur sa moitié, 10 s puis il repart', () => {
+  const s = mkC();
+  assert.ok(check(s, { p: 0, t: 'commander', x: 8, y: 16 }), 'Éveil vide : refusé');
+  s.players[0].eveil = 100;
+  assert.ok(check(s, { p: 0, t: 'commander', x: 8, y: 6 }), 'moitié adverse : refusé');
+  step(s, [{ p: 0, t: 'commander', x: 8, y: 16 }]);
+  assert.ok(s.players[0].eveil < 1, 'Éveil consommé');
+  const c = cmdrOf(s, 0);
+  assert.ok(c && c.cmdr && c.card === 'frere' && c.star === CMDR.star);
+  assert.ok(check(s, { p: 0, t: 'commander', x: 8, y: 16 }), 'un seul à la fois');
+  run(s, CMDR.life + 0.8); // 10 s après l'atterrissage (0,6 s)
+  assert.equal(cmdrOf(s, 0), null, 'reparti après 10 s');
+});
+
+test('Commandant : dirigé au joystick, compétence une seule fois, pas de bonus de faction', () => {
+  const s = mkC(); s.players[0].eveil = 100;
+  step(s, [{ p: 0, t: 'commander', x: 8, y: 17 }]); run(s, 0.8);
+  const c = cmdrOf(s, 0), x0 = c.x;
+  assert.ok(check(s, { p: 0, t: 'cmove', dx: 9, dy: 0 }), 'direction hors limites refusée');
+  step(s, [{ p: 0, t: 'cmove', dx: 8, dy: 0 }]); run(s, 1);
+  assert.ok(c.x > x0 + 0.5, 'il avance vers la droite');
+  step(s, [{ p: 0, t: 'csig' }]);
+  assert.ok(check(s, { p: 0, t: 'csig' }), 'compétence déjà utilisée');
+  // même héros, même rang : le Commandant n'a pas le bonus de faction « aube » du deck de départ
+  const ref = createBattle({ seed: 1, decks: [['frere', 'frere', 'frere', 'frere', 'frere', 'frere', 'frere', 'frere'], DECK2] });
+  assert.ok(ref.players[0].syn.aube > 0);
+  const s2 = createBattle({ seed: 1, commanders: ['frere', null], decks: [['frere', 'frere', 'frere', 'frere', 'frere', 'frere', 'frere', 'frere'], DECK2] });
+  s2.players[0].eveil = 100; step(s2, [{ p: 0, t: 'commander', x: 8, y: 17 }]);
+  s2.players[0].bench[0] = { id: 'frere', star: CMDR.star }; step(s2, [{ p: 0, t: 'deploy', slot: 0, x: 5, y: 17 }]);
+  const cm = cmdrOf(s2, 0), twin = s2.ents.find(e => e.card === 'frere' && !e.cmdr && e.p === 0);
+  assert.ok(cm.maxHp < twin.maxHp * CMDR.power + 1, 'sans bonus de faction');
+});
+
+test('Commandant : même graine + mêmes commandes = même combat (IA qui l’utilise)', () => {
+  const play = () => { const s = mkC(77), b0 = createBot(0, 4, 1), b1 = createBot(1, 4, 2), log = []; while (!s.over) { const c = [botThink(b0, s, 1 / TICK_RATE), botThink(b1, s, 1 / TICK_RATE)].filter(Boolean); log.push(...c.map(x => x.t)); step(s, c); } return { h: hashState(s), n: log.filter(t => t === 'commander').length }; };
+  const a = play(), b = play();
+  assert.equal(a.h, b.h);
+  assert.ok(a.n >= 1, 'l’IA appelle son Commandant');
 });

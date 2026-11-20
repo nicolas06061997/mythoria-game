@@ -3,17 +3,18 @@
 // Toujours affichée comme « IA » : jamais présentée comme un vrai joueur.
 
 import { HERO, SPELL, MAX_STAR } from './content.js';
-import { CY, HEART, SUMMON_COST, MYTH, check, sanctOf, inIsland, hazardAt } from './sim.js';
+import { CY, HEART, SUMMON_COST, MYTH, check, sanctOf, inIsland, hazardAt, cmdrOf, sigKind } from './sim.js';
 import { makeRng } from './rng.js';
 
+// cmdr : chance d'appeler le Commandant plutôt que le sortilège quand l'Éveil est plein ;
 // orders : chance de penser aux ordres tactiques à chaque décision (la Recrue n'en donne jamais) ;
 // think : secondes entre deux décisions ; mana : vitesse de l'éther de l'IA ; mistake : chance d'agir au hasard / de rester passive.
 export const AI_LEVELS = [
-  { name: 'Recrue',    think: 3.6, merge: 0.1, defend: 0.35, heart: 0.15, spellSmart: 0.2, reserve: 0, mana: 0.6, mistake: 0.45, orders: 0.0 },
-  { name: 'Soldat',    think: 3.1, merge: 0.3, defend: 0.5, heart: 0.3, spellSmart: 0.35, reserve: 0, mana: 0.68, mistake: 0.36, orders: 0.08 },
-  { name: 'Capitaine', think: 2.8, merge: 0.45, defend: 0.6, heart: 0.45, spellSmart: 0.55, reserve: 0, mana: 0.72, mistake: 0.3, orders: 0.1 },
-  { name: 'Champion',  think: 2.6, merge: 0.55, defend: 0.65, heart: 0.55, spellSmart: 0.7, reserve: 0, mana: 0.76, mistake: 0.25, orders: 0.13 },
-  { name: 'Seigneur',  think: 2.2, merge: 0.7, defend: 0.8, heart: 0.7, spellSmart: 0.85, reserve: 0, mana: 0.84, mistake: 0.16, orders: 0.18 },
+  { name: 'Recrue',    think: 3.6, merge: 0.1, defend: 0.35, heart: 0.15, spellSmart: 0.2, reserve: 0, mana: 0.6, mistake: 0.45, orders: 0.0, cmdr: 0.0 },
+  { name: 'Soldat',    think: 3.1, merge: 0.3, defend: 0.5, heart: 0.3, spellSmart: 0.35, reserve: 0, mana: 0.68, mistake: 0.36, orders: 0.08, cmdr: 0.2 },
+  { name: 'Capitaine', think: 2.8, merge: 0.45, defend: 0.6, heart: 0.45, spellSmart: 0.55, reserve: 0, mana: 0.72, mistake: 0.3, orders: 0.1, cmdr: 0.35 },
+  { name: 'Champion',  think: 2.6, merge: 0.55, defend: 0.65, heart: 0.55, spellSmart: 0.7, reserve: 0, mana: 0.76, mistake: 0.25, orders: 0.13, cmdr: 0.5 },
+  { name: 'Seigneur',  think: 2.2, merge: 0.7, defend: 0.8, heart: 0.7, spellSmart: 0.85, reserve: 0, mana: 0.84, mistake: 0.16, orders: 0.18, cmdr: 0.65 },
 ];
 
 export function createBot(p, level = 1, seed = 7) {
@@ -42,7 +43,19 @@ export function botThink(bot, s, dt) {
   const mine = s.ents.filter(e => !e.dead && e.p === p && e.kind === 'unit');
   const sanct = sanctOf(s, p);
 
-  // 1) Sortilège
+  // 0) Commandant sur l'île : compétence signature quand elle sert (Lot 4)
+  const C = cmdrOf(s, p);
+  if (C && !C.sigUsed) {
+    const k = sigKind(C.card), near = r => enemies.filter(e => d2(e, C) <= r * r).length;
+    if ((k === 'wave' && near(2.6) >= 2) || (k === 'volley' && near(6) >= 2) || (k === 'heal' && mine.filter(e => d2(e, C) < 16 && e.hp < e.maxHp * 0.6).length >= 2) || C.cmdrT < 1.5) { const cm = ok({ p, t: 'csig' }); if (cm) return cm; }
+  }
+  // 1) Éveil plein : Commandant (selon le niveau) ou sortilège
+  if (P.eveil >= 100 && P.cmdr && L.cmdr && bot.rng() < L.cmdr) {
+    const danger = enemies.filter(e => d2(e, sanct) < 64).sort((a, b) => d2(a, sanct) - d2(b, sanct))[0];
+    const x = danger ? danger.x : 8 + (bot.rng() - 0.5) * 3, y = danger ? danger.y + home * 1.5 : CY + home * 1.4;
+    const cy = p === 0 ? clamp(y, CY + 1.2, 21) : clamp(y, 3, CY - 1.2);
+    const cm = ok({ p, t: 'commander', x: clamp(x, 2, 14), y: cy }); if (cm) return cm;
+  }
   if (P.eveil >= 100) {
     const sp = SPELL[P.spell];
     if (sp.heal) {

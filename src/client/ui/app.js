@@ -1,7 +1,7 @@
 // MYTHORIA — menus : accueil 3D, héros & deck, fiche de héros 3D, mondes, modes, résultats, profil.
 import { HERO, PLAYABLE, SPELL, SPELLS, RARITIES, FACTIONS, WORLDS, UNLOCKS, SPELL_UNLOCKS, DECK_SIZE, STAR_MULT, deckSynergies, worldFor } from '../../shared/content.js';
 import { AI_LEVELS } from '../../shared/ai.js';
-import { loadProfile, saveProfile, resetProfile, owned, ownedSpells, worldOf, botLevelFor, botDeck, botSpell, botLevels, applyResult, xpNeed, heroLevel, canUpgrade, ECLATS, CONQUEST_MAX, gearFor, heroItems, heroGear, equipItem, unequipItem, itemState, forgeItem, unlockedCount, heroWins } from '../store.js';
+import { loadProfile, saveProfile, resetProfile, owned, ownedSpells, worldOf, botLevelFor, botDeck, botSpell, botLevels, botCommander, commanderChoices, applyResult, xpNeed, heroLevel, canUpgrade, ECLATS, CONQUEST_MAX, gearFor, heroItems, heroGear, equipItem, unequipItem, itemState, forgeItem, unlockedCount, heroWins } from '../store.js';
 import { SLOTS, STAT_NAME, gearBonus, botGear, itemsFor, itemById } from '../../shared/items.js';
 import { itemIcon } from './itemart.js';
 import { battleSVG, medalSVG, isleSVG, sparkSVG } from './art.js';
@@ -250,7 +250,8 @@ function play(modeId, level, world, extra = {}) {
   new Battle(holder, {
     deck: P.deck.slice(), spell: P.spell, oppDeck, oppSpell: botSpell(tro, seed), botLevel: level, world, myName: P.name, mode: modeId,
     levels: { ...P.levels }, oppLevels: extra.oppLevels || botLevels(oppDeck, tro), skins: { ...P.skins.eq },
-    gear: gearFor(P, P.deck), oppGear: extra.oppGear || botGear(oppDeck, tro),
+    gear: gearFor(P, P.commander ? [...P.deck, P.commander] : P.deck), oppGear: extra.oppGear || botGear(oppDeck, tro),
+    commander: P.commander, oppCommander: extra.simMode === 'survival' ? null : botCommander(tro, seed),
     simMode: extra.simMode, tuto: extra.tuto, boss: extra.boss, waves: extra.waves, mods: extra.mods, bonus: extra.bonus, title: extra.title,
     onEnd: r => { holder.remove(); document.body.classList.remove('in-battle'); if (extra.onResult) r = extra.onResult(r) || r; showResult(r); },
   });
@@ -334,6 +335,11 @@ function heroesScreen() {
         h('span', { class: 'sp-ic' }, icon(spellIcon(P.spell))),
         h('div', {}, h('small', {}, 'Sortilège (jauge d’Éveil)'), h('b', {}, SPELL[P.spell].name), h('em', {}, SPELL[P.spell].desc)),
         h('span', { class: 'chev' }, '›')),
+      // Commandant (Lot 4) : en plus des 8 héros, appelé quand l'Éveil est plein ; ne compte pas dans les bonus de faction
+      P.commander ? h('button', { class: 'spell-slot cmdr-slot', onclick: () => openCommanders() },
+        h('span', { class: 'cm-pt', style: { '--rc': RARITIES[HERO[P.commander].rar].color } }, portraitImg(P.commander), h('i', { class: 'crown' }, '👑')),
+        h('div', {}, h('small', {}, 'Commandant (jauge d’Éveil)'), h('b', {}, HERO[P.commander].name), h('em', {}, 'Éveil plein : appelle-le 10 s sur l’île et dirige-le au joystick. Ne compte pas dans les bonus de faction.')),
+        h('span', { class: 'chev' }, '›')) : null,
       synergyChips(P.deck)),
     h('div', { class: 'panel' },
       h('div', { class: 'row between' }, h('h3', {}, 'Collection'), h('small', { class: 'muted' }, own.length + ' / ' + PLAYABLE.length)),
@@ -360,6 +366,13 @@ function synergyChips(deck) {
   }));
 }
 
+function openCommanders() {
+  sfx('click');
+  const list = commanderChoices(P).sort((a, b) => RARITIES[HERO[b].rar].order - RARITIES[HERO[a].rar].order);
+  const s = sheet(h('div', { class: 'spells cmdr-pick' }, h('h3', {}, 'Choisis ton Commandant'),
+    h('p', { class: 'muted' }, 'N’importe lequel de tes héros (sauf les groupes et les kamikazes). Quand ta jauge d’Éveil est pleine, tu choisis : ton sortilège OU ton Commandant, qui descend sur l’île 10 secondes, que tu diriges au joystick, avec une compétence signature.'),
+    h('div', { class: 'cm-grid' }, list.map(id => heroCard(HERO[id], { inDeck: P.commander === id, sub: P.commander === id ? '👑 Commandant' : null, onclick: () => { P.commander = id; saveProfile(P); sfx('fuse'); toast(HERO[id].name + ' est ton Commandant 👑'); s.close(); render(); } })))));
+}
 function openSpells(ownS) {
   const s = sheet(h('div', { class: 'spells' }, h('h3', {}, 'Choisis ton sortilège'),
     h('p', { class: 'muted' }, 'La jauge d’Éveil se remplit pendant le combat (2× plus vite si tu tiens le Cœur de Mythe). Pleine : touche le bouton puis l’île.'),
@@ -405,6 +418,7 @@ function openHero(id) {
         statBar('Portée', c.range, max.range, c.range <= 1.2 ? 'Mêlée' : c.range + ' cases'),
         h('div', { class: 'sbar' }, h('small', {}, 'Cible'), h('b', { class: 'wide' }, TGT[c.tgt]))),
       own ? gearBlock(id, () => { close(); openHero(id); }) : null,
+      own && commanderChoices(P).includes(id) ? (P.commander === id ? h('p', { class: 'tip cm-tip' }, '👑 C’est ton Commandant') : h('button', { class: 'btn ghost wide cm-btn', onclick: () => { P.commander = id; saveProfile(P); sfx('fuse'); toast(c.name + ' est ton Commandant 👑'); close(); openHero(id); render(); } }, '👑 Nommer Commandant')) : null,
       heroProgress(id, () => { close(); openHero(id); render(); }),
       h('div', { class: 'evo' }, h('h4', {}, 'Évolution en combat'),
         h('div', { class: 'evo-row' }, [1, 2, 3].map(st => h('div', { class: 'evo-st' }, h('b', {}, '★'.repeat(st)), h('small', {}, '×' + STAR_MULT[st] + ' puissance')))),
@@ -494,6 +508,8 @@ function openSettings() {
     h('h3', {}, 'Réglages'),
     h('button', { class: 'btn ghost wide', onclick: () => { P.sound = !P.sound; setSound(P.sound); saveProfile(P); s.close(); openSettings(); } }, icon('sound'), P.sound ? ' Son : activé' : ' Son : coupé'),
     ...['m', 's'].map(k => { const V = getVolumes(); return h('label', { class: 'vol' }, h('span', {}, k === 'm' ? '🎵 Musique' : '🔊 Bruitages'), h('input', { type: 'range', min: 0, max: 100, value: Math.round(V[k] * 100), oninput: e => { const W = getVolumes(); W[k] = e.target.value / 100; setVolumes(W.m, W.s); }, onchange: () => k === 's' && sfx('coin') })); }),
+    // Lot 4 : petits zooms de caméra sur les temps forts (★3, Cœur, Rayon du Mythe, Commandant) — désactivables pour le confort
+    (() => { let on = true; try { on = localStorage.getItem('myt_cam') !== '0'; } catch (e) {} return h('label', { class: 'vol cam-tog' }, h('span', {}, '🎥 Mouvements de caméra'), h('input', { type: 'checkbox', checked: on, onchange: e => { try { localStorage.setItem('myt_cam', e.target.checked ? '1' : '0'); } catch (x) {} sfx('click'); } })); })(),
     h('h4', {}, '🎨 Graphismes'),
     h('div', { class: 'gfx' }, GFX_LEVELS.map(l => h('button', { class: 'gfxb' + (gfxChoice() === l.id ? ' on' : ''), onclick: () => { setGfx(l.id); sfx('click'); s.close(); openSettings(); render(); toast('Graphismes : ' + l.name + (l.id === 'auto' ? ' (' + GFX_LEVELS.find(x => x.id === autoLevel()).name + ')' : '')); } }, l.name))),
     h('p', { class: 'muted small' }, (GFX_LEVELS.find(l => l.id === gfxChoice()) || GFX_LEVELS[0]).desc + (gfxChoice() === 'auto' ? ' Sur ce téléphone : ' + GFX_LEVELS.find(x => x.id === autoLevel()).name + '.' : '') + ' S’applique au prochain écran 3D (combat, menu).'),

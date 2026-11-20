@@ -4,6 +4,7 @@
 import { STARTER_DECK, STARTER_SPELL, unlockedHeroes, unlockedSpells, worldFor, WORLDS, HERO, PLAYABLE, validateDeck } from '../shared/content.js';
 import { upgradeCost, MAX_LEVEL, ECLATS, ECLAT_CYCLE, ECLAT_MAX, eclatType, rollEclat, purifyPerDay, CONQUEST_MAX, conquestPoints, conquestReward, dayKey, weekKey, dailyShop, makeMissions, LOGIN, SKINS, botHeroLevel } from '../shared/economy.js';
 import { makeRng, shuffle } from '../shared/rng.js';
+import { cmdrOk } from '../shared/sim.js';
 import { SLOTS, gearBonus, itemsFor, itemById } from '../shared/items.js';
 import { BUILDINGS, DECOS, newKingdom, canBuild, buildCost, buildTime, speedupGems, produced, kingdomBonus } from '../shared/kingdom.js';
 
@@ -40,6 +41,7 @@ export function loadProfile() {
   if (validateDeck(p.deck, owned(p))) p.deck = STARTER_DECK.slice();
   if (!ownedSpells(p).includes(p.spell)) p.spell = STARTER_SPELL;
   if (!HERO[p.avatar]) p.avatar = 'ecuyer';
+  if (!cmdrOk(p.commander) || !owned(p).includes(p.commander)) p.commander = defaultCommander(p); // Commandant (Lot 4)
   if (!p.kingdom || typeof p.kingdom !== 'object' || !p.kingdom.b) p.kingdom = newKingdom(now());
   if (!p.kingdom.b.autel) p.kingdom.b.autel = 1; // l'Autel des Failles est offert (sauvegardes d'avant le 19/11)
   if (!p.equip || typeof p.equip !== 'object') p.equip = {};
@@ -73,6 +75,17 @@ function migrateEclats(p, d, raw) {
 }
 // graine reproductible par joueur (le futur serveur pourra refaire les mêmes tirages)
 function nextSeed(p) { p.seedN = (p.seedN || 0) + 1; return ((p.created || 1) % 2147483647 + Math.imul(p.seedN, 2654435761)) >>> 0; }
+
+// Commandant (Lot 4) : héros débloqué, unité seule (pas de groupe, pas de kamikaze) ; par défaut le héros favori, sinon le plus rare du deck
+export const commanderChoices = p => owned(p).filter(cmdrOk);
+export function defaultCommander(p) {
+  const ch = commanderChoices(p); if (!ch.length) return null;
+  if (ch.includes(p.avatar)) return p.avatar;
+  const inDeck = (p.deck || []).filter(id => ch.includes(id));
+  return inDeck[0] || ch[0];
+}
+// Commandant de l'IA : un héros débloqué au même niveau de Gloire, choisi par la graine
+export function botCommander(trophies, seed) { const ch = unlockedHeroes(trophies).filter(cmdrOk); return ch.length ? ch[seed % ch.length] : null; }
 
 export function saveProfile(p) { try { localStorage.setItem(KEY, JSON.stringify(p)); } catch (e) {} }
 export function resetProfile() { try { localStorage.removeItem(KEY); localStorage.removeItem('myt_profile_v1'); } catch (e) {} }

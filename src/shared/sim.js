@@ -27,6 +27,12 @@ export const ORDER_FX = { defendArmor: 0.8, assaultSiege: 1.25 }; // Défense : 
 // Décharge du Mythe : tenir le Cœur (au moins un de ses héros au sol dessus, aucun ennemi) MYTH.need secondes au total -> rayon qui frappe le Sanctuaire adverse
 // (et les ennemis sur sa trajectoire), puis le compteur repart à zéro.
 export const MYTH = { need: 30, sanctPct: 0.07, unitDmg: 400, width: 1.3 };
+// Commandant (Lot 4, 20/11) : un héros en plus du deck. Éveil plein -> au choix le sortilège OU le Commandant,
+// qui descend sur l'île 10 s, version ★3 de lui-même, dirigeable (commandes « cmove » quantifiées) avec une compétence signature (« csig ») une fois.
+// Il ne compte pas dans les bonus de faction du deck et n'en reçoit pas.
+export const CMDR = { life: 10, star: 2, power: 0.75, steerSpd: 1.15, sig: { wave: { r: 2.8, dmg: 2, stun: 1.0, push: 1.6 }, volley: { r: 6.5, n: 5, dmg: 2 }, heal: { r: 4, pct: 0.25 } } };
+export const cmdrOk = id => { const c = HERO[id]; return !!(c && c.type === 'unit' && !c.kamikaze && (c.count || 1) === 1); };
+export const sigKind = id => { const c = HERO[id]; return c.aura || c.heal ? 'heal' : c.range > 2 ? 'volley' : 'wave'; };
 // Failles dynamiques (Lot 3, 20/11) : une vers 1:20-1:40, une autre au début de la prolongation, 15 s chacune, pour les deux camps.
 export const RIFT = { dur: 15, r: 2.4, at: [80, 100], otDelay: 6, kinds: ['fureur', 'source', 'tempete'],
   fureur: 1.3,        // +30 % de dégâts pour les héros dedans
@@ -62,7 +68,7 @@ function clampIsland(e) {
   if (d > lim) { e.x = CX + dx / d * lim * RX; e.y = CY + dy / d * lim * RY; }
 }
 
-export function createBattle({ world = null, seed = 1, decks, spells = ['meteore', 'meteore'], levels = [{}, {}], gear = [{}, {}], names = ['Joueur 1', 'Joueur 2'], mode = 'duel', boss = null, waves = null, mods = null, bonus = null, botMana = 0 }) {
+export function createBattle({ world = null, commanders = [null, null], seed = 1, decks, spells = ['meteore', 'meteore'], levels = [{}, {}], gear = [{}, {}], names = ['Joueur 1', 'Joueur 2'], mode = 'duel', boss = null, waves = null, mods = null, bonus = null, botMana = 0 }) {
   const s = {
     tick: 0, t: 0, seed, rng: (seed >>> 0) || 1, nextId: 1, ents: [], proj: [], pend: [], ev: [],
     over: false, winner: -1, reason: '', overtime: false, mode, mods: mods || {}, wave: 0, waveT: 6, wavesDef: waves,
@@ -72,6 +78,7 @@ export function createBattle({ world = null, seed = 1, decks, spells = ['meteore
       name: names[p], mana: MANA_START, eveil: 0, bench: Array(BENCH).fill(null), deck: decks[p].slice(),
       spell: spells[p] || 'meteore', levels: levels[p] || {}, gear: gear[p] || {}, syn: deckSynergies(decks[p]).tiers, summons: 0, deployed: 0, fuses: 0, spells: 0, hearts: 0,
       order: 'assault', orderCd: 0, orders: 0, myth: 0, discharges: 0,
+      cmdr: cmdrOk(commanders[p]) ? commanders[p] : null, cmdrId: 0, cmdrs: 0,
       bonus: (p === 0 && bonus) || (p === 1 && botMana ? { hp: 1, sanctDmg: 1, eveil: 1, mana: botMana } : { hp: 1, sanctDmg: 1, eveil: 1 }),
     })),
   };
@@ -122,6 +129,18 @@ export function check(s, cm) {
       if (P.eveil < 100 - 1e-6) return 'Jauge d’Éveil pas encore pleine.';
       if (!inIsland(cm.x, cm.y)) return 'Vise l’île.';
       return null;
+    case 'commander':
+      if (!P.cmdr) return 'Aucun Commandant.';
+      if (P.eveil < 100 - 1e-6) return 'Jauge d’Éveil pas encore pleine.';
+      if (cmdrOf(s, cm.p)) return 'Ton Commandant est déjà sur l’île.';
+      if (!(cm.x >= 0 && cm.x <= W && cm.y >= 0 && cm.y <= H) || !deployOk(cm.p, cm.x, cm.y)) return 'Pose ton Commandant sur ta moitié de l’île.';
+      return null;
+    case 'cmove': {
+      if (!cmdrOf(s, cm.p)) return 'Aucun Commandant sur l’île.';
+      if (!Number.isInteger(cm.dx) || !Number.isInteger(cm.dy) || Math.abs(cm.dx) > 8 || Math.abs(cm.dy) > 8) return 'Direction invalide.';
+      return null;
+    }
+    case 'csig': { const e = cmdrOf(s, cm.p); if (!e) return 'Aucun Commandant sur l’île.'; if (e.sigUsed) return 'Compétence déjà utilisée.'; return null; }
     case 'order':
       if (!ORDERS.includes(cm.o)) return 'Ordre inconnu.';
       if (P.order === cm.o) return 'C’est déjà l’ordre en cours.';
@@ -154,6 +173,16 @@ function apply(s, cm) {
   } else if (cm.t === 'deploy') {
     const h = P.bench[cm.slot]; P.bench[cm.slot] = null; P.deployed++;
     deployHero(s, cm.p, h, cm.x, cm.y);
+  } else if (cm.t === 'commander') {
+    P.eveil = 0; P.cmdrs++;
+    const e = spawn(s, cm.p, P.cmdr, cm.x, cm.y, CMDR.star, P.levels[P.cmdr] || 1, 0.6, true);
+    e.cmdr = true; e.cmdrT = CMDR.life; e.steerX = 0; e.steerY = 0; e.sigUsed = false; P.cmdrId = e.id;
+    s.ev.push({ type: 'cmdr', p: cm.p, id: e.id, card: P.cmdr, x: cm.x, y: cm.y });
+  } else if (cm.t === 'cmove') {
+    const e = cmdrOf(s, cm.p), L = Math.sqrt(cm.dx * cm.dx + cm.dy * cm.dy);
+    e.steerX = L ? cm.dx / L : 0; e.steerY = L ? cm.dy / L : 0;
+  } else if (cm.t === 'csig') {
+    signature(s, cmdrOf(s, cm.p));
   } else if (cm.t === 'order') {
     P.order = cm.o; P.orderCd = ORDER_CD; P.orders++;
     s.ev.push({ type: 'order', p: cm.p, o: cm.o });
@@ -167,8 +196,8 @@ function apply(s, cm) {
 }
 
 // ---------- Héros sur l'île ----------
-function mults(s, p, c) {
-  const t = s.players[p].syn[c.fac] || 0;
+function mults(s, p, c, noSyn) {
+  const t = noSyn ? 0 : s.players[p].syn[c.fac] || 0;
   return {
     hp: c.fac === 'aube' ? [1, 1.08, 1.15][t] : 1,
     dmg: c.fac === 'arcane' ? [1, 1.08, 1.16][t] : 1,
@@ -181,11 +210,12 @@ function mults(s, p, c) {
 
 const NOGEAR = { dmg: 0, atk: 0, hp: 0, spd: 0 };
 function applyStats(s, e) {
-  const c = HERO[e.card], m = mults(s, e.p, c), lv = levelMult(e.lvl), st = STAR_MULT[e.star];
+  const c = HERO[e.card], m = mults(s, e.p, c, e.cmdr), lv = levelMult(e.lvl), st = STAR_MULT[e.star];
   const g = (s.players[e.p].gear || {})[e.card] || NOGEAR; // objets équipés (bonus déjà plafonnés)
-  e.maxHp = Math.round(c.hp * m.hp * lv * st * (1 + g.hp) * (e.bossHp ? 1 : s.players[e.p].bonus.hp));
+  const cp = e.cmdr ? CMDR.power : 1; // Commandant : projection un peu moins solide qu'un vrai ★2
+  e.maxHp = Math.round(c.hp * m.hp * lv * st * cp * (1 + g.hp) * (e.bossHp ? 1 : s.players[e.p].bonus.hp));
   if (e.bossHp) e.maxHp = e.bossHp;
-  e.dmg = e.bossDmg || Math.round(c.dmg * m.dmg * lv * st * (1 + g.dmg));
+  e.dmg = e.bossDmg || Math.round(c.dmg * m.dmg * lv * st * cp * (1 + g.dmg));
   e.hit = c.hit / m.atk / (1 + g.atk);
   if (!e.bossHp) e.spd = (c.spd || 0) * (1 + g.spd);
   e.regen = m.regen;
@@ -194,7 +224,7 @@ function applyStats(s, e) {
   e.r = e.bossR || c.r * STAR_SIZE[e.star];
 }
 
-function spawn(s, p, id, x, y, star = 1, lvl = 1, deploy = DEPLOY_TIME) {
+function spawn(s, p, id, x, y, star = 1, lvl = 1, deploy = DEPLOY_TIME, cmdr = false) {
   const c = HERO[id];
   const e = {
     id: s.nextId++, p, kind: c.type === 'building' ? 'building' : 'unit', card: id, lvl, star,
@@ -202,7 +232,7 @@ function spawn(s, p, id, x, y, star = 1, lvl = 1, deploy = DEPLOY_TIME) {
     fly: !!c.fly, splash: c.splash || 0, proj: c.proj || null, shield: c.shield || 0, frozen: 0, slowT: 0,
     deploy, target: 0, retarget: 0, dead: false, life: c.life || 0,
     sumT: c.summon ? c.summon.every : 0, novaT: c.nova ? c.nova.every : 0,
-    dashReady: !!c.dash, chargeReady: !!c.charge, moving: false, atkAnim: 0, faceX: 0, faceY: p === 0 ? -1 : 1,
+    dashReady: !!c.dash, chargeReady: !!c.charge, moving: false, atkAnim: 0, faceX: 0, faceY: p === 0 ? -1 : 1, cmdr,
   };
   applyStats(s, e);
   e.hp = e.maxHp;
@@ -389,6 +419,20 @@ export function step(s, cmds = []) {
     if (e.frozen > 0) { e.frozen -= dt; continue; }
     if (e.slowT > 0) { e.slowT -= dt; if (e.slowT <= 0) e.slowK = 0; }
     if (e.deploy > 0) { e.deploy -= dt; if (e.deploy <= 0) onLand(s, e); continue; }
+    if (e.cmdr) {
+      e.cmdrT -= dt;
+      if (e.cmdrT <= 0) { e.dead = true; s.ev.push({ type: 'cmdrEnd', p: e.p, id: e.id, x: e.x, y: e.y }); continue; }
+      if (e.steerX || e.steerY) {
+        // dirigé par le joueur : il avance dans la direction donnée et frappe ce qui est à portée, sans poursuivre
+        const sp = e.spd * CMDR.steerSpd * (e.slowK ? 1 - e.slowK : 1) * dt;
+        e.x += e.steerX * sp; e.y += e.steerY * sp; clampIsland(e); e.moving = true; e.faceX = e.steerX; e.faceY = e.steerY;
+        if (e.cd > 0) e.cd -= dt;
+        let best = null, bd = Infinity;
+        for (const t of s.ents) { if (!canTarget(e, t)) continue; const g = gap(e, t); if (g <= e.range && g < bd) { bd = g; best = t; } }
+        if (best && e.cd <= 0) { attack(s, e, best); e.cd = e.hit; }
+        continue;
+      }
+    }
     if (e.kind === 'sanct' && s.wev && s.wev.on && s.wev.k === 'eclipse') { if (e.cd > 0) e.cd -= dt; continue; } // Éclipse : les Sanctuaires ne tirent plus
     const c = e.card ? HERO[e.card] : null;
     const hk = e.haste ? WEV.arcane.k2 : 1;
@@ -576,6 +620,27 @@ export function hashState(s) {
   if (s.rift) { add(s.rift.x); add(s.rift.y); add(s.rift.end); } if (s.wev) { add(s.wev.at); add(s.wev.on ? 1 : 0); }
   for (const P of s.players) { add(P.mana); add(P.eveil); add(P.myth); add(ORDERS.indexOf(P.order)); for (const b of P.bench) add(b ? b.star * 7 + b.id.length : 0); }
   return h.toString(16);
+}
+
+// ---------- Commandant (Lot 4) ----------
+export function cmdrOf(s, p) { const id = s.players[p].cmdrId; return id ? s.ents.find(e => e.id === id && !e.dead) || null : null; }
+function signature(s, e) {
+  e.sigUsed = true;
+  const k = sigKind(e.card), S = CMDR.sig;
+  s.ev.push({ type: 'csig', p: e.p, id: e.id, k, x: e.x, y: e.y });
+  if (k === 'heal') { for (const o of s.ents) if (!o.dead && o.p === e.p && o.kind === 'unit' && dist(o, e) <= S.heal.r) o.hp = Math.min(o.maxHp, o.hp + o.maxHp * S.heal.pct); return; }
+  if (k === 'volley') {
+    const tg = s.ents.filter(o => canTarget(e, o) && o.kind !== 'sanct' && dist(o, e) <= S.volley.r).sort((a, b) => dist(a, e) - dist(b, e)).slice(0, S.volley.n);
+    for (const o of tg) s.proj.push({ x: e.x, y: e.y, tid: o.id, tx: o.x, ty: o.y, spd: 14, dmg: e.dmg * S.volley.dmg, splash: 0, p: e.p, kind: e.proj || 'arrow', src: e.id, fly: e.fly, id: s.nextId++ });
+    return;
+  }
+  for (const o of s.ents) {
+    if (o.dead || o.p === e.p || o.kind !== 'unit') continue;
+    const d = dist(o, e); if (d > S.wave.r + o.r * 0.5) continue;
+    damage(s, o, e.dmg * S.wave.dmg, e); if (o.dead || o.boss) continue;
+    o.frozen = Math.max(o.frozen, S.wave.stun);
+    const k2 = S.wave.push / (d || 1); o.x += (o.x - e.x) * k2; o.y += (o.y - e.y) * k2; clampIsland(o);
+  }
 }
 
 // ---------- Failles dynamiques et événements de monde (Lot 3) ----------

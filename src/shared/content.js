@@ -122,7 +122,7 @@ export const HEROES = [
     lore: 'Il a forgé sa hache dans la lave d’un volcan. Il dit que c’était « un peu chaud ».',
     ability: ['Tourbillon', 'Ses coups de hache touchent tous les ennemis autour de lui.'] },
   { id: 'dragonnet', name: 'Pyrrhus', title: 'Dragonnet de Braise', fac: 'braise', rar: 'rare', type: 'unit',
-    hp: 580, dmg: 76, hit: 1.5, spd: 1.4, range: 3, tgt: 'any', count: 1, r: 0.55, fly: true, splash: 1.0, proj: 'fire',
+    hp: 660, dmg: 86, hit: 1.5, spd: 1.4, range: 3, tgt: 'any', count: 1, r: 0.55, fly: true, splash: 1.0, proj: 'fire',
     model: { proc: 'dragon', scale: 0.8, color: '#ff7a3d', belly: '#ffd27a' },
     lore: 'Le plus jeune des dragons des Pics. Il crache déjà le feu, mais pas encore très droit.',
     ability: ['Souffle ardent', 'Vole et crache des boules de feu de zone.'] },
@@ -185,7 +185,7 @@ export const HEROES = [
 
   // ----- Neutre -----
   { id: 'belier', name: 'Fracas', title: 'Bélier de Siège', fac: 'neutre', rar: 'rare', type: 'unit',
-    hp: 1700, dmg: 320, hit: 1.8, spd: 1.8, range: 0.9, tgt: 'buildings', count: 1, r: 0.65,
+    hp: 1700, dmg: 270, hit: 1.8, spd: 1.8, range: 0.9, tgt: 'buildings', count: 1, r: 0.65,
     model: { proc: 'ram', scale: 1 },
     lore: 'Construit par les nains des Forges pour ouvrir n’importe quelle porte. Surtout celles des autres.',
     ability: ['Siège', 'Fonce droit sur le Sanctuaire ennemi et ignore les troupes.'] },

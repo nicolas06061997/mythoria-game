@@ -1,0 +1,28 @@
+{
+ "date": "2026-11-19",
+ "at": "2026-11-19T19:43:09.738Z",
+ "checks": 32,
+ "liveChecks": 18,
+ "liveOk": 18,
+ "trialChecks": 14,
+ "detected": [],
+ "resolved": [
+  "Texte coupé",
+  "Texte coupé",
+  "Couleurs hors charte",
+  "Couleurs hors charte",
+  "Couleurs hors charte",
+  "Couleurs hors charte",
+  "Couleurs hors charte"
+ ],
+ "publications": 10,
+ "rollbacks": 0,
+ "blocked": 3,
+ "open": [],
+ "loadPhoneS": 16.4,
+ "version": "2026-11-19.9",
+ "next": [
+  "Continuer la surveillance horaire.",
+  "Mise en service des agents Claude (Réparateur, Graphiste, Équilibreur) : étape 4 du plan."
+ ]
+}

@@ -1,0 +1,20 @@
+{
+ "date": "2026-11-14",
+ "at": "2026-11-14T19:24:57.161Z",
+ "checks": 7,
+ "liveChecks": 4,
+ "liveOk": 4,
+ "trialChecks": 3,
+ "detected": [],
+ "resolved": [],
+ "publications": 1,
+ "rollbacks": 0,
+ "blocked": 2,
+ "open": [],
+ "loadPhoneS": 10.3,
+ "version": "2026-11-14.25",
+ "next": [
+  "Continuer la surveillance horaire.",
+  "Mise en service des agents Claude (Réparateur, Graphiste, Équilibreur) : étape 4 du plan."
+ ]
+}

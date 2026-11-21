@@ -35,10 +35,10 @@ const writeJSON = (f, v) => writeFile(join(DATA, f), JSON.stringify(v, null, 1))
 // Les contrôles de main (toutes les heures, ou après publication) décrivent le jeu publié.
 // Les contrôles des branches d'essai décrivent une modification pas encore publiée.
 const isLive = () => BRANCH === 'main' || EVENT === 'schedule';
-const TRIGGERS = { schedule: 'contrôle horaire', push: 'modification envoyée', workflow_dispatch: 'lancé à la main', manuel: 'lancé à la main' };
+const TRIGGERS = { schedule: 'contrôle continu', push: 'modification envoyée', workflow_dispatch: 'lancé à la main', manuel: 'lancé à la main' };
 
 const AGENTS = [
-  { id: 'testeur', name: 'Testeur', role: 'Joue au jeu toutes les heures (téléphone + ordinateur) et relève les problèmes.' },
+  { id: 'testeur', name: 'Testeur', role: 'Joue au jeu en continu, toutes les 10 min (téléphone + ordinateur) et relève les problèmes.' },
   { id: 'gardien', name: 'Publication protégée', role: 'Ne publie une modification que si tout est vert, contrôle le site en ligne, revient en arrière si besoin.' },
   { id: 'rapporteur', name: 'Rapporteur', role: 'Écrit le rapport quotidien et envoie les notifications.' },
   { id: 'chef', name: 'Guardian (chef)', role: 'Discute avec toi et répartit le travail.', soon: true },
@@ -217,7 +217,7 @@ async function rapport() {
     open: open.map(p => ({ title: p.title, where: p.where, level: p.level, since: p.firstSeen })),
     loadPhoneS: loads.length ? +(loads.reduce((a, b) => a + b, 0) / loads.length / 1000).toFixed(1) : null,
     version: D.state.liveVersion || null,
-    next: open.length ? ['Corriger les problèmes encore ouverts (' + open.length + ').'] : ['Continuer la surveillance horaire.'],
+    next: open.length ? ['Corriger les problèmes encore ouverts (' + open.length + ').'] : ['Continuer la surveillance en continu.'],
   };
   rep.next.push("Mise en service des agents Claude (Réparateur, Graphiste, Équilibreur) : étape 4 du plan.");
   await writeJSON(`reports/${day}.json`, rep);

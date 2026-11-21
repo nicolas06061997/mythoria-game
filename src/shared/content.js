@@ -50,7 +50,7 @@ export const HEROES = [
     lore: 'Fils de forgeron, Aldric a juré de protéger le Royaume d’Aurore avant même de savoir tenir une épée.',
     ability: ['Courage', 'Rien de spécial : solide, fiable et pas cher à fusionner.'] },
   { id: 'frere', name: 'Godric', title: 'Frère-Bouclier', fac: 'aube', rar: 'rare', type: 'unit',
-    hp: 1550, dmg: 115, hit: 1.3, spd: 0.9, range: 0.9, tgt: 'ground', count: 1, r: 0.6, shield: 400,
+    hp: 1450, dmg: 105, hit: 1.3, spd: 0.9, range: 0.9, tgt: 'ground', count: 1, r: 0.6, shield: 400,
     model: { glb: 'Knight', show: ['1H_Sword', 'Rectangle_Shield', 'Knight_Helmet', 'Knight_Cape'], scale: 1.12, tint: '#e4e8f2', atk: ['1H_Melee_Attack_Chop'] },
     lore: 'Le mur vivant de la Garde Blanche. On raconte qu’aucune flèche n’a jamais traversé son bouclier.',
     ability: ['Rempart', 'Son bouclier absorbe les 400 premiers dégâts.'] },

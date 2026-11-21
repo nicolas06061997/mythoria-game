@@ -1204,6 +1204,10 @@ body::after { background: radial-gradient(60% 22% at 30% 16%, rgba(80, 255, 190,
 .cm-pt img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; } .cm-pt .crown { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); font-size: 15px; font-style: normal; }
 .cm-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin-top: 8px; }
 .cm-btn { margin: 4px 0; } .cm-tip { text-align: center; }
+/* Réglages : « Mouvements de caméra » sur une seule ligne, case à cocher à droite (21/11) */
+.settings .vol.cam-tog span { width: auto; flex: 1; white-space: nowrap; }
+.settings .vol.cam-tog input { flex: none; width: 24px; height: 24px; margin: 0; }
+
 
 /* ===== Ajouts du 19/11 : recyclage, replays, statistiques, Expédition, Défi du jour, sauvegarde, rôles ===== */
 .b-hint { white-space: normal; }

@@ -148,7 +148,7 @@ async function runDevice(browser, base, dev, charte) {
   };
 
   const q = '?speed=8&autoplay&guardian=1';
-  await doStep('Chargement du jeu', async S => {
+  const LOAD = async S => {
     const t0 = Date.now();
     await page.goto(base + q, { waitUntil: 'domcontentloaded', timeout: 60000 });
     await page.waitForFunction(() => !document.getElementById('splash') && (document.querySelector('#app > *') || document.querySelector('.intro')), null, { timeout: LIMITS.loadFail + 10000 });
@@ -157,7 +157,24 @@ async function runDevice(browser, base, dev, charte) {
     if (ms > LIMITS.loadFail) throw new Error('chargement beaucoup trop long');
     if (ms > LIMITS.loadWarn) S.warn = 'Chargement long';
     B.gpu = await gpuInfo(page); R.metrics.gpu = B.gpu.renderer.slice(0, 80);
-  });
+  };
+  let L = await doStep('Chargement du jeu', LOAD);
+  // Panne passagère du serveur (ex. GitHub Pages qui répond « 503 » juste après une mise en ligne, vu les 20/11) :
+  // on réessaie jusqu'à 2 fois (après 20 puis 40 s) avant de conclure que le jeu est cassé. Si un nouvel essai passe : « à surveiller », pas bloquant.
+  const is5xx = f => f.step === 'Chargement du jeu' && /HTTP 5\d\d/.test(f.why);
+  for (let k = 1; k <= 2 && !L.ok && R.failedRequests.some(is5xx); k++) {
+    const bad = [...new Set(R.failedRequests.filter(is5xx).map(f => f.url.replace(/^https?:\/\/[^/]+/, '') + ' (' + f.why + ')'))].slice(0, 3);
+    console.log(`[${dev.label}] serveur indisponible (essai ${k}) : ${bad.join(', ')} — nouvel essai dans ${20 * k} s`);
+    R.failedRequests = R.failedRequests.filter(f => f.step !== 'Chargement du jeu');
+    R.errors = R.errors.filter(e => e.step !== 'Chargement du jeu');
+    R.steps.pop(); delete R.metrics.loadMs;
+    await page.waitForTimeout(20000 * k);
+    L = await doStep('Chargement du jeu', async S => {
+      await LOAD(S);
+      S.warn = 'Serveur indisponible au début (panne passagère)';
+      S.notes.push(`Le serveur a d'abord répondu une erreur passagère pour ${bad.join(', ')} ; essai n° ${k + 1} réussi.`);
+    });
+  }
   if (!R.steps[0].ok && !R.metrics.loadMs) { await ctx.close(); return R; }
 
   await doStep('Premier lancement (nom + récompense)', async S => {

@@ -38,6 +38,9 @@ attente de la nouvelle version en ligne, puis contrôle du site en ligne
 
 ## Ce que le contrôleur vérifie (guardian/check.mjs)
 
+- **Panne passagère du serveur (21/11)** : si un fichier répond une erreur 5xx pendant le chargement (GitHub Pages renvoie parfois « 503 » juste après une mise en ligne), le contrôleur réessaie jusqu'à 2 fois (20 puis 40 s). Si un essai passe : « à surveiller » (« Serveur indisponible au début »), pas de retour arrière. Une erreur 404 ou une panne qui dure reste bloquante.
+- **Branche d'essai** : intégrer `main` en **rebasant** (pas en fusionnant) : le retour arrière automatique (`git revert`) ne sait pas annuler un commit de fusion.
+
 Sur un écran de téléphone (412×915, tactile) et d'ordinateur (1366×768) :
 
 - chargement complet du jeu (temps mesuré, alerte au-delà de 15 s, échec au-delà de 35 s) ;

@@ -281,7 +281,9 @@ async function runDevice(browser, base, dev, charte) {
 // L'appli MYTHORIA Guardian (tableau de bord, dépôt séparé « mythoria-guardian ») : s'ouvre, lit les données, aucune erreur, installable.
 const DASH_URL = `https://${(process.env.GITHUB_REPOSITORY_OWNER || 'nicolas06061997').toLowerCase()}.github.io/mythoria-guardian/`;
 async function runDashboard(browser, base) {
-  const R = { device: 'guardian', label: 'Appli Guardian (téléphone)', steps: [], errors: [], warnings: 0, failedRequests: [], metrics: {} };
+  // soft : l'appli est un autre dépôt ; si elle a un souci, on prévient (« à surveiller ») mais on ne défait JAMAIS le jeu
+  // (20/11 : 12 fichiers de l'appli introuvables un instant → retour arrière d'une version du jeu qui marchait).
+  const R = { device: 'guardian', label: 'Appli Guardian (téléphone)', soft: true, steps: [], errors: [], warnings: 0, failedRequests: [], metrics: {} };
   const ctx = await browser.newContext({ viewport: { width: 412, height: 915 }, isMobile: true, hasTouch: true, locale: 'fr-FR' });
   const page = await ctx.newPage();
   page.on('pageerror', e => R.errors.push({ kind: 'exception', step: 'Appli Guardian', text: String(e.message || e).slice(0, 400) }));

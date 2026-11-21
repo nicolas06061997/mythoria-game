@@ -1,5 +1,5 @@
 // MYTHORIA — écran de combat : simulation + IA (plus tard : réseau) + vue 3D + toucher + interface.
-import { createBattle, step, check, timeLeft, sanctOf, DT, MANA_MAX, DOUBLE_AT, SUMMON_COST, deployOk } from '../shared/sim.js';
+import { createBattle, step, check, timeLeft, sanctOf, DT, MANA_MAX, DOUBLE_AT, SUMMON_COST, deployOk, ORDERS, ORDER_CD, MYTH, CMDR, cmdrOf, sigKind } from '../shared/sim.js';
 import { HERO, SPELL, ROLES } from '../shared/content.js';
 import { createBot, botThink, AI_LEVELS } from '../shared/ai.js';
 import { BattleView } from './three/battleview.js';
@@ -7,6 +7,18 @@ import { h, toast, confirmBox } from './ui/dom.js';
 import { icon } from './ui/icons.js';
 import { sfx, playMusic, setMusicIntensity } from './audio.js';
 import { Tuto } from './tuto.js';
+
+// Ordres tactiques (Lot 2) : icônes et noms des 3 boutons du bord droit
+const ORDER_UI = {
+  heart: { name: 'Cœur', tip: 'Tes héros tiennent le Cœur de Mythe', svg: '<svg viewBox="0 0 24 24"><path d="M12 2l5 7-5 13-5-13z" fill="#ffd36a" stroke="#3e2404" stroke-width="1.3" stroke-linejoin="round"/><path d="M12 2l5 7h-10z" fill="#fff4c4" opacity=".7"/><circle cx="12" cy="10" r="1.6" fill="#fff"/></svg>' },
+  assault: { name: 'Assaut', tip: 'Tes héros foncent sur le Sanctuaire ennemi', svg: '<svg viewBox="0 0 24 24"><path d="M4 20L15 9l1.5-5L21 2.5 19.5 7 15 9" fill="none" stroke="#ffe2d0" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.5 13.5l4 4M4 20l2.5-1" stroke="#ff7a4a" stroke-width="2.4" stroke-linecap="round"/></svg>' },
+  defend: { name: 'Défense', tip: 'Tes héros se replient devant ton Sanctuaire', svg: '<svg viewBox="0 0 24 24"><path d="M12 2.5l8 3v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10v-6z" fill="#6fc8ff" stroke="#08204a" stroke-width="1.4" stroke-linejoin="round"/><path d="M12 5.5v13" stroke="#fff" stroke-width="1.6" opacity=".8"/></svg>' },
+};
+const ORDER_ROW = ['heart', 'assault', 'defend'];
+// Failles et événements de monde (Lot 3) : nom + effet annoncés en bannière
+const RIFT_UI = { fureur: ['🔥 Faille de Fureur', '+30 % de dégâts pour les héros dedans'], source: ['💧 Source de Vie', 'soigne les héros dedans'], tempete: ['🌪 Faille-Tempête', 'repousse et ralentit les héros'] };
+const WEV_UI = { bourrasque: ['❄️ Bourrasque', 'les héros dans le vent sont ralentis'], lave: ['🌋 Coulée de lave', 'le bord de l’île brûle'], spores: ['🌿 Spores de soin', 'les héros dedans sont soignés'],
+  halo: ['☀️ Halo d’aurore', 'bouclier pour les héros dedans'], hate: ['🔮 Glyphe de hâte', 'héros 30 % plus rapides dedans'], eclipse: ['🌑 Éclipse', 'les Sanctuaires ne tirent plus'] };
 
 // ?speed=4 dans l'adresse accélère le combat (sert aux tests automatiques).
 const SPEED = Math.min(8, Math.max(1, Number(new URLSearchParams(location.search).get('speed')) || 1));
@@ -17,7 +29,7 @@ export class Battle {
   constructor(root, opts) {
     this.o = opts; this.root = root; this.replay = opts.replay || null;
     const seed = opts.seed != null ? opts.seed >>> 0 : (Math.random() * 1e9) | 0;
-    this.params = this.replay ? JSON.parse(JSON.stringify(this.replay.params)) : JSON.parse(JSON.stringify({ seed, decks: [opts.deck, opts.oppDeck], spells: [opts.spell, opts.oppSpell], levels: [opts.levels || {}, opts.oppLevels || {}], names: [opts.myName, 'IA ' + AI_LEVELS[opts.botLevel].name], mode: opts.simMode || 'duel', boss: opts.boss || null, waves: opts.waves || null, mods: opts.mods || null, bonus: opts.bonus || null, botMana: opts.simMode === 'survival' ? 0 : AI_LEVELS[opts.botLevel].mana, relics: opts.relics || null, fair: !!opts.fair }));
+    this.params = this.replay ? JSON.parse(JSON.stringify(this.replay.params)) : JSON.parse(JSON.stringify({ world: opts.world.key, commanders: [opts.commander || null, opts.oppCommander || null], seed, decks: [opts.deck, opts.oppDeck], spells: [opts.spell, opts.oppSpell], levels: [opts.levels || {}, opts.oppLevels || {}], gear: [opts.gear || {}, opts.oppGear || {}], names: [opts.myName, 'IA ' + AI_LEVELS[opts.botLevel].name], mode: opts.simMode || 'duel', boss: opts.boss || null, waves: opts.waves || null, mods: opts.mods || null, bonus: opts.bonus || null, botMana: opts.simMode === 'survival' ? 0 : AI_LEVELS[opts.botLevel].mana, relics: opts.relics || null, fair: !!opts.fair }));
     this.s = createBattle(JSON.parse(JSON.stringify(this.params)));
     this.log = []; this.ri = 0; this.spd = SPEED;
     this.bot = this.replay || opts.simMode === 'survival' ? null : createBot(1, opts.botLevel, seed ^ 0x5bd1e995);
@@ -64,7 +76,8 @@ export class Battle {
             h('span', { class: 'tp-n' }, '')),
           h('div', { class: 'tp-bar' }, h('i', { class: 'tp-lag' }), h('i', { class: 'tp-fill' }), h('u'))); return { el, name: el.querySelector('.tp-name'), n: el.querySelector('.tp-n'), fill: el.querySelector('.tp-fill'), lag: el.querySelector('.tp-lag'), hp: -1, lagK: 1, hitT: 0 }; })).map(t => t.el)),
       h('div', { class: 'b-top' },
-        h('div', { class: 'b-clock' }, this.elTimer = h('b', {}, '3:00'), this.elHeart = h('small', {}, 'Cœur : libre')),
+        h('div', { class: 'b-clock' }, this.elTimer = h('b', {}, '3:00'), this.elHeart = h('small', {}, 'Cœur : libre'),
+          this.elMyth = h('div', { class: 'b-myth', title: 'Décharge du Mythe' }, h('i', { class: 'me' }), h('i', { class: 'op' }))),
         this.elBoss = h('div', { class: 'b-boss' }, h('b', {}, ''), h('div', { class: 'b-hp red' }, h('i'), h('span', {}, ''))),
         h('button', { class: 'b-quit', onclick: () => this.quit(), 'aria-label': 'Quitter' }, icon('close'))),
       h('div', { class: 'b-bottom' },
@@ -82,10 +95,19 @@ export class Battle {
       this.replay ? h('div', { class: 'b-replay' }, h('b', {}, '⏵ REPLAY'), this.elSpd = h('button', { onclick: () => this.cycleSpeed() }, '×' + this.spd)) : null,
       this.elLoad = h('div', { class: 'b-load' }, h('div', { class: 'logo' }, 'MYTHORIA'), h('b', {}, 'Ouverture de la Faille…'),
         h('small', {}, w.name), h('div', { class: 'lbar' }, this.elLoadBar = h('i'))),
-      this.elHint = h('div', { class: 'b-hint' }, '👆 Touche un héros du Cercle, puis l’île'));
+      this.elHint = h('div', { class: 'b-hint' }, '👆 Touche un héros du Cercle, puis l’île'),
+      // ordres tactiques : colonne de 3 boutons ronds au bord droit, à portée du pouce
+      this.elOrders = h('div', { class: 'b-orders' }, ...ORDER_ROW.map(o => { const b = h('button', { class: 'b-ord o-' + o, 'data-o': o, 'aria-label': ORDER_UI[o].name, onclick: () => this.order(o) }, h('span', { class: 'oi', html: ORDER_UI[o].svg }), h('small', {}, ORDER_UI[o].name), h('i', { class: 'cd' })); return b; })),
+      // Lot 4 : choix à l'Éveil plein (sortilège OU Commandant), joystick et compétence du Commandant
+      this.elChoice = h('div', { class: 'b-choice off' },
+        h('button', { class: 'ch-spell', onclick: () => this.startAim('spell') }, h('span', { class: 'sp-ic' }, icon(spellIcon(this.o.spell))), h('b', {}, SPELL[this.o.spell].name), h('small', {}, 'Sortilège')),
+        this.o.commander ? h('button', { class: 'ch-cmdr', onclick: () => this.startAim('cmdr') }, h('span', { class: 'crown' }, '👑'), h('b', {}, HERO[this.o.commander].name), h('small', {}, 'Commandant · 10 s')) : null),
+      this.elJoy = h('div', { class: 'b-joy off' }, h('i', { class: 'knob' })),
+      this.elSig = h('button', { class: 'b-sig off', onclick: () => this.signature() }, h('span', { class: 'si' }, '✦'), h('small', {}, 'Compétence'), h('svg', { class: 'ring', viewBox: '0 0 100 100', html: '<circle cx="50" cy="50" r="46" class="bg"/><circle cx="50" cy="50" r="46" class="fg"/>' })));
     this.gems = [...this.el.querySelectorAll('.eth-gems i')];
     this.root.innerHTML = ''; this.root.append(this.el);
     this.cv.addEventListener('pointerdown', e => this.down(e));
+    this.joyInit();
     this.mv = e => this.move(e); this.up = e => this.release(e);
     addEventListener('pointermove', this.mv); addEventListener('pointerup', this.up); addEventListener('pointercancel', this.up);
   }
@@ -95,7 +117,12 @@ export class Battle {
     const tick = () => {
       if (this.ended) return;
       if (n > 0) { this.banner(String(n), 'count'); sfx('tick'); n--; setTimeout(tick, 700); }
-      else { this.banner('Combat !', 'go'); sfx('go'); this.started = true; setTimeout(() => this.banner(''), 900); }
+      else {
+        this.banner('Combat !', 'go'); sfx('go'); this.started = true; setTimeout(() => this.banner(''), 900);
+        // présentation des ordres et de la Décharge, une seule fois (Lot 2)
+        let seen = true; try { seen = !!localStorage.getItem('myt_ord'); if (!seen) localStorage.setItem('myt_ord', '1'); } catch (e) {}
+        if (!seen && !this.tuto) setTimeout(() => !this.ended && toast('Nouveau : donne des ordres à tes héros (boutons à droite). Tiens le Cœur 30 s pour lancer le Rayon du Mythe !'), 1600);
+      }
     };
     setTimeout(tick, 200);
   }
@@ -116,10 +143,44 @@ export class Battle {
     this.select(-1);
   }
   cycleSpeed() { this.spd = this.spd >= 4 ? 1 : this.spd * 2; this.elSpd.textContent = '×' + this.spd; sfx('click'); }
+  order(o) {
+    if (!this.started || this.ended || this.replay) return;
+    const P = this.s.players[this.me];
+    if (P.order === o) { toast(ORDER_UI[o].tip); return; }
+    if (this.send({ p: this.me, t: 'order', o })) { sfx('click'); toast(ORDER_UI[o].name + ' : ' + ORDER_UI[o].tip.toLowerCase()); }
+  }
   toggleAim() {
     if (this.s.players[this.me].eveil < 100) { toast('La jauge d’Éveil se remplit avec le temps (2× plus vite si tu tiens le Cœur)'); return; }
-    this.aiming = !this.aiming; this.elSpell.classList.toggle('aim', this.aiming);
-    if (this.aiming) toast('Touche l’île pour lancer ' + SPELL[this.o.spell].name);
+    if (this.aiming || !this.elChoice.classList.contains('off')) { this.aiming = false; this.elSpell.classList.remove('aim'); this.elChoice.classList.add('off'); return; }
+    // Commandant disponible : choisir entre le sortilège et le Commandant
+    if (this.o.commander && !cmdrOf(this.s, this.me)) { this.elChoice.classList.remove('off'); sfx('click'); return; }
+    this.startAim('spell');
+  }
+  startAim(kind) {
+    this.elChoice.classList.add('off');
+    this.aimKind = kind; this.aiming = true; this.elSpell.classList.add('aim');
+    toast(kind === 'cmdr' ? 'Touche ta moitié de l’île pour appeler ' + HERO[this.o.commander].name : 'Touche l’île pour lancer ' + SPELL[this.o.spell].name);
+  }
+  // Commandant : compétence signature (une fois) et joystick (directions arrondies, ~10 par seconde, comme des commandes ordinaires)
+  signature() { if (this.send({ p: this.me, t: 'csig' })) sfx('spell'); }
+  joyInit() {
+    const J = this.elJoy, K = J.querySelector('.knob');
+    const upd = e => {
+      const r = J.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2, R = r.width / 2;
+      let vx = (e.clientX - cx) / R, vy = (e.clientY - cy) / R; const L = Math.hypot(vx, vy); if (L > 1) { vx /= L; vy /= L; }
+      K.style.transform = `translate(${vx * R * 0.6}px, ${vy * R * 0.6}px)`;
+      const dead = Math.hypot(vx, vy) < 0.22, dx = dead ? 0 : Math.round(vx * 8), dy = dead ? 0 : Math.round(vy * 8) * (this.me === 0 ? 1 : -1);
+      this.joyWant = [dx, dy];
+    };
+    J.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); J.setPointerCapture(e.pointerId); this.joyOn = true; upd(e); });
+    J.addEventListener('pointermove', e => { if (this.joyOn) { e.stopPropagation(); upd(e); } });
+    const end = e => { this.joyOn = false; K.style.transform = ''; this.joyWant = [0, 0]; };
+    J.addEventListener('pointerup', end); J.addEventListener('pointercancel', end);
+  }
+  joyTick(dt) {
+    this.joyT = (this.joyT || 0) - dt;
+    const w = this.joyWant || [0, 0], last = this.joySent || [0, 0];
+    if ((w[0] !== last[0] || w[1] !== last[1]) && this.joyT <= 0 && cmdrOf(this.s, this.me)) { if (!check(this.s, { p: this.me, t: 'cmove', dx: w[0], dy: w[1] })) { this.pending.push({ p: this.me, t: 'cmove', dx: w[0], dy: w[1] }); this.joySent = w.slice(); this.joyT = 0.1; } }
   }
 
   // ---------- Toucher ----------
@@ -166,7 +227,8 @@ export class Battle {
     if (d.spell) {
       const g = this.view.pickGround(e.clientX, e.clientY); if (!g) return;
       d.x = g.x; d.y = g.y;
-      this.view.setGhost({ spell: this.o.spell, x: g.x, y: g.y, ok: !check(this.s, { p: this.me, t: 'spell', x: g.x, y: g.y }) });
+      if (this.aimKind === 'cmdr') this.view.setGhost({ id: this.o.commander, star: CMDR.star, x: g.x, y: g.y, ok: deployOk(this.me, g.x, g.y) });
+      else this.view.setGhost({ spell: this.o.spell, x: g.x, y: g.y, ok: !check(this.s, { p: this.me, t: 'spell', x: g.x, y: g.y }) });
       return;
     }
     if (Math.abs(e.clientX - d.sx) + Math.abs(e.clientY - d.sy) > 8) d.moved = true;
@@ -187,7 +249,8 @@ export class Battle {
     this.drag = null;
     this.view.setGhost(null); this.view.highlightSlot(-1);
     if (d.spell) {
-      if (d.x !== undefined && this.send({ p: this.me, t: 'spell', x: d.x, y: d.y })) { this.aiming = false; this.elSpell.classList.remove('aim'); sfx('spell'); }
+      const cm = this.aimKind === 'cmdr' ? { p: this.me, t: 'commander', x: d.x, y: d.y } : { p: this.me, t: 'spell', x: d.x, y: d.y };
+      if (d.x !== undefined && this.send(cm)) { this.aiming = false; this.elSpell.classList.remove('aim'); sfx(this.aimKind === 'cmdr' ? 'summon' : 'spell'); this.joySent = [0, 0]; this.joyWant = [0, 0]; }
       return;
     }
     if (!d.moved) { this.select(this.sel === d.slot ? -1 : d.slot); return; }
@@ -207,6 +270,7 @@ export class Battle {
         let cmds;
         if (this.replay) { cmds = []; const L = this.replay.cmds; while (this.ri < L.length && L[this.ri].tick === this.s.tick) { const { tick, ...c } = L[this.ri++]; cmds.push(c); } }
         else {
+          this.joyTick(DT);
           cmds = this.pending.splice(0);
           const bc = this.bot && !(this.tuto && this.tuto.holdBot) && botThink(this.bot, this.s, DT); if (bc) cmds.push(bc);
           const b0 = this.bot0 && botThink(this.bot0, this.s, DT); if (b0) cmds.push(b0);
@@ -242,6 +306,13 @@ export class Battle {
       else if (e.type === 'boss') { this.banner('☠ ' + e.name, 'bad'); sfx('tower'); setTimeout(() => !this.ended && this.banner(''), 1800); }
       else if (e.type === 'bossSkill') sfx(e.k === 'freeze' ? 'freeze' : e.k === 'heal' ? 'heal' : 'boom', 200);
       else if (e.type === 'bossDown') { this.banner('Boss vaincu ! Détruis le Sanctuaire', 'good'); sfx('boom'); setTimeout(() => !this.ended && this.banner(''), 1600); }
+      else if (e.type === 'cmdr') { this.banner('👑 ' + HERO[e.card].name + (e.p === this.me ? ' entre en scène !' : ' (Commandant ennemi)'), e.p === this.me ? 'good' : 'bad'); setTimeout(() => !this.ended && this.banner(''), 1400); sfx('fuse'); if (e.p === this.me) toast('Dirige-le avec le joystick à gauche · Compétence : bouton ✦'); }
+      else if (e.type === 'csig') sfx(e.k === 'heal' ? 'heal' : 'boom');
+      else if (e.type === 'rift') { const [n, d] = RIFT_UI[e.k]; sfx('spell'); this.banner(n + (e.n > 1 ? ' (prolongation)' : ''), 'go'); setTimeout(() => !this.ended && this.banner(''), 1700); toast(d); }
+      else if (e.type === 'wevWarn') sfx('tick');
+      else if (e.type === 'wev') { const [n, d] = WEV_UI[e.k]; this.banner(n, 'go'); setTimeout(() => !this.ended && this.banner(''), 1300); if (e.n === 1) toast(d); if (e.k === 'eclipse') this.el.classList.add('eclipse'); }
+      else if (e.type === 'wevEnd') { if (e.k === 'eclipse') this.el.classList.remove('eclipse'); }
+      else if (e.type === 'discharge') { sfx('boom'); setTimeout(() => sfx('spell'), 120); this.banner(e.p === this.me ? 'Rayon du Mythe !' : 'Rayon du Mythe ennemi !', e.p === this.me ? 'good big' : 'bad big'); setTimeout(() => !this.ended && this.banner(''), 1500); }
       else if (e.type === 'overtime') { this.banner('Prolongation !', 'go'); setTimeout(() => !this.ended && this.banner(''), 1800); }
     }
     if (!this.dbl && this.s.t >= DOUBLE_AT) { setMusicIntensity(1); this.dbl = true; this.banner('Éther ×2 !', 'go'); setTimeout(() => !this.ended && this.banner(''), 1500); }
@@ -285,8 +356,19 @@ export class Battle {
     const nb = P.bench.filter(Boolean).length;
     this.elSummon.classList.toggle('hint', P.mana >= 4 && nb < 2);
     if (!P.deployed && s.t > 12 && nb && this.elHint.classList.contains('off') && !this.hintAgain) { this.hintAgain = true; this.elHint.textContent = 'Astuce : touche un héros en bas, puis l’île'; this.elHint.classList.remove('off'); setTimeout(() => this.elHint.classList.add('off'), 6000); }
+    // Commandant sur l'île : joystick + compétence + temps restant
+    const C = cmdrOf(s, this.me);
+    this.elJoy.classList.toggle('off', !C); this.elSig.classList.toggle('off', !C || C.sigUsed);
+    if (C) { this.elSig.style.setProperty('--p', Math.max(0, C.cmdrT) / CMDR.life); this.elSig.querySelector('.si').textContent = { wave: '💥', volley: '🏹', heal: '💚' }[sigKind(C.card)]; }
+    if (P.eveil < 100 && !this.elChoice.classList.contains('off')) this.elChoice.classList.add('off');
     this.elSpell.style.setProperty('--p', P.eveil / 100);
     this.elSpell.classList.toggle('ready', P.eveil >= 100);
+    // ordres : bouton actif + délai avant le prochain changement
+    if (this.ordShown !== P.order) { this.ordShown = P.order; this.elOrders.querySelectorAll('.b-ord').forEach(b => b.classList.toggle('on', b.dataset.o === P.order)); }
+    const cdk = P.orderCd / ORDER_CD; if (this.ordCd !== cdk) { this.ordCd = cdk; this.elOrders.style.setProperty('--cd', cdk); this.elOrders.classList.toggle('wait', cdk > 0); }
+    // Décharge du Mythe : progression des deux camps sous le chrono
+    const mk = Math.min(1, P.myth / MYTH.need), ok = Math.min(1, s.players[1 - this.me].myth / MYTH.need);
+    this.elMyth.style.setProperty('--m', mk); this.elMyth.style.setProperty('--o', ok); this.elMyth.classList.toggle('hot', mk > 0.8);
     const hs = s.heart.owner < 0 ? 'Cœur : libre' : s.heart.owner === this.me ? 'Cœur : à toi ✦' : 'Cœur : ennemi';
     if (this.elHeart.textContent !== hs) { this.elHeart.textContent = hs; this.elHeart.className = s.heart.owner < 0 ? '' : s.heart.owner === this.me ? 'blue' : 'red'; }
   }

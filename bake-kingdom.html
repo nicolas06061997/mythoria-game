@@ -29,7 +29,7 @@ const WHITE = new THREE.MeshLambertMaterial({ color: '#ffffff' });
 
 // couleurs « carte peinte » (matières des modèles Quaternius renommées par nom de matière)
 const PAL = { Main: '#4a5598', Wood: '#80562f', Wood_Light: '#a87e4f', Stone: '#8d919e', Stone_Light: '#bcbfc8', Walls: '#ddd2b8', White: '#e4ddcc', Red: '#a12c1f',
-  Gold: '#d1a442', Metal_Light: '#8d929c', Green: '#4e7d2b', Yellow: '#cdb32c', Rock: '#82858f' };
+  Gold: '#d1a442', Metal_Light: '#8d929c', Green: '#4e7d2b', Yellow: '#cdb32c', Rock: '#82858f', Rune: '#6fdcff', Shard: '#6f9cff' };
 const grain = s => {
   s.vertexShader = s.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWp;').replace('#include <project_vertex>', '#include <project_vertex>\nvWp = (modelMatrix * vec4(transformed, 1.0)).xyz;');
   s.fragmentShader = s.fragmentShader.replace('#include <common>', `#include <common>
@@ -90,6 +90,45 @@ const EXTRA = {
   'marche:1': [['kingdom/Crate_Stack2', 0.42, 0.95, 0.55, 0.4], ['kingdom/Barrel', 0.2, -0.95, 0.5, 0], ['kingdom/Barrel', 0.18, -0.75, 0.75, 0], ['kingdom/Logs', 0.4, 0.85, -0.6, 1]],
   'marche:2': [['kingdom/Market_FirstAge_Level2', 1.2, 1.25, 0.9, 0.3], ['kingdom/Crate_Stack2', 0.4, -1.1, 0.7, 0.2]],
 };
+// Autel des Failles (19/11) : construit par le code (pas de modèle Quaternius qui convienne) — socle à degrés,
+// colonnes à chapiteaux dorés, cercle de runes, grand Éclat de Faille qui flotte au-dessus d'une vasque. 3 paliers.
+function autelModel(t) {
+  const g = new THREE.Group();
+  const mat = name => { const m = new THREE.MeshStandardMaterial({ color: PAL[name], flatShading: true }); m.name = name; return m; };
+  const add = (geo, name, x = 0, y = 0, z = 0, emis) => {
+    const m = new THREE.Mesh(geo, mat(name)); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true;
+    const alb = albedoOf(m.material); if (emis) alb.userData.emis = new THREE.Color(emis); m.userData.alb = alb; meshes.push(m); g.add(m); return m;
+  };
+  // socle à degrés octogonal
+  const steps = [[1.05, 0.16], [0.86, 0.16], [0.66, 0.14]];
+  let y = 0;
+  steps.forEach(([r, hgt], i) => { add(new THREE.CylinderGeometry(r, r + 0.04, hgt, 8), i % 2 ? 'Stone_Light' : 'Stone', 0, y + hgt / 2); y += hgt; });
+  // liseré doré du dernier degré + cercle de runes
+  add(new THREE.TorusGeometry(0.6, 0.025, 4, 32).rotateX(Math.PI / 2), 'Gold', 0, y + 0.005);
+  for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2 + 0.2; add(new THREE.BoxGeometry(0.07, 0.02, 0.12), 'Rune', Math.cos(a) * 0.48, y + 0.01, Math.sin(a) * 0.48, '#4fd8ff'); }
+  // vasque
+  add(new THREE.CylinderGeometry(0.24, 0.16, 0.22, 8), 'Stone_Light', 0, y + 0.11);
+  add(new THREE.CylinderGeometry(0.3, 0.24, 0.1, 8), 'Stone', 0, y + 0.27);
+  add(new THREE.CylinderGeometry(0.25, 0.25, 0.02, 16), 'Rune', 0, y + 0.32, 0, '#3fb8ff');
+  // colonnes
+  const nCol = t === 0 ? 4 : 6, cr = 0.86;
+  for (let i = 0; i < nCol; i++) {
+    const a = i / nCol * Math.PI * 2 + Math.PI / nCol, x = Math.cos(a) * cr, z = Math.sin(a) * cr, hc = 0.62 + t * 0.12;
+    add(new THREE.CylinderGeometry(0.075, 0.09, hc, 6), 'Stone_Light', x, 0.32 + hc / 2, z);
+    add(new THREE.CylinderGeometry(0.12, 0.1, 0.07, 6), 'Gold', x, 0.32 + hc + 0.035, z);
+    if (t >= 1) add(new THREE.OctahedronGeometry(0.06, 0), 'Rune', x, 0.32 + hc + 0.14, z, '#8fe9ff');
+  }
+  // grand Éclat de Faille qui flotte (même forme que l'icône de l'interface)
+  const eh = 1.15 + t * 0.15;
+  const shard = new THREE.OctahedronGeometry(0.25, 0); shard.scale(1, eh / 0.5, 0.8);
+  const big = add(shard, 'Shard', 0, y + 0.42 + eh / 2 + 0.06, 0, '#3f73ff'); big.rotation.y = 0.5; big.rotation.z = 0.06;
+  // petits éclats autour
+  const nS = 2 + t * 2;
+  for (let i = 0; i < nS; i++) { const a = i / nS * Math.PI * 2, s2 = new THREE.OctahedronGeometry(0.07, 0); s2.scale(1, 2.2, 1); add(s2, 'Shard', Math.cos(a) * 0.36, y + 0.7 + (i % 2) * 0.25, Math.sin(a) * 0.36, '#4a7dff'); }
+  // palier 3 : arche dorée au-dessus
+  if (t === 2) add(new THREE.TorusGeometry(0.58, 0.035, 6, 40, Math.PI), 'Gold', 0, y + 0.55, 0);
+  return g;
+}
 const v3 = (x, y, z) => new THREE.Vector3(x, y, z);
 function useMat(kind) { for (const m of meshes) m.material = kind === 'alb' ? m.userData.alb : kind === 'emis' ? (m.userData.emisMat ||= new THREE.MeshBasicMaterial({ color: m.userData.alb.userData.emis || 0x000000 })) : WHITE; }
 function pass() { r.setRenderTarget(rt); r.setClearColor(0, 0); r.clear(); r.render(sc, cam); r.readRenderTargetPixels(rt, 0, 0, RW, RH, buf); r.setRenderTarget(null); return buf; }
@@ -100,7 +139,7 @@ function lightFrom(dir, ctr, rad) {
 window.bake = async (id, t, opt = {}) => {
   meshes.length = 0;
   const grp = new THREE.Group();
-  const main = fit(await model(SETS[id][t]), id === 'tour' ? 1.25 : 2.0); grp.add(main);
+  const main = id === 'autel' ? fit(autelModel(t), 1.7) : fit(await model(SETS[id][t]), id === 'tour' ? 1.25 : 2.0); grp.add(main);
   if (id === 'cristal') { main.scale.multiplyScalar(0.8); const c = crystals(5 + t * 3); c.scale.setScalar(1.1 + t * 0.15); grp.add(c); }
   for (const [p, z, x, zz, ry, sc2, y, seed] of EXTRA[id + ':' + t] || []) {
     if (p === 'crystals') { const c = crystals(z, seed || 5); c.scale.setScalar(sc2 || 0.6); c.position.set(x, y || 0, zz); grp.add(c); continue; }

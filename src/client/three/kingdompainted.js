@@ -10,13 +10,13 @@ export const IMG_W = 1050, IMG_H = 1120;
 // emplacements en pixels de l'image (château, mine et carrière sont dessinés dans l'image)
 export const PSPOTS = {
   chateau: [524, 600, 'painted'], mine: [244, 700, 'painted'], carriere: [770, 625, 'painted'],
-  academie: [292, 616], temple: [632, 526], marche: [399, 512], caserne: [500, 860], tour: [762, 752], cristal: [395, 770],
+  academie: [292, 616], temple: [632, 526], marche: [399, 512], caserne: [500, 860], tour: [762, 752], cristal: [395, 770], autel: [690, 895],
 };
 // Images des bâtiments (bake-kingdom.html : même lumière dorée et mêmes ombres douces que la carte), 3 paliers : niveaux 1-3, 4-6, 7+.
 // [largeur, hauteur, point d'appui x, y (fraction), largeur du bâtiment (fraction de l'image)] — rempli par l'atelier.
-export const B_ART = /*B_ART*/{'academie': [[520, 426, 0.5102, 0.672, 0.6304], [520, 440, 0.5, 0.6715, 0.6956], [520, 378, 0.5, 0.6121, 0.7589]], 'caserne': [[520, 406, 0.5, 0.6103, 0.7578], [520, 375, 0.5, 0.5684, 0.6311], [520, 415, 0.5, 0.6493, 0.6944]], 'cristal': [[520, 383, 0.5233, 0.4399, 0.5163], [520, 384, 0.5, 0.4525, 0.5378], [520, 385, 0.5085, 0.486, 0.4893]], 'marche': [[520, 355, 0.5, 0.4426, 0.75], [520, 326, 0.5, 0.4282, 0.6844], [520, 355, 0.5376, 0.4649, 0.7276]], 'temple': [[520, 390, 0.5131, 0.6569, 0.3158], [520, 403, 0.5288, 0.6185, 0.3067], [520, 405, 0.5275, 0.6086, 0.3025]], 'tour': [[520, 403, 0.5, 0.6704, 0.3422], [520, 403, 0.5, 0.6627, 0.3867], [520, 393, 0.5, 0.6548, 0.3744]]}/*/B_ART*/;
+export const B_ART = /*B_ART*/{'autel': [[520, 366, 0.505, 0.6136, 0.4994], [520, 369, 0.5067, 0.6171, 0.4767], [520, 365, 0.5, 0.6204, 0.4452]], 'academie': [[520, 426, 0.5102, 0.672, 0.6304], [520, 440, 0.5, 0.6715, 0.6956], [520, 378, 0.5, 0.6121, 0.7589]], 'caserne': [[520, 406, 0.5, 0.6103, 0.7578], [520, 375, 0.5, 0.5684, 0.6311], [520, 415, 0.5, 0.6493, 0.6944]], 'cristal': [[520, 383, 0.5233, 0.4399, 0.5163], [520, 384, 0.5, 0.4525, 0.5378], [520, 385, 0.5085, 0.486, 0.4893]], 'marche': [[520, 355, 0.5, 0.4426, 0.75], [520, 326, 0.5, 0.4282, 0.6844], [520, 355, 0.5376, 0.4649, 0.7276]], 'temple': [[520, 390, 0.5131, 0.6569, 0.3158], [520, 403, 0.5288, 0.6185, 0.3067], [520, 405, 0.5275, 0.6086, 0.3025]], 'tour': [[520, 403, 0.5, 0.6704, 0.3422], [520, 403, 0.5, 0.6627, 0.3867], [520, 393, 0.5, 0.6548, 0.3744]]}/*/B_ART*/;
 // largeur du bâtiment sur la carte, en pixels de l'image de l'île (palier 1) ; les paliers suivants grandissent un peu
-const B_W = { academie: 150, caserne: 150, tour: 92, temple: 128, marche: 142, cristal: 112 };
+const B_W = { autel: 118, academie: 150, caserne: 150, tour: 92, temple: 128, marche: 142, cristal: 112 };
 export const artTier = lvl => lvl <= 3 ? 0 : lvl <= 6 ? 1 : 2;
 export function bArt(id, lvl) {
   const t = artTier(Math.max(1, lvl)), m = B_ART[id] && B_ART[id][t];

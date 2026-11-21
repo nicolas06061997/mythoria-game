@@ -1,22 +1,22 @@
-// MYTHORIA — écrans de progression : boutique, coffres, missions, connexion, amélioration, apparences.
+// MYTHORIA — écrans de progression : boutique, Éclats de Faille et Autel, jauge de conquête, missions, connexion, amélioration, apparences.
 import { HERO, RARITIES, FACTIONS, SPELL } from '../../shared/content.js';
-import { SKINS, CHESTS, MAX_LEVEL } from '../../shared/economy.js';
-import { saveProfile, owned, heroLevel, canUpgrade, upgradeHero, chestState, startChest, chestGemCost, openChest, shopOffers, buy, skinsFor, missionsReady, claimMission, claimLogin, maxHeroLevel } from '../store.js';
+import { SKINS, ECLATS, ECLAT_ORDER, CONQUEST_MAX, CONQUEST_CYCLE, purifyPerDay, autelBonus, MAX_LEVEL } from '../../shared/economy.js';
+import { saveProfile, owned, heroLevel, canUpgrade, upgradeHero, purify, purifyLeft, purifyMax, autelLevel, eclatCounts, conquestReady, claimConquest, shopOffers, buy, skinsFor, missionsReady, claimMission, claimLogin, maxHeroLevel } from '../store.js';
 import { h, toast, sheet } from './dom.js';
 import { icon } from './icons.js';
 import { sfx } from '../audio.js';
-import { sparkSVG } from './art.js';
+import { sparkSVG, eclatSVG, relicSVG } from './art.js';
 
 let C; // contexte : { P(), render(), portraitImg(id) }
 export function initProgress(ctx) { C = ctx; }
 
-const CHEST_ART = { bois: 'c1', argent: 'c3', or: 'c2', magique: 'c4', legendaire: 'c5' };
-export function chestIcon(type, cls = '') {
-  const s = h('span', { class: 'chest-ic ' + cls, style: { '--cc': CHESTS[type].color } });
-  // coffres de la maquette de l'utilisateur, rendus nets (assets/ui/chest-c1..c5.webp ; dans un emplacement : tuile slot-*.webp)
-  s.classList.add('ci-' + (CHEST_ART[type] || 'c1')); s.append(h('img', { alt: '', draggable: 'false', src: 'assets/ui/chest-' + (CHEST_ART[type] || 'c1') + '.webp' }));
+// Éclat de Faille dessiné en SVG (net partout) ; la couleur suit la sorte d'Éclat
+export function eclatIcon(type, cls = '') {
+  const T = ECLATS[type] || ECLATS.brut;
+  const s = h('span', { class: 'eclat-ic ' + cls, style: { '--ec': T.color, '--eg': T.glow } }); s.innerHTML = eclatSVG(T.color, T.glow);
   return s;
 }
+function relicIcon(cls = '') { const s = h('span', { class: 'relic-ic ' + cls }); s.innerHTML = relicSVG(); return s; }
 const fmt = sec => { sec = Math.max(0, Math.ceil(sec)); const hh = Math.floor(sec / 3600), mm = Math.floor(sec % 3600 / 60), ss = sec % 60; return hh ? hh + ' h ' + String(mm).padStart(2, '0') : mm ? mm + ' min ' + String(ss).padStart(2, '0') : ss + ' s'; };
 
 function rewardChips(r) {
@@ -25,49 +25,68 @@ function rewardChips(r) {
   if (r.gems) out.push(h('span', { class: 'rchip' }, icon('gem'), '+' + r.gems));
   if (r.crystals) out.push(h('span', { class: 'rchip' }, icon('crystal'), '+' + r.crystals));
   if (r.stone) out.push(h('span', { class: 'rchip' }, '🪨 +' + r.stone));
-  if (r.chest) out.push(h('span', { class: 'rchip' }, chestIcon(r.chest, 'xs'), CHESTS[r.chest].name));
+  if (r.eclat && ECLATS[r.eclat]) out.push(h('span', { class: 'rchip' }, eclatIcon(r.eclat, 'xs'), ECLATS[r.eclat].name));
   return out;
 }
 
-// ---------- Coffres (sur l'accueil) ----------
-export function chestRow() {
-  const P = C.P();
-  const row = h('div', { class: 'chests' }, P.chests.map((c, i) => {
-    const st = chestState(c);
-    if (st === 'empty') return h('div', { class: 'cslot empty' }, h('span', { class: 'chest-ic ci-empty' }), h('small', {}, 'Libre'));
-    const b = h('button', { class: 'cslot ' + st, onclick: () => chestTap(i) }, chestIcon(c.type), h('small', { class: 'cname' }, CHESTS[c.type].name.replace('Coffre ', '').replace('d’', '').replace('de ', '')));
-    const lab = h('b', { class: 'ctime' });
-    const upd = () => { const s2 = chestState(P.chests[i]); lab.textContent = s2 === 'ready' ? 'OUVRIR !' : s2 === 'opening' ? fmt((P.chests[i].end - Date.now()) / 1000) : fmt(CHESTS[c.type].time); };
-    upd(); b.append(lab);
-    if (st === 'opening') { const t = setInterval(() => { if (!b.isConnected) return clearInterval(t); upd(); if (chestState(P.chests[i]) === 'ready') { clearInterval(t); C.render(); } }, 1000); }
-    return b;
-  }));
-  row.append(chestLife());
+// ---------- Conquête et Autel (sur l'accueil, à la place des coffres) ----------
+export function conquestRow() {
+  const P = C.P(), pts = P.conquest.pts, full = conquestReady(P), k = Math.min(1, pts / CONQUEST_MAX);
+  const next = ECLATS[CONQUEST_CYCLE[P.conquest.n % CONQUEST_CYCLE.length]];
+  const R = 46, L = 2 * Math.PI * R;
+  const ring = h('span', { class: 'cq-ring' }); ring.innerHTML = `<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="${R}" class="bg"/><circle cx="50" cy="50" r="${R}" class="fg" style="stroke-dasharray:${L};stroke-dashoffset:${L * (1 - k)}"/></svg>`;
+  const n = P.eclats.length, left = purifyLeft(P), counts = eclatCounts(P);
+  const best = ECLAT_ORDER.slice().reverse().find(t => counts[t]) || 'brut';
+  const row = h('div', { class: 'conq' },
+    h('button', { class: 'cq-tile cq-conquest' + (full ? ' ready' : ''), onclick: () => full ? claimRelic() : explainConquest() },
+      h('span', { class: 'cq-med' }, ring, relicIcon()),
+      h('span', { class: 'cq-txt' }, h('small', {}, 'Conquête'), h('b', {}, full ? 'RELIQUE !' : pts + ' / ' + CONQUEST_MAX), h('em', {}, full ? 'Touche pour la prendre' : 'Relique : Éclat ' + next.name.replace('Éclat ', '')))),
+    h('button', { class: 'cq-tile cq-autel' + (n && left ? ' ready' : ''), onclick: openAutel },
+      h('span', { class: 'cq-ec' }, n ? eclatIcon(best) : eclatIcon('brut', 'ghost'), n ? h('i', { class: 'cq-n' }, n) : null),
+      h('span', { class: 'cq-txt' }, h('small', {}, 'Autel'), h('b', {}, n ? (n > 1 ? n + ' Éclats' : '1 Éclat') : 'Aucun Éclat'), h('em', {}, n ? (left ? 'Purifier · ' + left + ' / ' + purifyMax(P) : 'Revient demain') : 'Gagne en Arène'))));
+  row.append(conqLife());
   return row;
 }
-// Coffres vivants (comme la maquette) : étoiles qui scintillent au-dessus, poussières dorées qui montent de l'étagère
-const CH_STARS = [[25, 3, 16], [51, 9, 13], [65, 2, 18], [88, 5, 15], [6, 30, 10], [42, 26, 9], [96, 34, 9], [31, 47, 7], [80, 44, 8]];
-function chestLife() {
-  const fx = h('div', { class: 'ch-fx', 'aria-hidden': 'true' });
-  CH_STARS.forEach(([x, y, z], i) => { const e = h('span', { class: 'ch-star', style: { left: x + '%', top: y + '%', width: z + 'px', height: z + 'px', animationDuration: (1.6 + (i * 37 % 11) / 10) + 's', animationDelay: -(i * 7 % 13) / 5 + 's' } }); e.innerHTML = sparkSVG(); fx.append(e); });
-  for (let i = 0; i < 10; i++) fx.append(h('i', { class: 'ch-mote', style: { left: (4 + i * 9.6) + '%', animationDuration: (3 + (i * 7 % 5) * .5) + 's', animationDelay: -(i * 11 % 9) * .45 + 's' } }));
+// Décor vivant : étoiles qui scintillent au-dessus, poussières dorées qui montent
+const CQ_STARS = [[25, 3, 16], [51, 9, 13], [65, 2, 18], [88, 5, 15], [6, 30, 10], [42, 26, 9], [96, 34, 9], [31, 47, 7], [80, 44, 8]];
+function conqLife() {
+  const fx = h('div', { class: 'cq-fx', 'aria-hidden': 'true' });
+  CQ_STARS.forEach(([x, y, z], i) => { const e = h('span', { class: 'cq-star', style: { left: x + '%', top: y + '%', width: z + 'px', height: z + 'px', animationDuration: (1.6 + (i * 37 % 11) / 10) + 's', animationDelay: -(i * 7 % 13) / 5 + 's' } }); e.innerHTML = sparkSVG(); fx.append(e); });
+  for (let i = 0; i < 10; i++) fx.append(h('i', { class: 'cq-mote', style: { left: (4 + i * 9.6) + '%', animationDuration: (3 + (i * 7 % 5) * .5) + 's', animationDelay: -(i * 11 % 9) * .45 + 's' } }));
   return fx;
 }
-function chestTap(i) {
-  const P = C.P(), c = P.chests[i], st = chestState(c), T = CHESTS[c.type];
-  if (st === 'ready') return reveal(openChest(P, i, false));
-  const cost = chestGemCost(c);
-  const s = sheet(h('div', { class: 'chest-sheet' }, chestIcon(c.type, 'big'), h('h3', {}, T.name),
-    h('p', { class: 'muted' }, 'Contient de l’or, des cristaux et environ ' + T.shards + ' fragments de héros' + (T.legend ? ', dont un héros légendaire ou mythique.' : '.')),
-    st === 'locked' ? h('button', { class: 'btn big gold', onclick: () => { const e = startChest(P, i); if (e) return toast(e, 'bad'); s.close(); C.render(); sfx('click'); } }, 'Lancer l’ouverture (' + fmt(T.time) + ')') : h('p', {}, 'Ouverture en cours…'),
-    h('button', { class: 'btn big ghost', onclick: () => { const r = openChest(P, i, true); if (r && r.err) return toast(r.err, 'bad'); s.close(); reveal(r); } }, 'Ouvrir maintenant : ', icon('gem'), cost)));
+function explainConquest() {
+  sfx('click');
+  const P = C.P();
+  sheet(h('div', { class: 'cq-sheet' }, relicIcon('big'), h('h3', {}, 'Jauge de conquête'),
+    h('p', {}, 'Chaque combat en Arène fait avancer ta conquête des Failles : victoire +12, et +4 de plus si tu tiens le Cœur de Mythe à la fin ; égalité +5, défaite +3. Les victoires en Campagne, Événement et Tournoi comptent +6.'),
+    h('p', { class: 'tip' }, 'Jauge pleine (' + CONQUEST_MAX + ') : une Relique de conquête tout de suite, sans attendre. Prochaine : ' + ECLATS[CONQUEST_CYCLE[P.conquest.n % CONQUEST_CYCLE.length]].name + ' + 5 gemmes.'),
+    h('div', { class: 'shardbar' }, h('i', { style: { width: Math.min(100, P.conquest.pts / CONQUEST_MAX * 100) + '%' } }), h('span', {}, P.conquest.pts + ' / ' + CONQUEST_MAX))));
 }
-function reveal(r) {
+function claimRelic() {
+  const r = claimConquest(C.P()); if (!r) return;
+  reveal(r, 'Relique de conquête');
+}
+// L'Autel des Failles (bâtiment du Royaume) : purifier les Éclats, tout de suite
+export function openAutel() {
+  sfx('click');
+  const P = C.P(), lvl = autelLevel(P), counts = eclatCounts(P), left = purifyLeft(P);
+  const types = ECLAT_ORDER.filter(t => counts[t]).reverse();
+  const s = sheet(h('div', { class: 'autel-sheet' },
+    h('h3', {}, 'Autel des Failles · niveau ' + lvl),
+    h('p', { class: 'muted' }, 'Les combats arrachent des Éclats aux Failles. L’Autel les purifie et libère ce qu’ils contiennent : or, cristaux, gemmes et fragments de héros.'),
+    h('div', { class: 'au-left' + (left ? '' : ' none') }, h('b', {}, left + ' / ' + purifyMax(P)), h('small', {}, 'purifications restantes aujourd’hui')),
+    types.length ? h('div', { class: 'au-list' }, types.map(t => h('div', { class: 'au-row', style: { '--ec': ECLATS[t].color } },
+      eclatIcon(t), h('div', { class: 'au-t' }, h('b', {}, ECLATS[t].name + ' ×' + counts[t]), h('small', {}, 'Environ ' + Math.round(ECLATS[t].shards * autelBonus(lvl)) + ' fragments' + (ECLATS[t].legend ? ', dont un héros légendaire ou mythique' : ''))),
+      h('button', { class: 'btn small ' + (left ? 'gold' : 'ghost'), onclick: () => { const r = purify(P, t); if (r.err) return toast(r.err, 'bad'); s.close(); reveal(r); } }, 'Purifier'))))
+      : h('p', { class: 'tip' }, 'Aucun Éclat pour l’instant : chaque victoire en Arène en rapporte un.'),
+    h('p', { class: 'muted small' }, 'Améliore l’Autel dans ton Royaume : +1 purification par jour (niveau suivant : ' + purifyPerDay(lvl + 1) + ') et des Éclats 6 % plus riches à chaque niveau. Réserve : ' + P.eclats.length + ' / 20 Éclats.')), { onClose: () => C.render() });
+}
+function reveal(r, title) {
   if (!r) return;
   sfx('fuse');
-  const P = C.P();
-  const s = sheet(h('div', { class: 'chest-open' },
-    chestIcon(r.type, 'big pop'), h('h3', {}, CHESTS[r.type].name),
+  const s = sheet(h('div', { class: 'reward-open' },
+    r.relic ? relicIcon('big pop') : eclatIcon(r.type, 'big pop'), h('h3', {}, title || ECLATS[r.type].name + ' purifié'),
     h('div', { class: 'rchips' }, rewardChips(r)),
     h('div', { class: 'shard-grid' }, Object.entries(r.shards).map(([id, n]) => h('div', { class: 'shard', style: { '--rc': RARITIES[HERO[id].rar].color } }, C.portraitImg(id), h('b', {}, '×' + n), h('small', {}, HERO[id].name)))),
     h('button', { class: 'btn big gold', onclick: () => { s.close(); C.render(); } }, 'Super !')));
@@ -107,7 +126,7 @@ export function shopScreen() {
     let art, title, sub;
     if (o.kind === 'gift') { art = h('div', { class: 'of-art gift' }, icon('star')); title = o.name; sub = 'Gratuit, une fois par jour'; }
     else if (o.kind === 'shards') { const c = HERO[o.hero]; art = h('div', { class: 'of-art', style: { '--rc': RARITIES[c.rar].color } }, C.portraitImg(o.hero)); title = '×' + o.n + ' fragments'; sub = c.name + ' · ' + RARITIES[c.rar].name; }
-    else if (o.kind === 'chest') { art = h('div', { class: 'of-art' }, chestIcon(o.chest, 'big')); title = CHESTS[o.chest].name; sub = 'S’ouvre tout de suite'; }
+    else if (o.kind === 'eclat') { art = h('div', { class: 'of-art' }, eclatIcon(o.eclat, 'big')); title = ECLATS[o.eclat].name; sub = 'Déjà purifié : contenu tout de suite'; }
     else if (o.kind === 'crystals') { art = h('div', { class: 'of-art' }, icon('crystal')); title = '×' + o.n + ' cristaux'; sub = 'Pour les niveaux 6 à 10'; }
     else if (o.kind === 'skin') { const c = HERO[o.hero]; art = h('div', { class: 'of-art', style: { '--rc': SKINS[o.skin].glow } }, C.portraitImg(o.hero)); title = 'Apparence ' + SKINS[o.skin].name; sub = c.name + ' (sans effet sur la puissance)'; }
     const price = o.price ? (o.price.gold ? [icon('coin'), o.price.gold] : [icon('gem'), o.price.gems]) : ['Gratuit'];
@@ -116,7 +135,7 @@ export function shopScreen() {
         if (bought) return;
         const e = buy(P, o); if (e) return toast(e, 'bad');
         sfx('coin'); toast('Acheté ✓');
-        if (o.kind === 'chest') { const i = P.chests.findIndex(c => c && c.type === o.chest && !c.start); if (i >= 0) { P.chests[i].start = 1; P.chests[i].end = 1; const r = openChest(P, i, false); C.render(); return reveal(r); } }
+        if (o.kind === 'eclat' && o.got) { C.render(); return reveal(o.got); }
         C.render();
       } }, bought ? 'Acheté' : price));
   };
@@ -127,7 +146,7 @@ export function shopScreen() {
     h('div', { class: 'panel' }, h('h3', {}, 'Tes ressources'),
       h('div', { class: 'res-grid' },
         h('div', {}, icon('coin'), h('b', {}, P.gold), h('small', {}, 'Or : améliorer les héros, construire')),
-        h('div', {}, icon('gem'), h('b', {}, P.gems), h('small', {}, 'Gemmes : coffres, apparences, accélérer')),
+        h('div', {}, icon('gem'), h('b', {}, P.gems), h('small', {}, 'Gemmes : Éclats, apparences, accélérer')),
         h('div', {}, icon('crystal'), h('b', {}, P.crystals), h('small', {}, 'Cristaux : héros niveaux 6 à 10')),
         h('div', {}, h('span', { class: 'ic' }, '🪨'), h('b', {}, P.stone), h('small', {}, 'Pierre : bâtiments du Royaume')))),
     h('p', { class: 'muted center' }, 'MYTHORIA est équitable : aucun achat en argent réel, tout se gagne en jouant. Les gemmes ne donnent jamais de puissance en combat.'));
@@ -146,7 +165,7 @@ export function heroProgress(id, onChange) {
       sfx('fuse'); toast(c.name + ' passe niveau ' + r.lvl + ' !'); onChange();
     } }, 'Améliorer : ', icon('coin'), cost.gold, cost.crystals ? [' ', icon('crystal'), cost.crystals] : null) : null,
     st.ok || !cost ? null : h('small', { class: 'muted' }, st.why),
-    h('small', { class: 'muted' }, 'Fragments : dans les coffres et la boutique. Niveau maximum actuel : ' + maxHeroLevel(P) + ' (monte avec l’Académie du Royaume).'));
+    h('small', { class: 'muted' }, 'Fragments : dans les Éclats de Faille (Autel du Royaume) et la boutique. Niveau maximum actuel : ' + maxHeroLevel(P) + ' (monte avec l’Académie du Royaume).'));
   const sk = skinsFor(P, id);
   const skins = (c.model.glb || c.model.beast) ? h('div', { class: 'hskins' }, h('h4', {}, 'Apparences'),
     h('div', { class: 'skin-row' },

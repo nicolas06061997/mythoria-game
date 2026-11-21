@@ -18,7 +18,7 @@ Légende : 👤 = c'est toi qui le fais · 🤖 = c'est Claude qui le fait
 9. 🤖 Comptes joueurs : inscription / connexion (e-mail ou Google).
 10. 🤖 Sauvegarde en ligne : ta progression actuelle est transférée, tu peux changer de téléphone sans rien perdre.
 11. 🤖 Serveur de combat qui calcule les combats lui-même (anti-triche).
-12. 🤖 Économie sur le serveur (coffres, or, niveaux) : impossible de tricher en modifiant le jeu.
+12. 🤖 Économie sur le serveur (Éclats, conquête, or, niveaux) : impossible de tricher en modifiant le jeu.
 13. 🤖 Matchmaking : trouver un adversaire de ton niveau (trophées).
 14. 🤖 Duel contre un ami par lien ou code.
 15. 🤖 Reconnexion si Internet coupe pendant un combat.

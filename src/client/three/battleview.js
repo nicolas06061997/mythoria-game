@@ -1,6 +1,6 @@
 // MYTHORIA — vue 3D d'un combat. N'applique AUCUNE règle : elle montre l'état de la simulation.
 import * as THREE from 'three';
-import { CX, CY, RX, RY, HEART, SANCT, BENCH } from '../../shared/sim.js';
+import { CX, CY, RX, RY, HEART, SANCT, BENCH, MYTH, CMDR } from '../../shared/sim.js';
 import { HERO, SPELL, RARITIES } from '../../shared/content.js';
 import { createRenderer, quality, PerfWatch } from './stage.js';
 import { buildWorld } from './world.js';
@@ -52,6 +52,95 @@ const SYLVE_FS = `uniform sampler2D map; uniform float t, cheer, top; uniform ve
     gl_FragColor = c;
   }`;
 const BENCH_Z = RY + 3.1, BENCH_X = [-4.6, -2.3, 0, 2.3, 4.6];
+// ---------- Arc runique du Cercle d'Invocation (Lot 1B, 19/11 : remplace la rangée de socles en ligne) ----------
+// Les 5 socles suivent un arc (le centre plus près de toi, les bords remontent vers l'île) ;
+// chaque socle = médaillon rond de pierre astrale, liseré doré, anneau de runes qui tourne ; le héros lévite au-dessus.
+const ARC_LIFT = 0.8; // remontée des socles du bord (unités du monde)
+let RUNE_TEX = null;
+function runeTexture() {
+  if (RUNE_TEX) return RUNE_TEX;
+  const S = 256, c = document.createElement('canvas'); c.width = c.height = S; const g = c.getContext('2d');
+  g.translate(S / 2, S / 2); g.strokeStyle = '#fff'; g.lineCap = 'round';
+  g.lineWidth = 3; g.beginPath(); g.arc(0, 0, 118, 0, 7); g.stroke();
+  g.lineWidth = 2; g.beginPath(); g.arc(0, 0, 84, 0, 7); g.stroke();
+  // glyphes entre les deux cercles
+  let sd = 11; const rnd = () => (sd = (sd * 9301 + 49297) % 233280) / 233280;
+  for (let i = 0; i < 16; i++) {
+    g.save(); g.rotate(i / 16 * Math.PI * 2); g.translate(0, -101); g.lineWidth = 2.6; g.beginPath();
+    const k = Math.floor(rnd() * 4);
+    if (k === 0) { g.moveTo(-6, -8); g.lineTo(0, 8); g.lineTo(6, -8); }
+    else if (k === 1) { g.moveTo(0, -9); g.lineTo(0, 9); g.moveTo(-6, -3); g.lineTo(6, 3); }
+    else if (k === 2) { g.moveTo(-6, 8); g.lineTo(-6, -8); g.lineTo(6, 0); g.lineTo(-6, 0); }
+    else { g.arc(0, 0, 6, 0.4, 5.9); g.moveTo(0, -9); g.lineTo(0, 9); }
+    g.stroke(); g.restore();
+  }
+  // étoile à 8 branches au centre
+  g.lineWidth = 1.6; g.globalAlpha = 0.55; g.beginPath();
+  for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; g.moveTo(Math.cos(a) * 20, Math.sin(a) * 20); g.lineTo(Math.cos(a + Math.PI / 8) * 60, Math.sin(a + Math.PI / 8) * 60); g.lineTo(Math.cos(a + Math.PI / 4) * 20, Math.sin(a + Math.PI / 4) * 20); }
+  g.stroke();
+  RUNE_TEX = new THREE.CanvasTexture(c); RUNE_TEX.colorSpace = THREE.SRGBColorSpace; RUNE_TEX.anisotropy = 4;
+  return RUNE_TEX;
+}
+// Médaillon d'un socle : pierre astrale + liseré doré + runes (additives) + halo
+function medallion() {
+  const g = new THREE.Group();
+  const stone = new THREE.Mesh(new THREE.CylinderGeometry(0.92, 0.82, 0.22, 40), new THREE.MeshStandardMaterial({ color: '#1c2766', emissive: '#0d1a5a', emissiveIntensity: 0.6, roughness: 0.55, metalness: 0.25 }));
+  stone.position.y = 0.11; stone.receiveShadow = true; g.add(stone);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.92, 0.06, 8, 48), new THREE.MeshStandardMaterial({ color: '#e9c877', emissive: '#7a5410', emissiveIntensity: 0.7, roughness: 0.3, metalness: 0.8 }));
+  rim.rotation.x = Math.PI / 2; rim.position.y = 0.22; g.add(rim);
+  const rune = new THREE.Mesh(new THREE.PlaneGeometry(1.66, 1.66), new THREE.MeshBasicMaterial({ map: runeTexture(), color: '#8fd8ff', transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false }));
+  rune.rotation.x = -Math.PI / 2; rune.position.y = 0.235; g.add(rune);
+  const halo = new THREE.Mesh(new THREE.PlaneGeometry(3, 3), new THREE.MeshBasicMaterial({ map: glowTexture(), color: '#5fb8ff', transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false }));
+  halo.rotation.x = -Math.PI / 2; halo.position.y = 0.02; g.add(halo);
+  return { g, rune, halo, rim };
+}
+// ---------- Zones des failles et des événements de monde (Lot 3) : un seul programme pour toutes ----------
+// Plan qui couvre l'île ; le shader calcule la zone en coordonnées du combat (cercle, bande, bord) et dessine l'effet du type k.
+const ZONE_K = { fureur: 0, source: 1, tempete: 2, bourrasque: 3, lave: 4, spores: 5, halo: 6, hate: 7 };
+const ZONE_VS = 'varying vec2 vP; uniform float zk; void main(){ vec4 w = modelMatrix * vec4(position, 1.0); vP = vec2(w.x + ' + CX.toFixed(1) + ', w.z / zk + ' + CY.toFixed(1) + '); gl_Position = projectionMatrix * viewMatrix * w; }';
+const ZONE_FS = `varying vec2 vP; uniform float t, a, warn, k, shape, zr; uniform vec4 z; uniform vec3 col;
+  float h2(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f); return mix(mix(h2(i), h2(i+vec2(1,0)), f.x), mix(h2(i+vec2(0,1)), h2(i+vec2(1,1)), f.x), f.y); }
+  void main(){
+    vec2 P = vP;
+    vec2 e = (P - vec2(${CX.toFixed(1)}, ${CY.toFixed(1)})) / vec2(${RX.toFixed(2)}, ${RY.toFixed(2)});
+    if (dot(e, e) > 1.0) discard;                       // seulement sur l'île
+    float d, edge;                                       // d : 0 au centre .. 1 au bord de la zone ; edge : liseré
+    if (shape < 0.5) { d = length(P - z.xy) / zr; }
+    else if (shape < 1.5) { d = abs(P.y - (z.x + z.y) * 0.5) / ((z.y - z.x) * 0.5); }
+    else { float lim = ${(RX * 0.55).toFixed(2)}; float dx = (P.x - ${CX.toFixed(1)}) * z.x - lim; d = dx > 0.0 ? 1.0 - min(1.0, dx / 1.2) * 0.6 : 2.0; }
+    if (d > 1.0) discard;
+    edge = smoothstep(0.82, 0.97, d) * (1.0 - smoothstep(0.97, 1.0, d));
+    vec2 q = P - z.xy; float ang = atan(q.y, q.x), r = length(q) / max(zr, 0.01);
+    float v = 0.0;
+    if (k < 0.5) v = 0.55 + 0.45 * sin(ang * 3.0 + r * 9.0 - t * 4.0);                       // Fureur : tourbillon rouge
+    else if (k < 1.5) v = 0.5 + 0.5 * sin(r * 14.0 - t * 2.5) * 0.6 + 0.2 * vn(P * 2.0 + t);    // Source : ondes vertes
+    else if (k < 2.5) v = 0.5 + 0.5 * sin(ang * 4.0 - r * 12.0 + t * 7.0);                    // Tempête : spirale rapide
+    else if (k < 3.5) v = 0.55 + 0.9 * smoothstep(0.45, 1.0, vn(vec2(P.x * 1.2 - t * 6.0, P.y * 5.0))); // Bourrasque : rafales
+    else if (k < 4.5) v = 0.45 + 0.55 * vn(P * 1.6 + vec2(0.0, t * 0.8)) + 0.3 * vn(P * 4.0 - t);  // Lave : coulée
+    else if (k < 5.5) { vec2 g = fract(P * 1.6 + vec2(0.0, -t * 0.4)) - 0.5; v = 0.25 + smoothstep(0.18, 0.0, length(g)) * (0.5 + 0.5 * sin(t * 3.0 + h2(floor(P * 1.6)) * 6.0)); } // Spores
+    else if (k < 6.5) v = 0.35 + 0.65 * smoothstep(0.35, 0.0, abs(fract(r * 2.0 - t * 0.8) - 0.5));  // Halo : anneaux qui s'élargissent
+    else v = 0.3 + 0.7 * step(0.6, fract(ang * 1.909 + t * 0.6)) * smoothstep(0.72, 0.8, r) * (1.0 - smoothstep(0.92, 0.98, r)) + 0.25 * smoothstep(0.4, 0.0, abs(r - 0.5)); // Hâte : cercle de runes
+    float fill = (1.0 - warn) * v * (0.55 + 0.45 * (1.0 - d)) ;
+    float glow = edge * (warn > 0.5 ? 0.6 + 0.4 * sin(t * 10.0) : 1.0);
+    // couleur posée par-dessus (pas additive : reste visible sur la neige ou le sol doré), liseré plus clair
+    float al = clamp(fill * (k > 2.5 && k < 3.5 ? 1.1 : 0.55) + glow * 0.9, 0.0, 0.85) * a;
+    gl_FragColor = vec4(mix(col, vec3(1.0), glow * 0.35), al);
+  }`;
+// Bandeau de runes qui relie les socles (courbe passant par les 5 médaillons), motif qui défile
+const ARC_VS = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }';
+const ARC_FS = `varying vec2 vUv; uniform float t; uniform vec3 col;
+  float h(float x){ return fract(sin(x * 91.7) * 4375.5); }
+  void main(){
+    float edge = smoothstep(0.0, 0.18, vUv.y) * smoothstep(1.0, 0.82, vUv.y);
+    float line = smoothstep(0.12, 0.0, abs(vUv.y - 0.5)) * 0.55;
+    float u = vUv.x * 46.0 - t * 1.6, cell = floor(u), f = fract(u);
+    float glyph = step(0.35, h(cell)) * smoothstep(0.5, 0.2, abs(f - 0.5)) * smoothstep(0.42, 0.18, abs(vUv.y - 0.5));
+    float pulse = 0.6 + 0.4 * sin(vUv.x * 18.0 - t * 3.0);
+    float ends = smoothstep(0.0, 0.06, vUv.x) * smoothstep(1.0, 0.94, vUv.x);
+    gl_FragColor = vec4(col * (line + glyph * 0.8) * pulse * edge * ends, 1.0);
+  }`;
+
 
 // Forteresse des Sanctuaires (remplace le simple temple)
 function fortress(roof, crys, stone, hk = 1) {
@@ -86,6 +175,7 @@ export class BattleView {
     this.key = worldKey; this.me = me;
     this.q = quality();
     this.art = ARENA_ART[worldKey] || null; this.zk = this.art ? this.art.k : 1; this.bz = this.art ? this.art.benchZ : BENCH_Z; this.bx = this.art ? this.art.benchX : BENCH_X;
+    { const xm = Math.max(...this.bx.map(Math.abs)); this.bzs = this.bx.map(x => this.bz - ARC_LIFT * this.zk * (x / xm) ** 2); }
     this.r = createRenderer(canvas);
     this.scene = new THREE.Scene();
     this.cam = new THREE.PerspectiveCamera(42, 1, 0.5, 400);
@@ -134,7 +224,7 @@ export class BattleView {
     // Halo au sol du Cœur (lisible en un coup d'œil : couleur = qui capture, clignote si disputé)
     this.heartHalo = new THREE.Mesh(new THREE.RingGeometry(HEART.r * 0.55, HEART.r, 64), new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.15, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending }));
     this.heartHalo.rotation.x = -Math.PI / 2; this.heartHalo.position.y = 0.06; this.heartHalo.scale.y = this.zk; this.scene.add(this.heartHalo);
-    this.zones = []; // zones persistantes (Éruption)
+    this.lava = []; // zones persistantes (Éruption)
     if (this.art) this.heart.group.traverse(o => { if (o.isMesh && !o.material.transparent) o.visible = false; });
     // Cercle d'invocation (le banc du joueur, en 3D devant l'île)
     const ledge = new THREE.Group(); ledge.position.set(0, -0.35, this.bz);
@@ -144,15 +234,36 @@ export class BattleView {
     this.scene.add(ledge); if (this.art) ledge.visible = false;
     this.slotHits = [];
     for (let i = 0; i < BENCH; i++) {
-      const g = new THREE.Group(); g.position.set(this.bx[i], 0, this.bz);
-      const ped = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.95, 0.35, 8), new THREE.MeshStandardMaterial({ color: '#d8d0c0', flatShading: true })); ped.position.y = 0.05; ped.receiveShadow = true; ped.castShadow = true; g.add(ped); if (this.art) { ped.visible = false; }
-      const rune = new THREE.Mesh(new THREE.RingGeometry(0.55, 0.72, 6), new THREE.MeshBasicMaterial({ color: '#8fd8ff', transparent: true, opacity: 0.5, side: THREE.DoubleSide, depthWrite: false }));
-      rune.rotation.x = -Math.PI / 2; rune.position.y = this.art ? 0.03 : 0.24; g.add(rune);
+      const g = new THREE.Group(); g.position.set(this.bx[i], 0, this.bzs[i]);
+      const md = medallion(); md.g.scale.setScalar(1.12); g.add(md.g); const rune = md.rune;
       const hit = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.1, 2.6, 8), new THREE.MeshBasicMaterial({ visible: false })); hit.position.y = 1.2; hit.userData.slot = i; g.add(hit);
       this.slotHits.push(hit);
       this.scene.add(g);
-      this.bench.push({ g, rune, key: '', actor: null, loading: null });
+      this.bench.push({ g, rune, halo: md.halo, key: '', actor: null, loading: null, sel: false });
     }
+    // arc de runes qui relie les médaillons (dans les arènes peintes et en 3D)
+    {
+      const pts = this.bx.map((x, i) => new THREE.Vector3(x, 0.05, this.bzs[i]));
+      const d0 = pts[0].clone().sub(pts[1]).multiplyScalar(0.55), d1 = pts[4].clone().sub(pts[3]).multiplyScalar(0.55);
+      const curve = new THREE.CatmullRomCurve3([pts[0].clone().add(d0), ...pts, pts[4].clone().add(d1)]);
+      const N = 120, W = 0.34, pos = [], uv = [], idx = [];
+      for (let k = 0; k <= N; k++) {
+        const u = k / N, p = curve.getPointAt(u), tg = curve.getTangentAt(u), nx = -tg.z, nz = tg.x, l = Math.hypot(nx, nz) || 1;
+        pos.push(p.x - nx / l * W, p.y, p.z - nz / l * W, p.x + nx / l * W, p.y, p.z + nz / l * W); uv.push(u, 0, u, 1);
+        if (k < N) { const a = k * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+      }
+      const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.setIndex(idx);
+      this.arcU = { t: { value: 0 }, col: { value: new THREE.Color('#6fc8ff') } };
+      const arc = new THREE.Mesh(geo, new THREE.ShaderMaterial({ uniforms: this.arcU, vertexShader: ARC_VS, fragmentShader: ARC_FS, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+      arc.renderOrder = -1; this.scene.add(arc);
+    }
+    // zones des failles / événements de monde (cachées tant qu'il n'y en a pas)
+    this.zones = [0, 1].map(() => {
+      const u = { t: { value: 0 }, a: { value: 0 }, warn: { value: 0 }, k: { value: 0 }, shape: { value: 0 }, zr: { value: 1 }, z: { value: new THREE.Vector4() }, col: { value: new THREE.Color() }, zk: { value: this.zk } };
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(RX * 2 + 1, (RY * 2 + 1) * this.zk).rotateX(-Math.PI / 2), new THREE.ShaderMaterial({ uniforms: u, vertexShader: ZONE_VS, fragmentShader: ZONE_FS, transparent: true, depthWrite: false }));
+      m.position.y = 0.08; m.visible = false; m.renderOrder = 1; this.scene.add(m);
+      return { m, u, fade: 0, key: '' };
+    });
     // Zone de déploiement (moitié de l'île du joueur)
     const sh = new THREE.Shape(); sh.absellipse(0, 0, RX - 0.3, RY - 0.3, Math.PI, 2 * Math.PI, false, 0);
     this.zone = new THREE.Mesh(new THREE.ShapeGeometry(sh, 40), new THREE.MeshBasicMaterial({ color: TEAM[0], transparent: true, opacity: 0.2, depthWrite: false, side: THREE.DoubleSide }));
@@ -287,7 +398,8 @@ export class BattleView {
   }
   // Recule la caméra jusqu'à voir toute l'île et le cercle d'invocation.
   fitCamera() {
-    const target = new THREE.Vector3(0, 0, 3.0), dir = new THREE.Vector3(0, 0.95, 1.0).normalize();
+    // Lot 4 : angle un peu plus bas qu'avant (0,95 -> 0,8) pour montrer le relief et le vide autour de l'île (mondes en vraie 3D seulement)
+    const target = new THREE.Vector3(0, 0, 3.0), dir = new THREE.Vector3(0, 0.8, 1.0).normalize();
     const pts = [[-RX + 0.9, 0, 2], [RX - 0.9, 0, 2], [0, 5.5, -RY + 2.7], [-5.6, 0, this.bz + 1], [5.6, 0, this.bz + 1], [0, 0, this.bz + 1.2]].map(p => new THREE.Vector3(...p));
     let lo = 10, hi = 120;
     for (let it = 0; it < 22; it++) {
@@ -313,7 +425,7 @@ export class BattleView {
     return p ? this.toSim(p.x, p.z) : null;
   }
   screenOf(x, y, h = 0) { const w = this.toWorld(x, y); const v = new THREE.Vector3(w.x, h, w.z).project(this.cam); return { x: (v.x + 1) / 2 * this.ow, y: (1 - v.y) / 2 * this.oh }; }
-  benchScreen(i) { const v = new THREE.Vector3(this.bx[i], 0, this.bz).project(this.cam); return { x: (v.x + 1) / 2 * this.ow, y: (1 - v.y) / 2 * this.oh }; }
+  benchScreen(i, h = 0) { const v = new THREE.Vector3(this.bx[i], h, this.bzs[i]).project(this.cam); return { x: (v.x + 1) / 2 * this.ow, y: (1 - v.y) / 2 * this.oh }; }
 
   async setGhost(g) {
     if (!g) { this.ghostInfo = null; if (this.ghost) { this.scene.remove(this.ghost.a.holder); this.ghost.a.dispose(); this.ghost = null; } this.zone.visible = false; this.aim.visible = false; return; }
@@ -344,16 +456,77 @@ export class BattleView {
       b: c.fly ? '🪽 Volant : ne capture pas le Cœur' : c.type === 'building' ? 'Bâtiment : ne capture pas' : c.tgt === 'buildings' ? 'Fonce sur les bâtiments' : inHeart ? '✦ Capture le Cœur ici' : '✦ Peut capturer le Cœur',
       heart: inHeart && !c.fly && c.type !== 'building' };
   }
-  highlightSlot(i) { this.bench.forEach((b, k) => { b.rune.material.color.set(k === i ? '#ffd166' : '#8fd8ff'); b.rune.material.opacity = k === i ? 0.95 : 0.5; }); }
+  highlightSlot(i) { this.bench.forEach((b, k) => { b.sel = k === i; b.rune.material.color.set(b.sel ? '#ffd166' : '#8fd8ff'); b.halo.material.color.set(b.sel ? '#ffc04a' : '#5fb8ff'); b.halo.material.opacity = b.sel ? 0.7 : 0.35; }); }
+
+  // Zones des failles et des événements de monde (Lot 3) : 0 = faille, 1 = événement du monde
+  syncZones(s, dt) {
+    const COL = { fureur: '#ff4a3a', source: '#4dff9a', tempete: '#b46bff', bourrasque: '#2f80e8', lave: '#ff5a10', spores: '#3ee07a', halo: '#ffb52e', hate: '#c08aff' };
+    const R = s.rift, Wv = s.wev && s.wev.k !== 'eclipse' ? s.wev : null;
+    const items = [R ? { key: 'r' + R.n, k: R.k, zone: { shape: 'circle', x: R.x, y: R.y, r: R.r }, warn: false } : null, Wv ? { key: 'w' + Wv.n, k: Wv.k, zone: Wv.zone, warn: !Wv.on } : null];
+    this.zones.forEach((Z, i) => {
+      const it = items[i];
+      if (it) {
+        Z.last = it; Z.fade = Math.min(1, Z.fade + dt * 2.5);
+        const u = Z.u, zz = it.zone; u.k.value = ZONE_K[it.k]; u.col.value.set(COL[it.k]); u.warn.value = it.warn ? 1 : 0;
+        if (zz.shape === 'circle') { u.shape.value = 0; u.z.value.set(zz.x, zz.y, 0, 0); u.zr.value = zz.r; }
+        else if (zz.shape === 'band') { u.shape.value = 1; u.z.value.set(zz.y0, zz.y1, 0, 0); u.zr.value = 1; }
+        else { u.shape.value = 2; u.z.value.set(zz.side, 0, 0, 0); u.zr.value = 1; }
+        // particules légères (moins en qualité « eco »)
+        if (!it.warn && Math.random() < dt * (this.q.low ? 4 : 10)) this.zoneSpark(it, COL[it.k]);
+      } else Z.fade = Math.max(0, Z.fade - dt * 2);
+      Z.m.visible = Z.fade > 0.01; Z.u.a.value = Z.fade * (i === 0 ? 0.9 : 0.75); Z.u.t.value = this.time;
+    });
+  }
+  zoneSpark(it, col) {
+    const z = it.zone; let x, y;
+    if (z.shape === 'circle') { const a = Math.random() * 6.28, r = Math.sqrt(Math.random()) * z.r; x = z.x + Math.cos(a) * r; y = z.y + Math.sin(a) * r; }
+    else if (z.shape === 'band') { x = CX + (Math.random() - 0.5) * RX * 1.6; y = z.y0 + Math.random() * (z.y1 - z.y0); }
+    else { x = CX + z.side * (RX * 0.62 + Math.random() * RX * 0.3); y = CY + (Math.random() - 0.5) * RY * 1.4; }
+    const w = this.toWorld(x, y), up = { lave: 1.2, spores: 0.6, halo: 1.5, source: 0.8, fureur: 1, tempete: 0.4, hate: 0.6, bourrasque: 0.1 }[it.k] || 0.5;
+    this.fx.emit(w.x, 0.3, w.z, { n: it.k === 'bourrasque' ? 1 : 2, color: [col, '#ffffff'], size: it.k === 'spores' ? 0.35 : 0.3, life: 1.1, speed: it.k === 'bourrasque' ? 0.2 : 0.5, up, alpha: 0.8 });
+  }
+  // Mouvements de caméra des temps forts (Lot 4) : petit zoom vers le point (image entière : 3D + calque, donc les arènes peintes restent alignées)
+  punch(x, y, k) {
+    let off = false; try { off = localStorage.getItem('myt_cam') === '0'; } catch (e) {}
+    if (off || !this.ow) return;
+    const p = this.screenOf(x, y, 0.5);
+    this.pz = { x: Math.max(0, Math.min(this.ow, p.x)), y: Math.max(0, Math.min(this.oh, p.y)), k: Math.max(k, this.pz ? this.pz.k * (1 - this.pz.t / 0.9) : 0), t: 0 };
+  }
+  punchTick(dt) {
+    const P = this.pz; if (!P) return;
+    P.t += dt; const u = P.t / 0.9;
+    const ease = u >= 1 ? 0 : P.k * (u < 0.18 ? Math.sin(u / 0.18 * Math.PI / 2) : Math.cos((u - 0.18) / 0.82 * Math.PI / 2));
+    const tr = ease > 0.0005 ? `scale(${1 + ease})` : '';
+    for (const el of [this.cv, this.ov]) { el.style.transformOrigin = `${P.x}px ${P.y}px`; el.style.transform = tr; }
+    if (u >= 1) this.pz = null;
+  }
+  // Rayon du Mythe (Lot 2) : faisceau du Cœur jusqu'au Sanctuaire visé, éclair, explosion, secousse
+  mythBeam(e, team) {
+    const a = this.toWorld(e.x0, e.y0), b = this.toWorld(e.x1, e.y1), col = TEAM[team];
+    const A = new THREE.Vector3(a.x, 1.6, a.z), B = new THREE.Vector3(b.x, 2.2, b.z), len = A.distanceTo(B);
+    const mk = (r, c, op) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, 12, 1, true), new THREE.MeshBasicMaterial({ color: c, transparent: true, opacity: op, blending: THREE.AdditiveBlending, depthWrite: false })); m.position.copy(A).add(B).multiplyScalar(0.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), B.clone().sub(A).normalize()); this.scene.add(m); return m; };
+    const core = mk(0.22, '#ffffff', 1), glow = mk(0.75, col, 0.55);
+    (this.beams = this.beams || []).push({ core, glow, t: 0, life: 1.1 });
+    this.fx.pillar(a.x, a.z, 1.6, col, 1.0, 9); this.fx.flash(a.x, 2, a.z, 7, col, 0.5);
+    this.fx.flash(b.x, 2.5, b.z, 8, '#ffffff', 0.6); this.fx.explosion(b.x, b.z, 2.4, 'magic'); this.fx.ring(b.x, b.z, 3.6, col, 0.8);
+    this.shake = Math.max(this.shake, 0.7);
+  }
+  beamTick(b, dt) {
+    b.t += dt; const k = 1 - b.t / b.life;
+    if (k <= 0) { for (const m of [b.core, b.glow]) { this.scene.remove(m); m.geometry.dispose(); } return false; }
+    const w = 1 + Math.sin(b.t * 40) * 0.12;
+    b.core.material.opacity = k; b.glow.material.opacity = 0.55 * k; b.core.scale.set(w * (0.4 + k * 0.6), 1, w * (0.4 + k * 0.6)); b.glow.scale.set(w * (0.5 + k), 1, w * (0.5 + k));
+    return true;
+  }
 
   // ---------- Effets à partir des événements ----------
   ingest(ev, s) {
     for (const e of ev) {
       const w = e.x !== undefined ? this.toWorld(e.x, e.y) : null;
       const team = e.p === this.me ? 0 : 1;
-      if (['fuse', 'heart', 'bossDown', 'boss'].includes(e.type) || (e.type === 'die' && e.kind === 'sanct') || e.type === 'end') { const k = e.type === 'end' || e.type === 'bossDown' ? 1.5 : 0.8; this.world.cheer(k); this.artCheer = Math.min(1.5, (this.artCheer || 0) + k); }
+      if (['fuse', 'heart', 'bossDown', 'boss', 'discharge'].includes(e.type) || (e.type === 'die' && e.kind === 'sanct') || e.type === 'end') { const k = e.type === 'end' || e.type === 'bossDown' ? 1.5 : 0.8; this.world.cheer(k); this.artCheer = Math.min(1.5, (this.artCheer || 0) + k); }
       switch (e.type) {
-        case 'deploy': this.fx.ring(w.x, w.z, 1.4, TEAM[team], 0.6); this.fx.pillar(w.x, w.z, 0.6, TEAM[team], 0.7, 7); break;
+        case 'deploy': if (e.star >= 3) this.punch(e.x, e.y, 0.05); this.fx.ring(w.x, w.z, 1.4, TEAM[team], 0.6); this.fx.pillar(w.x, w.z, 0.6, TEAM[team], 0.7, 7); break;
         case 'land': { const v = this.views.get(e.id); if (v) { this.fx.dust(w.x, w.z, 12); this.fx.ring(w.x, w.z, 1.0, '#ffffff', 0.35); } break; }
         case 'attack': { const v = this.views.get(e.id); if (v && v.actor) { v.actor.play('attack', { force: true }); const c = HERO[s.ents.find(o => o.id === e.id)?.card]; if (c && !c.proj && !c.chain) { const t = this.toWorld(e.tx, e.ty); this.fx.emit(t.x, 0.9, t.z, { n: 6, color: ['#ffffff', '#ffe9b0'], size: 0.3, life: 0.25, speed: 3 }); } } break; }
         case 'hit': { const v = this.views.get(e.id); if (v && v.actor) v.actor.flash(); const ent = s.ents.find(o => o.id === e.id); if (ent && ent.kind === 'sanct') { this.num(e.x, e.y, '-' + e.amount, 3.4); this.sanctFlash = 0.1; } break; }
@@ -366,14 +539,26 @@ export class BattleView {
         case 'impact': if (e.kind === 'arrow') this.fx.emit(w.x, 0.9, w.z, { n: 4, color: '#ffffff', size: 0.25, life: 0.2, speed: 2 }); else if (e.kind === 'ice') this.fx.emit(w.x, 0.9, w.z, { n: 8, color: ['#ffffff', '#9fe8ff'], size: 0.35, life: 0.4, speed: 2.5 }); else this.fx.emit(w.x, 0.9, w.z, { n: 8, color: ['#ffffff', '#ffd27a'], size: 0.4, life: 0.3, speed: 2.5 }); break;
         case 'zap': this.fx.bolt(e.pts.map(p => { const q = this.toWorld(p.x, p.y); return new THREE.Vector3(q.x, 1.1, q.z); })); break;
         case 'dash': { const a = this.toWorld(e.x0, e.y0), b = this.toWorld(e.x1, e.y1); for (let k = 0; k <= 8; k++) this.fx.emit(a.x + (b.x - a.x) * k / 8, 0.8, a.z + (b.z - a.z) * k / 8, { n: 3, color: ['#ffb48a', '#ff7a3d'], size: 0.5, life: 0.4, speed: 0.6, gravity: 0 }); break; }
-        case 'fuse': if (e.star >= 3) this.shake = Math.max(this.shake, 0.35); this.fx.pillar(w.x, w.z, 1.0, '#ffd166', 1.0, 9); this.fx.ring(w.x, w.z, 2.2, '#ffd166', 0.7); this.fx.emit(w.x, 1, w.z, { n: 40, color: ['#fff3c0', '#ffd166'], size: 0.45, life: 1, speed: 3, up: 0.9 }); this.num(e.x, e.y, '★'.repeat(e.star) + ' FUSION', 3.0, '#ffd166', true); break;
+        case 'fuse': if (e.star >= 3) this.punch(e.x, e.y, 0.05); this.fx.pillar(w.x, w.z, 1.0, '#ffd166', 1.0, 9); this.fx.ring(w.x, w.z, 2.2, '#ffd166', 0.7); this.fx.emit(w.x, 1, w.z, { n: 40, color: ['#fff3c0', '#ffd166'], size: 0.45, life: 1, speed: 3, up: 0.9 }); this.num(e.x, e.y, '★'.repeat(e.star) + ' FUSION', 3.0, '#ffd166', true); break;
         case 'conjure': { const v = this.views.get(e.id); if (v && v.actor) v.actor.play('cast', { force: true }); this.fx.ring(w.x, w.z, 2, FAC_COL[e.fac] || '#a0ffb0', 0.7); this.fx.emit(w.x, 0.3, w.z, { n: 20, color: [FAC_COL[e.fac] || '#a0ffb0', '#ffffff'], size: 0.4, life: 0.8, speed: 1.5, up: 1 }); break; }
         case 'nova': { const v = this.views.get(e.id); if (v && v.actor) v.actor.play('cast', { force: true }); this.fx.ring(w.x, w.z, e.r, '#bff0ff', 0.6); this.fx.shards(w.x, w.z, e.r); this.fx.emit(w.x, 0.6, w.z, { n: 30, color: ['#ffffff', '#bff0ff'], size: 0.4, life: 0.8, speed: 4, up: 0.3 }); break; }
         case 'cast': if (SPELL[e.spell].fx === 'meteor') { const w2 = this.toWorld(e.x, e.y); this.fx.meteor(w2.x, w2.z, e.delay); } break;
         case 'spell': this.spellFx(e, w); break;
-        case 'heart': this.fx.flash(0, 2, 0, 6, e.owner < 0 ? '#ffffff' : TEAM[e.owner === this.me ? 0 : 1], 0.6); this.fx.ring(0, 0, 3.4, e.owner < 0 ? '#ffffff' : TEAM[e.owner === this.me ? 0 : 1], 0.8); break;
+        case 'heart': this.punch(HEART.x, HEART.y, 0.04); this.fx.flash(0, 2, 0, 6, e.owner < 0 ? '#ffffff' : TEAM[e.owner === this.me ? 0 : 1], 0.6); this.fx.ring(0, 0, 3.4, e.owner < 0 ? '#ffffff' : TEAM[e.owner === this.me ? 0 : 1], 0.8); break;
         case 'shieldBreak': { const ent = s.ents.find(o => o.id === e.id); if (ent) { const q = this.toWorld(ent.x, ent.y); this.fx.emit(q.x, 1, q.z, { n: 14, color: ['#cfe8ff', '#ffffff'], size: 0.35, life: 0.5, speed: 3 }); } break; }
         case 'boss': this.shake = 0.6; break;
+        case 'discharge': this.mythBeam(e, team); this.punch(HEART.x, HEART.y, 0.07); break;
+        case 'cmdr': { this.fx.pillar(w.x, w.z, 1.2, '#ffd36a', 1.1, 9); this.fx.ring(w.x, w.z, 2.2, '#ffd36a', 0.8); this.fx.flash(w.x, 2, w.z, 6, '#fff3c0', 0.5); this.shake = Math.max(this.shake, 0.35); this.punch(e.x, e.y, 0.06); break; }
+        case 'cmdrEnd': this.fx.pillar(w.x, w.z, 0.9, '#ffd36a', 0.6, 7); this.fx.emit(w.x, 0.6, w.z, { n: 24, color: ['#fff3c0', '#ffd36a'], size: 0.4, life: 0.8, speed: 2, up: 1.5 }); break;
+        case 'csig': {
+          const col = e.k === 'heal' ? '#7dff9a' : e.k === 'volley' ? '#9fe8ff' : '#ffb04a';
+          this.fx.ring(w.x, w.z, e.k === 'volley' ? 6 : e.k === 'heal' ? 4 : 2.8, col, 0.7); this.fx.flash(w.x, 1.5, w.z, 5, col, 0.45);
+          if (e.k === 'wave') { this.fx.explosion(w.x, w.z, 2.6, 'roar'); this.shake = Math.max(this.shake, 0.45); }
+          this.punch(e.x, e.y, 0.045); break;
+        }
+        case 'rift': this.fx.flash(w.x, 1.5, w.z, 5, '#ffffff', 0.5); this.fx.ring(w.x, w.z, e.r * 1.4, '#ffffff', 0.7); this.shake = Math.max(this.shake, 0.25); break;
+        case 'halo': { const v = this.views.get(e.id); if (v && v.actor) { const p = v.actor.holder.position; this.fx.ring(p.x, p.z, 0.9, '#ffd36a', 0.5); } break; }
+        case 'order': if (e.p === this.me) this.orderT = 2.5; break;
         case 'bossSkill': {
           const v = this.views.get(e.id); if (v && v.actor) v.actor.play(e.k === 'slam' ? 'attack' : 'cast', { force: true });
           if (e.k === 'slam') { this.fx.explosion(w.x, w.z, e.r, 'roar'); this.fx.ring(w.x, w.z, e.r * 1.3, '#ff5a3a', 0.6); this.shake = 0.45; }
@@ -384,8 +569,8 @@ export class BattleView {
           break; }
         case 'bossDown': this.fx.explosion(w.x, w.z, 3, 'fire'); this.fx.pillar(w.x, w.z, 1.4, '#ffd166', 1.4, 10); this.shake = 0.8; break;
         case 'wave': this.fx.flash(0, 3, -8, 10, '#ff5a3a', 0.6); break;
-        case 'summon': if (e.p === this.me) { const b = this.bx[e.slot]; const col = RARITIES[HERO[e.id].rar].color; this.fx.pillar(b, this.bz, 0.8, col, 0.8, 5); this.fx.emit(b, 0.4, this.bz, { n: 24, color: [col, '#ffffff'], size: 0.45, life: 0.8, speed: 2, up: 1 }); } break;
-        case 'benchFuse': if (e.p === this.me) { const b = this.bx[e.slot]; this.fx.pillar(b, this.bz, 1, '#ffd166', 0.9, 6); this.fx.emit(b, 0.6, this.bz, { n: 36, color: ['#fff3c0', '#ffd166'], size: 0.45, life: 0.9, speed: 2.5, up: 1 }); } break;
+        case 'summon': if (e.p === this.me) { const b = this.bx[e.slot]; const col = RARITIES[HERO[e.id].rar].color; const bz = this.bzs[e.slot]; this.fx.pillar(b, bz, 0.8, col, 0.8, 5); this.fx.emit(b, 0.4, bz, { n: 24, color: [col, '#ffffff'], size: 0.45, life: 0.8, speed: 2, up: 1 }); } break;
+        case 'benchFuse': if (e.p === this.me) { const b = this.bx[e.slot]; const bz = this.bzs[e.slot]; this.fx.pillar(b, bz, 1, '#ffd166', 0.9, 6); this.fx.emit(b, 0.6, bz, { n: 36, color: ['#fff3c0', '#ffd166'], size: 0.45, life: 0.9, speed: 2.5, up: 1 }); } break;
       }
     }
   }
@@ -405,7 +590,7 @@ export class BattleView {
     if (e.reso) this.fx.ring(w.x, w.z, e.r * 1.25, '#ffffff', 0.7);
     if (e.fx === 'eruption') {
       this.fx.explosion(w.x, w.z, e.r, 'fire'); this.fx.disc(w.x, w.z, e.r, '#ff4a0a', e.dur, 0.55); this.shake = Math.max(this.shake, 0.5);
-      this.zones.push({ x: w.x, z: w.z, r: e.r, t: e.dur, k: 0 });
+      this.lava.push({ x: w.x, z: w.z, r: e.r, t: e.dur, k: 0 });
       return;
     }
     if (e.fx === 'roots') {
@@ -506,12 +691,15 @@ export class BattleView {
           const k = key;
           makeHero(h.id, { star: h.star, lite: this.q.lite, skin: (this.skins || {})[h.id] }).then(a => {
             if (b.key !== k) { a.dispose(); return; }
-            a.holder.position.y = 0.23; a.holder.scale.multiplyScalar(1.05); a.play('idle'); b.actor = a; b.g.add(a.holder);
+            a.holder.position.y = 0.6; a.holder.scale.multiplyScalar(1.15); a.holder.rotation.order = 'YXZ'; a.play('idle'); b.actor = a; b.g.add(a.holder);
           });
         }
       }
-      if (b.actor) { b.actor.update(dt); b.actor.holder.rotation.y = Math.sin(this.time * 0.6 + i) * 0.35; }
-      b.rune.rotation.z += dt * 0.6;
+      // le héros lévite au-dessus de son médaillon
+      if (b.actor) { b.actor.update(dt); b.actor.holder.rotation.y = Math.sin(this.time * 0.6 + i) * 0.35; b.actor.holder.rotation.x = -0.55; b.actor.holder.position.y = 0.62 + Math.sin(this.time * 2.1 + i * 1.3) * 0.1; }
+      b.rune.rotation.z += dt * (h ? 0.8 : 0.35);
+      if (!b.sel) { const c = h ? RARITIES[HERO[h.id].rar].color : '#8fd8ff'; if (b.col !== c) { b.col = c; b.rune.material.color.set(c); } b.halo.material.opacity = (h ? 0.42 : 0.22) + Math.sin(this.time * 2 + i) * 0.06; }
+      else b.col = null;
     }
     // Sanctuaires, Cœur
     for (const p of [0, 1]) {
@@ -526,11 +714,15 @@ export class BattleView {
       else if (s.heart.owner >= 0) { H.color.set(TEAM[s.heart.owner === this.me ? 0 : 1]); H.opacity = 0.16; }
       else { H.color.set('#ffffff'); H.opacity = 0.08 + Math.sin(this.time * 2) * 0.03; }
       this.heartHalo.rotation.z += dt * 0.3; }
-    for (const z of this.zones) { z.t -= dt; z.k -= dt; if (z.k <= 0 && z.t > 0) { z.k = 0.12; const a = Math.random() * 6.283, d = Math.random() * z.r; this.fx.emit(z.x + Math.cos(a) * d, 0.2, z.z + Math.sin(a) * d, { n: 3, color: ['#fff3c0', '#ffb02e', '#ff4a0a'], size: 0.5, life: 0.7, speed: 1.2, up: 1.2, spread: 0.4, gravity: 1 }); } }
-    this.zones = this.zones.filter(z => z.t > 0);
+    for (const z of this.lava) { z.t -= dt; z.k -= dt; if (z.k <= 0 && z.t > 0) { z.k = 0.12; const a = Math.random() * 6.283, d = Math.random() * z.r; this.fx.emit(z.x + Math.cos(a) * d, 0.2, z.z + Math.sin(a) * d, { n: 3, color: ['#fff3c0', '#ffb02e', '#ff4a0a'], size: 0.5, life: 0.7, speed: 1.2, up: 1.2, spread: 0.4, gravity: 1 }); } }
+    this.lava = this.lava.filter(z => z.t > 0);
+    if (this.zones) this.syncZones(s, dt);
+    this.punchTick(dt);
+    if (this.beams) this.beams = this.beams.filter(b => this.beamTick(b, dt));
     this.fx.syncProjectiles(s.proj, (x, y) => this.toWorld(x, y));
     this.fx.update(dt);
     this.world.update(dt, this.time);
+    if (this.arcU) this.arcU.t.value = this.time;
     if (this.bgU) { this.artCheer = Math.max(0, (this.artCheer || 0) - dt * 0.6); this.bgU.t.value = this.time; this.bgU.cheer.value = Math.min(1, this.artCheer); }
     if (this.artUps) for (const u of this.artUps) u(dt, this.time);
     if (this.ghost) { this.ghost.a.update(dt); }
@@ -540,6 +732,32 @@ export class BattleView {
     this.post.render();
     if (this.perf) this.perf.tick(dt);
     this.drawOverlay(s, alpha, dt);
+  }
+
+  // Éclair d'énergie entre deux socles identiques prêts à fusionner (même héros, même rang, rang < 3)
+  drawFusionBolts(c, B, dt) {
+    const pairs = [];
+    for (let i = 0; i < BENCH; i++) for (let j = i + 1; j < BENCH; j++) { const a = B[i], b = B[j]; if (a && b && a.id === b.id && a.star === b.star && a.star < 3) pairs.push([i, j]); }
+    if (!pairs.length) return;
+    this.boltT = (this.boltT || 0) - dt;
+    if (this.boltT <= 0 || !this.bolts) { this.boltT = 0.07; this.bolts = {}; }
+    c.save(); c.globalCompositeOperation = 'lighter'; c.lineJoin = 'round'; c.lineCap = 'round';
+    for (const [i, j] of pairs) {
+      const k = i + '-' + j, A = this.benchScreen(i, 0.9), Bp = this.benchScreen(j, 0.9);
+      if (!this.bolts[k]) {
+        // ligne brisée qui monte en arc entre les deux médaillons (refaite ~14 fois par seconde)
+        const n = 12 + (j - i) * 4, lift = 26 + (j - i) * 10, pts = [];
+        for (let q = 0; q <= n; q++) { const u = q / n, x = A.x + (Bp.x - A.x) * u, y = A.y + (Bp.y - A.y) * u - Math.sin(u * Math.PI) * lift; const jit = q && q < n ? (Math.random() - 0.5) * 14 : 0; pts.push([x + jit * 0.4, y + jit]); }
+        this.bolts[k] = pts;
+      }
+      const pts = this.bolts[k], path = () => { c.beginPath(); pts.forEach(([x, y], q) => q ? c.lineTo(x, y) : c.moveTo(x, y)); };
+      const fl = 0.75 + Math.random() * 0.25;
+      path(); c.strokeStyle = `rgba(90,200,255,${0.22 * fl})`; c.lineWidth = 9; c.stroke();
+      path(); c.strokeStyle = `rgba(140,230,255,${0.6 * fl})`; c.lineWidth = 3.5; c.stroke();
+      path(); c.strokeStyle = `rgba(255,255,255,${0.95 * fl})`; c.lineWidth = 1.3; c.stroke();
+      for (const P of [A, Bp]) { const g = c.createRadialGradient(P.x, P.y, 0, P.x, P.y, 16); g.addColorStop(0, `rgba(220,245,255,${0.8 * fl})`); g.addColorStop(1, 'rgba(90,200,255,0)'); c.fillStyle = g; c.beginPath(); c.arc(P.x, P.y, 16, 0, 7); c.fill(); }
+    }
+    c.restore();
   }
 
   drawOverlay(s, alpha, dt) {
@@ -561,18 +779,58 @@ export class BattleView {
       if (e.rootT > 0 || e.curseT > 0) { c.font = '900 11px Nunito, sans-serif'; c.textAlign = 'left'; c.fillStyle = e.curseT > 0 ? '#d8a8ff' : '#9fff8a'; c.strokeStyle = 'rgba(20,10,30,.9)'; c.lineWidth = 3; const ic = (e.rootT > 0 ? '🌿' : '') + (e.curseT > 0 ? '☠' : ''); c.strokeText(ic, p.x + w / 2 + 3, p.y + 6); c.fillText(ic, p.x + w / 2 + 3, p.y + 6); }
       if (e.star > 1) { c.font = '900 12px Nunito, sans-serif'; c.textAlign = 'center'; c.fillStyle = '#ffd166'; c.strokeStyle = 'rgba(20,10,30,.9)'; c.lineWidth = 3; const st = '★'.repeat(e.star); c.strokeText(st, p.x, p.y - 4); c.fillText(st, p.x, p.y - 4); }
     }
-    // étoiles du cercle d'invocation
+    // Jauge de la Décharge du Mythe autour du Cœur : arc bleu = toi, arc rouge = l'ennemi (temps de contrôle cumulé / 30 s)
+    {
+      const ctr = this.screenOf(HEART.x, HEART.y, 0.05), ex = this.screenOf(HEART.x + HEART.r, HEART.y, 0.05), ey = this.screenOf(HEART.x, HEART.y + HEART.r, 0.05);
+      const rx = Math.abs(ex.x - ctr.x), ry = Math.abs(ey.y - ctr.y), top = -Math.PI / 2;
+      const arc = (k, col, sc, w) => { if (k <= 0.005) return; c.beginPath(); c.ellipse(ctr.x, ctr.y, rx * sc, ry * sc, 0, top, top + Math.PI * 2 * k); c.strokeStyle = col; c.lineWidth = w; c.stroke(); };
+      c.save(); c.lineCap = 'round';
+      c.beginPath(); c.ellipse(ctr.x, ctr.y, rx * 1.08, ry * 1.08, 0, 0, 7); c.strokeStyle = 'rgba(10,14,40,.35)'; c.lineWidth = 5; c.stroke();
+      const mk = Math.min(1, s.players[this.me].myth / MYTH.need), ok = Math.min(1, s.players[1 - this.me].myth / MYTH.need);
+      c.globalCompositeOperation = 'lighter';
+      arc(mk, mk > 0.8 ? `rgba(255,214,110,${0.75 + 0.25 * Math.sin(this.time * 9)})` : 'rgba(80,180,255,.9)', 1.08, 4);
+      arc(ok, ok > 0.8 ? `rgba(255,120,120,${0.75 + 0.25 * Math.sin(this.time * 9)})` : 'rgba(255,79,94,.8)', 0.9, 3);
+      c.restore();
+    }
+    // Fanions d'ordre (discrets) : seulement au-dessus de TES héros, petits, presque transparents sauf juste après un changement d'ordre
+    {
+      const P = s.players[this.me], col = { heart: '#ffd36a', assault: '#ff7a4a', defend: '#6fc8ff' }[P.order];
+      this.orderT = Math.max(0, (this.orderT || 0) - dt);
+      const mine = s.ents.filter(e => e.p === this.me && e.kind === 'unit' && !e.dead && !(e.deploy > 0));
+      const a = (this.orderT > 0 ? 0.95 : mine.length > 6 ? 0.32 : 0.5);
+      c.save(); c.globalAlpha = a;
+      for (const e of mine) {
+        const v = this.views.get(e.id); if (!v || !v.actor) continue;
+        const x = e.px + (e.x - e.px) * alpha, y = e.py + (e.y - e.py) * alpha;
+        const p = this.screenOf(x, y, v.actor.height + (e.fly ? 1.2 : 0.25));
+        const bx = p.x + Math.max(13, e.r * 22) + 3, by = p.y - 2;
+        c.fillStyle = 'rgba(20,14,30,.85)'; c.fillRect(bx - 0.6, by - 9, 1.4, 10);
+        c.beginPath(); c.moveTo(bx + 0.8, by - 9); c.lineTo(bx + 7, by - 6.5); c.lineTo(bx + 0.8, by - 4); c.closePath(); c.fillStyle = col; c.fill();
+      }
+      c.restore();
+    }
+    // Couronne des Commandants (Lot 4) + anneau du temps restant (le tien en or, celui de l'ennemi en rouge)
+    for (const e of s.ents) {
+      if (!e.cmdr || e.dead || e.deploy > 0) continue;
+      const v = this.views.get(e.id); if (!v || !v.actor) continue;
+      const x = e.px + (e.x - e.px) * alpha, y = e.py + (e.y - e.py) * alpha, p = this.screenOf(x, y, v.actor.height + 0.9);
+      const mine = e.p === this.me, col = mine ? '#ffd36a' : '#ff6b6b', k = Math.max(0, e.cmdrT) / CMDR.life;
+      c.save(); c.translate(p.x, p.y - 4 + Math.sin(this.time * 3) * 2);
+      c.beginPath(); c.arc(0, 0, 13, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * k); c.strokeStyle = col; c.lineWidth = 2.5; c.stroke();
+      c.beginPath(); c.moveTo(-8, 4); c.lineTo(-8, -4); c.lineTo(-4, 0); c.lineTo(0, -6); c.lineTo(4, 0); c.lineTo(8, -4); c.lineTo(8, 4); c.closePath();
+      c.fillStyle = col; c.fill(); c.lineWidth = 1.4; c.strokeStyle = 'rgba(40,20,0,.9)'; c.stroke();
+      c.restore();
+    }
+    // Cercle d'Invocation : rang (★) en petites gemmes sous chaque médaillon, éclairs entre deux héros prêts à fusionner
     const B = s.players[this.me].bench;
-    c.textAlign = 'center';
     for (let i = 0; i < BENCH; i++) {
       const h = B[i]; if (!h) continue;
       const p = this.benchScreen(i);
-      const col = RARITIES[HERO[h.id].rar].color;
-      c.font = '900 13px Nunito, sans-serif'; c.lineWidth = 3; c.strokeStyle = 'rgba(15,8,30,.95)';
-      for (let k = 0; k < 3; k++) { const sx = p.x + (k - 1) * 13; c.strokeText('★', sx, p.y + 22); c.fillStyle = k < h.star ? '#ffd166' : 'rgba(255,255,255,.25)'; c.fillText('★', sx, p.y + 22); }
-      c.fillStyle = col; c.font = '800 10px Nunito, sans-serif'; c.strokeText(HERO[h.id].name, p.x, p.y + 34); c.fillText(HERO[h.id].name, p.x, p.y + 34);
-      const twin = B.some((o, k) => k !== i && o && o.id === h.id && o.star === h.star && h.star < 3);
-      if (twin) { c.font = '900 11px Nunito, sans-serif'; c.fillStyle = '#7dff9a'; const yy = p.y - 62 - Math.abs(Math.sin(this.time * 4)) * 5; c.strokeText('FUSION ✦', p.x, yy); c.fillText('FUSION ✦', p.x, yy); }
+      for (let k = 0; k < 3; k++) {
+        const sx = p.x + (k - 1) * 11, sy = p.y + 19 + Math.abs(k - 1) * -2, on = k < h.star;
+        c.beginPath(); c.moveTo(sx, sy - 5); c.lineTo(sx + 4, sy); c.lineTo(sx, sy + 5); c.lineTo(sx - 4, sy); c.closePath();
+        c.fillStyle = on ? '#ffd166' : 'rgba(180,200,255,.22)'; c.fill(); c.lineWidth = 1.2; c.strokeStyle = 'rgba(15,8,40,.9)'; c.stroke();
+      }
     }
     if (this.ghostInfo && this.ghost) {
       const gi = this.ghostInfo, p = this.screenOf(gi.x, gi.y, 0);
@@ -580,6 +838,7 @@ export class BattleView {
       c.fillStyle = gi.ok ? '#ffffff' : '#ff8a94'; c.strokeText(gi.a, p.x, p.y + 20); c.fillText(gi.a, p.x, p.y + 20);
       c.fillStyle = gi.heart ? '#ffe28a' : '#bfe6ff'; c.strokeText(gi.b, p.x, p.y + 34); c.fillText(gi.b, p.x, p.y + 34);
     }
+    this.drawFusionBolts(c, B, dt);
     for (const n of this.nums) {
       n.t += dt; const k = n.t / 1.1;
       const p = this.screenOf(n.x, n.y, n.h + k * 1.2);

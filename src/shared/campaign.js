@@ -39,7 +39,7 @@ export const CHAPTERS = WORLDS.map((w, c) => ({
     n: c * 5 + i, name, boss: i === 4,
     ai: Math.max(0, Math.min(3, Math.floor(c * 0.6 + i * 0.3)) - (i === 4 ? 1 : 0)),
     lvl: 1 + Math.round(c * 1.0 + i * 0.15),
-    reward: i === 4 ? { gold: 200 + c * 150, gems: 15 + c * 5, chest: c >= 3 ? 'legendaire' : 'magique' } : { gold: 60 + c * 40 + i * 10, crystals: c >= 2 ? 10 + c * 5 : 0 },
+    reward: i === 4 ? { gold: 200 + c * 150, gems: 15 + c * 5, eclat: c >= 3 ? 'mythe' : 'arcane' } : { gold: 60 + c * 40 + i * 10, crystals: c >= 2 ? 10 + c * 5 : 0 },
   })),
 }));
 export const stageOf = n => CHAPTERS[Math.floor(n / 5)]?.stages[n % 5];
@@ -65,7 +65,7 @@ export const EVENT_REWARD = { gold: 90, crystals: 15 };
 export const EVENT_WINS_PER_DAY = 5;
 
 // ---------- Tournoi contre l'IA (3 manches) ----------
-export const TOURNEY = { rounds: 3, reward: [{ gold: 80 }, { gold: 160, gems: 5 }, { gold: 300, gems: 15, chest: 'magique' }] };
+export const TOURNEY = { rounds: 3, reward: [{ gold: 80 }, { gold: 160, gems: 5 }, { gold: 300, gems: 15, eclat: 'arcane' }] };
 
 // ---------- Survie : vagues selon le monde ----------
 export function survivalWaves(worldId) {
@@ -95,7 +95,7 @@ export const EXPE = {
   stages: 5,
   // niveau d'IA (ajouté à la base du monde) et niveau des héros ennemis pour chaque combat
   ai: [0, 0, 1, 1, 2], lvl: [0, 1, 1, 2, 3],
-  reward: [{ gold: 40 }, { gold: 60 }, { gold: 90, crystals: 10 }, { gold: 120, crystals: 15 }, { gold: 250, gems: 15, chest: 'magique' }],
+  reward: [{ gold: 40 }, { gold: 60 }, { gold: 90, crystals: 10 }, { gold: 120, crystals: 15 }, { gold: 250, gems: 15, eclat: 'arcane' }],
   names: ['Les Failles extérieures', 'Le pont brisé', 'La forêt de cristal', 'Le gouffre hurlant', 'Le Gardien de la Faille'],
 };
 // 3 reliques au hasard (déterministe), sans celles déjà possédées

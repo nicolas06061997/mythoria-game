@@ -1,57 +1,50 @@
 // MYTHORIA — illustrations vectorielles de l'interface « fantastique cosmique » (15/11).
 // Tout est dessiné en SVG : net à n'importe quelle taille d'écran, aucun fichier image.
-// chestSVG(type) · battleSVG() · medalSVG() · isleSVG('a'|'b'|'c') · sparkSVG()
+// eclatSVG(couleur, lueur) · relicSVG() · battleSVG() · medalSVG() · isleSVG('a'|'b'|'c') · sparkSVG()
 
 const OUT = '#070b2c';
 
-// ---------- Coffres astraux ----------
-const CH = {
-  bois:       { m: ['#fbe6bd', '#cf9a5c', '#7a4f24'], b: ['#3d68e0', '#1b2f92', '#0d1654'], gem: ['#fff6d8', '#e9c877', '#a8742a'], lock: 'ring', glow: '#9fd0ff' },
-  argent:     { m: ['#ffffff', '#b4bfdc', '#58648e'], b: ['#3f7af0', '#1a3aa6', '#0c1a5c'], gem: ['#ffffff', '#8fe9ff', '#2a8ee0'], lock: 'gem', glow: '#bfe9ff' },
-  or:         { m: ['#fff3bd', '#ecb94a', '#94610f'], b: ['#8a56ea', '#3d1f9a', '#1a0c54'], gem: ['#ffffff', '#9af0ff', '#2a9ae0'], lock: 'gem', glow: '#d9b8ff' },
-  magique:    { m: ['#f0d6ff', '#a877ea', '#54289a'], b: ['#35d0d8', '#2a55b8', '#1c1668'], gem: ['#ffffff', '#ff9aec', '#b030c0'], lock: 'gem', glow: '#8ff6ff', neb: 1 },
-  legendaire: { m: ['#fffbe0', '#ffc94a', '#b55f08'], b: ['#ff7a4a', '#b0204a', '#4a0c40'], gem: ['#ffffff', '#ffe98a', '#f09a1a'], lock: 'gem', glow: '#ffe9a0', neb: 1 },
-};
-const STARS = [[30, 30, .9], [44, 24, .6], [58, 33, 1], [66, 26, .55], [38, 42, .5], [29, 68, .8], [40, 78, .55], [62, 66, .9], [69, 80, .6], [33, 84, .5], [56, 84, .5], [92, 60, .7], [98, 72, .5], [94, 32, .6]];
 const spark = (x, y, r, o = 1) => `<path d="M${x} ${y - r}Q${x} ${y} ${x + r} ${y}Q${x} ${y} ${x} ${y + r}Q${x} ${y} ${x - r} ${y}Q${x} ${y} ${x} ${y - r}z" fill="#fff" opacity="${o}"/>`;
+// teinte plus claire (k > 0) ou plus sombre (k < 0)
+function shade(hex, k) {
+  const n = parseInt(hex.slice(1), 16), t = k < 0 ? 0 : 255, a = Math.abs(k);
+  const c = [n >> 16, n >> 8 & 255, n & 255].map(v => Math.round(v + (t - v) * a));
+  return '#' + ((1 << 24) | (c[0] << 16) | (c[1] << 8) | c[2]).toString(16).slice(1);
+}
 
-export function chestSVG(type) {
-  const c = CH[type] || CH.bois, k = 'ch' + (CH[type] ? type : 'bois');
-  const lidF = 'M12 52C12 31 18 21 26 18.500L97 18.500C90 21 84 31 84 52z'.replace(/\.500/g, '.5');
-  const cap = 'M84 52C84 31 90 21 97 18.500C104 17 108 27 108 44z'.replace(/\.500/g, '.5');
-  const lock = c.lock === 'ring'
-    ? `<circle cx="48" cy="53" r="9" fill="url(#${k}m)" stroke="${OUT}" stroke-width="1.4"/><circle cx="48" cy="53" r="5.2" fill="${c.m[2]}"/><circle cx="48" cy="53" r="3.4" fill="url(#${k}g)"/><circle cx="46.800" cy="51.800" r="1.100" fill="#fff" opacity=".9"/>`.replace(/\.(\d)00/g, '.$1')
-    : `<path d="M48 39L58 53 48 68 38 53z" fill="url(#${k}m)" stroke="${OUT}" stroke-width="1.4" stroke-linejoin="round"/><path d="M48 43.500L54.500 53 48 63 41.500 53z" fill="url(#${k}g)"/><path d="M48 43.500L54.500 53 48 53z" fill="#fff" opacity=".55"/><path d="M48 53L41.500 53 48 63z" fill="#000" opacity=".12"/>`.replace(/\.500/g, '.5');
-  return `<svg viewBox="0 0 120 104" xmlns="http://www.w3.org/2000/svg"><defs>
-<linearGradient id="${k}m" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.m[0]}"/><stop offset=".45" stop-color="${c.m[1]}"/><stop offset="1" stop-color="${c.m[2]}"/></linearGradient>
-<linearGradient id="${k}b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.b[0]}"/><stop offset=".55" stop-color="${c.b[1]}"/><stop offset="1" stop-color="${c.b[2]}"/></linearGradient>
-<linearGradient id="${k}g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c.gem[0]}"/><stop offset=".5" stop-color="${c.gem[1]}"/><stop offset="1" stop-color="${c.gem[2]}"/></linearGradient>
-<radialGradient id="${k}n" cx=".5" cy=".4" r=".6"><stop offset="0" stop-color="${c.glow}" stop-opacity=".75"/><stop offset="1" stop-color="${c.glow}" stop-opacity="0"/></radialGradient>
-<clipPath id="${k}c"><path d="${lidF}"/><path d="M12 52H84V92H12z"/><path d="${cap}"/><path d="M84 52L108 44V83L84 92z"/></clipPath></defs>
-<ellipse cx="60" cy="95" rx="50" ry="6" fill="#000" opacity=".38"/>
-<g stroke="${OUT}" stroke-width="2.600" stroke-linejoin="round" fill="${OUT}"><path d="${lidF}"/><path d="${cap}"/><path d="M12 52H84V92H12z"/><path d="M84 52L108 44V83L84 92z"/></g>
-<path d="M12 52H84V92H12z" fill="url(#${k}b)"/><path d="${lidF}" fill="url(#${k}b)"/>
-<path d="M84 52L108 44V83L84 92z" fill="url(#${k}b)"/><path d="${cap}" fill="url(#${k}b)"/>
-<g clip-path="url(#${k}c)">
-${c.neb ? `<ellipse cx="46" cy="34" rx="30" ry="16" fill="url(#${k}n)"/><ellipse cx="54" cy="76" rx="26" ry="14" fill="url(#${k}n)" opacity=".7"/>` : `<ellipse cx="46" cy="30" rx="30" ry="12" fill="url(#${k}n)" opacity=".45"/>`}
-<path d="M84 18V92L108 83V17z" fill="#04071e" opacity=".34"/>
-<path d="M26 19L97 19 95 23 22 24z" fill="#fff" opacity=".22"/>
-<g fill="#fff">${STARS.map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}"/>`).join('')}</g>
-${spark(52, 28, 3.4)}${spark(34, 74, 2.6, .9)}${spark(66, 73, 3, .95)}${spark(96, 48, 2.4, .8)}
-${type === 'bois' || !CH[type] ? '<path d="M30 34L40 27 52 31 62 25 68 30" fill="none" stroke="#fff" stroke-width=".8" opacity=".75"/><path d="M28 72L38 80 50 76" fill="none" stroke="#fff" stroke-width=".7" opacity=".6"/>' : ''}
-</g>
-<g fill="url(#${k}m)" stroke="${OUT}" stroke-width="1.400" stroke-linejoin="round">
-<path d="M12 92V52C12 31 18 21 26 18.500L36 18.500C28 21 22 31 22 52V92z"/>
-<path d="M74 92V52C74 31 80 21 87 18.500L97 18.500C90 21 84 31 84 52V92z"/>
-<path d="M84 52C84 31 90 21 97 18.500C104 17 108 27 108 44L103.500 45.500C103.500 31 100.500 24 97.500 24.500C93 25.500 88.500 34 88.500 50.500z"/>
-<path d="M103.500 45.500L108 44V83L103.500 84.700z"/>
-<path d="M12 48.500H84V56.500H12z"/><path d="M84 48.500L108 40.500V47.500L84 56.500z"/>
-<path d="M12 86.500H84V92H12z"/><path d="M84 86.500L108 77.500V83L84 92z"/>
-<path d="M10 90H25L23.500 98H12z"/><path d="M71 90H86L84.500 98H73z"/><path d="M99 84.500L109.500 80.500 108.500 87.500 101 91z"/>
-</g>
-<g fill="none" stroke="#fff" stroke-linecap="round"><path d="M14.500 50C14.500 34 19 24.500 26 21" stroke-width="1.300" opacity=".75"/><path d="M76.500 50C76.500 34 81 24.500 88 21" stroke-width="1.300" opacity=".75"/><path d="M14 50H82" stroke-width="1" opacity=".7"/><path d="M14 88H82" stroke-width=".8" opacity=".45"/></g>
-<g fill="${c.m[2]}"><circle cx="17" cy="66" r="1.300"/><circle cx="17" cy="78" r="1.300"/><circle cx="79" cy="66" r="1.300"/><circle cx="79" cy="78" r="1.300"/><circle cx="17" cy="38" r="1.200"/><circle cx="79" cy="38" r="1.200"/></g>
-${lock}</svg>`.replace(/(\d)\.(\d)00\b/g, '$1.$2');
+// ---------- Éclats de Faille (remplacent les coffres, 19/11) : grand cristal à facettes fendu d'une faille lumineuse ----------
+let EC_N = 0;
+export function eclatSVG(color, glow) {
+  const k = 'ec' + (EC_N++), l = shade(color, 0.5), d = shade(color, -0.5), dd = shade(color, -0.78);
+  return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs>
+<radialGradient id="${k}h" cx=".5" cy=".55" r=".5"><stop offset="0" stop-color="${glow}" stop-opacity=".8"/><stop offset=".5" stop-color="${color}" stop-opacity=".28"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></radialGradient>
+<linearGradient id="${k}a" x1="0" y1="0" x2=".7" y2="1"><stop offset="0" stop-color="${l}"/><stop offset=".45" stop-color="${color}"/><stop offset="1" stop-color="${d}"/></linearGradient>
+<linearGradient id="${k}b" x1="1" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}"/><stop offset="1" stop-color="${dd}"/></linearGradient>
+<linearGradient id="${k}r" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".5" stop-color="${glow}"/><stop offset="1" stop-color="#fff" stop-opacity=".2"/></linearGradient></defs>
+<ellipse cx="50" cy="56" rx="47" ry="45" fill="url(#${k}h)"/>
+<ellipse cx="51" cy="90" rx="27" ry="5.5" fill="#000" opacity=".35"/>
+<path d="M21 89L16 63L27 49L36 66L33 89z" fill="url(#${k}b)" stroke="${OUT}" stroke-width="2" stroke-linejoin="round"/><path d="M27 49L36 66L24 69z" fill="${l}" opacity=".6"/>
+<path d="M68 89L71 59L82 48L86 71L80 89z" fill="url(#${k}b)" stroke="${OUT}" stroke-width="2" stroke-linejoin="round"/><path d="M82 48L86 71L74 66z" fill="${l}" opacity=".5"/>
+<path d="M50 5L67 33L63 89L37 89L33 35z" fill="url(#${k}a)" stroke="${OUT}" stroke-width="2.4" stroke-linejoin="round"/>
+<path d="M50 5L67 33L63 89L51 89L52 40z" fill="${dd}" opacity=".38"/><path d="M50 5L67 33L52 40L33 35z" fill="${l}" opacity=".55"/><path d="M33 35L52 40L51 89L37 89z" fill="#fff" opacity=".08"/>
+<path d="M49 21L54 37L46 51L55 65L49 82" fill="none" stroke="${glow}" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" opacity=".55"/>
+<path d="M49 21L54 37L46 51L55 65L49 82" fill="none" stroke="url(#${k}r)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+${spark(72, 20, 5.5)}${spark(25, 33, 3.6, .85)}${spark(84, 40, 2.6, .7)}</svg>`;
+}
+
+// ---------- Relique de conquête (médaillon de la jauge) ----------
+export function relicSVG() {
+  const runes = Array.from({ length: 12 }, (_, i) => { const a = i / 12 * Math.PI * 2, x = 50 + Math.cos(a) * 37, y = 50 + Math.sin(a) * 37; return `<path d="M${(x - 2).toFixed(1)} ${(y - 2.6).toFixed(1)}l2 2.6l2-2.6M${x.toFixed(1)} ${y.toFixed(1)}v2.8" stroke="#ffe7a6" stroke-width="1.2" fill="none" stroke-linecap="round" opacity=".85"/>`; }).join('');
+  return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs>
+<radialGradient id="rlB" cx=".5" cy=".38" r=".7"><stop offset="0" stop-color="#3a5fe0"/><stop offset=".6" stop-color="#16217a"/><stop offset="1" stop-color="#080c3a"/></radialGradient>
+<linearGradient id="rlG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff6cc"/><stop offset=".45" stop-color="#f3c552"/><stop offset="1" stop-color="#9c6510"/></linearGradient>
+<linearGradient id="rlC" x1="0" y1="0" x2=".6" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".4" stop-color="#9ff0ff"/><stop offset="1" stop-color="#2a7ee0"/></linearGradient></defs>
+<circle cx="50" cy="50" r="44" fill="url(#rlB)" stroke="url(#rlG)" stroke-width="5"/>
+<circle cx="50" cy="50" r="31" fill="none" stroke="#f3c552" stroke-width="1" opacity=".55"/>${runes}
+<path d="M50 20L61 40L57 78L43 78L39 41z" fill="url(#rlC)" stroke="${OUT}" stroke-width="2" stroke-linejoin="round"/>
+<path d="M50 20L61 40L57 78L50 78L51 44z" fill="#0b2a7a" opacity=".35"/><path d="M50 20L61 40L51 44L39 41z" fill="#fff" opacity=".5"/>
+<path d="M49.5 32L52.5 44L47.5 54L52.5 66" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>
+${spark(70, 26, 4.5)}${spark(30, 66, 3, .8)}</svg>`;
 }
 
 // ---------- Plaque du bouton COMBATTRE (le texte reste du vrai texte, posé dessus) ----------

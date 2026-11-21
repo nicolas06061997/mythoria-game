@@ -17,6 +17,35 @@ export const SUMMON_COST = 2, BENCH = 5, EVEIL_TIME = 35;
 export const HEART = { x: CX, y: CY, r: 2.6, rate: 0.45 };
 export const SANCT = { hp: 12000, dmg: 100, hit: 0.85, range: 6.5, r: 1.7, splash: 1.0, y: [21.8, 2.2] };
 const DEPLOY_TIME = 1.0, SIGHT = 5.5;
+// Ordres tactiques (Lot 2, 20/11) : comportement de TOUS les héros d'un camp déjà sur l'île (et des suivants).
+// heart = tenir le Cœur de Mythe ; assault = pousser vers le Sanctuaire adverse (comportement d'origine, ordre de départ) ;
+// defend = se replier devant son Sanctuaire sans poursuivre au-delà de sa moitié.
+export const ORDERS = ['heart', 'assault', 'defend'];
+export const ORDER_CD = 1.5;          // secondes entre deux changements d'ordre
+const DEF_R = 7.0, DEF_BACK = 3.4;
+export const ORDER_FX = { defendArmor: 0.8, assaultSiege: 1.25 }; // Défense : -20 % de dégâts reçus dans sa moitié ; Assaut : +25 % contre Sanctuaires et bâtiments    // rayon de défense autour du point de repli ; recul du point de repli devant le Sanctuaire
+// Décharge du Mythe : tenir le Cœur (au moins un de ses héros au sol dessus, aucun ennemi) MYTH.need secondes au total -> rayon qui frappe le Sanctuaire adverse
+// (et les ennemis sur sa trajectoire), puis le compteur repart à zéro.
+export const MYTH = { need: 30, sanctPct: 0.07, unitDmg: 400, width: 1.3 };
+// Commandant (Lot 4, 20/11) : un héros en plus du deck. Éveil plein -> au choix le sortilège OU le Commandant,
+// qui descend sur l'île 10 s, version ★3 de lui-même, dirigeable (commandes « cmove » quantifiées) avec une compétence signature (« csig ») une fois.
+// Il ne compte pas dans les bonus de faction du deck et n'en reçoit pas.
+export const CMDR = { life: 10, star: 2, power: 0.75, steerSpd: 1.15, sig: { wave: { r: 2.8, dmg: 2, stun: 1.0, push: 1.6 }, volley: { r: 6.5, n: 5, dmg: 2 }, heal: { r: 4, pct: 0.25 } } };
+export const cmdrOk = id => { const c = HERO[id]; return !!(c && c.type === 'unit' && !c.kamikaze && (c.count || 1) === 1); };
+export const sigKind = id => { const c = HERO[id]; return c.aura || c.heal ? 'heal' : c.range > 2 ? 'volley' : 'wave'; };
+// Failles dynamiques (Lot 3, 20/11) : une vers 1:20-1:40, une autre au début de la prolongation, 15 s chacune, pour les deux camps.
+export const RIFT = { dur: 15, r: 2.4, at: [80, 100], otDelay: 6, kinds: ['fureur', 'source', 'tempete'],
+  fureur: 1.3,        // +30 % de dégâts pour les héros dedans
+  source: 0.045,      // soin : 4,5 % de la vie max par seconde
+  tempete: 2.4 };     // poussée vers l'extérieur (unités / s) + ralentissement
+// Événement de monde (Lot 3) : toutes les ~30 s, annoncé 2 s avant, change de moitié d'île à chaque fois.
+export const WEV = { first: 26, every: 30, warn: 2,
+  givre:  { k: 'bourrasque', dur: 3, slow: 0.45, h: 2.6 },
+  braise: { k: 'lave', dur: 6, dps: 0.035 },             // 3,5 % de la vie max / s sur un bord de l'île
+  sylve:  { k: 'spores', dur: 6, heal: 0.04, r: 2.4 },
+  aurore: { k: 'halo', dur: 4, shield: 0.15, r: 2.4 },   // bouclier = 15 % de la vie max (une fois par événement)
+  arcane: { k: 'hate', dur: 6, k2: 1.3, r: 2.6 },        // déplacement et attaques 30 % plus rapides
+  ombre:  { k: 'eclipse', dur: 4 } };                     // les Sanctuaires ne tirent plus
 
 const sq = x => x * x;
 const dist = (a, b) => Math.sqrt(sq(a.x - b.x) + sq(a.y - b.y));
@@ -40,16 +69,19 @@ function clampIsland(e) {
 }
 
 // relics : reliques du joueur 0 (mode Expédition) ; fair : mode « Tournoi / Équilibré » (niveaux plafonnés, sans bonus ni reliques).
-export function createBattle({ seed = 1, decks, spells = ['meteore', 'meteore'], levels = [{}, {}], names = ['Joueur 1', 'Joueur 2'], mode = 'duel', boss = null, waves = null, mods = null, bonus = null, botMana = 0, relics = null, fair = false }) {
-  if (fair) { levels = levels.map(fairLevels); bonus = null; relics = null; }
+export function createBattle({ world = null, commanders = [null, null], seed = 1, decks, spells = ['meteore', 'meteore'], levels = [{}, {}], gear = [{}, {}], names = ['Joueur 1', 'Joueur 2'], mode = 'duel', boss = null, waves = null, mods = null, bonus = null, botMana = 0, relics = null, fair = false }) {
+  if (fair) { levels = levels.map(fairLevels); gear = [{}, {}]; bonus = null; relics = null; }
   const s = {
     tick: 0, t: 0, seed, rng: (seed >>> 0) || 1, nextId: 1, ents: [], proj: [], pend: [], ev: [], zones: [], fair: !!fair,
     over: false, winner: -1, reason: '', overtime: false, mode, mods: mods || {}, wave: 0, waveT: 6, wavesDef: waves,
     heart: { ctl: 0, owner: -1 },
+    world, rift: null, riftN: 0, riftAt: 0, wev: null, wevN: 0, wevAt: WEV.first, wevSide: 1,
     players: [0, 1].map(p => ({
       name: names[p], mana: MANA_START, eveil: 0, bench: Array(BENCH).fill(null), deck: decks[p].slice(),
-      spell: spells[p] || 'meteore', levels: levels[p] || {}, syn: deckSynergies(decks[p]).tiers, roles: deckRoles(decks[p]).tiers, reso: spellResonance(spells[p] || 'meteore', decks[p]),
+      spell: spells[p] || 'meteore', levels: levels[p] || {}, gear: gear[p] || {}, syn: deckSynergies(decks[p]).tiers, roles: deckRoles(decks[p]).tiers, reso: spellResonance(spells[p] || 'meteore', decks[p]),
       relics: (p === 0 && relics) || [], st: {}, summons: 0, deployed: 0, fuses: 0, spells: 0, hearts: 0, recycled: 0,
+      order: 'assault', orderCd: 0, orders: 0, myth: 0, discharges: 0,
+      cmdr: cmdrOk(commanders[p]) ? commanders[p] : null, cmdrId: 0, cmdrs: 0,
       bonus: (p === 0 && bonus) || (p === 1 && botMana ? { hp: 1, sanctDmg: 1, eveil: 1, mana: botMana } : { hp: 1, sanctDmg: 1, eveil: 1 }),
     })),
   };
@@ -62,6 +94,7 @@ export function createBattle({ seed = 1, decks, spells = ['meteore', 'meteore'],
   // Chaque camp commence avec 2 héros sur son cercle.
   for (const p of [0, 1]) for (let k = 0; k < 2; k++) summonHero(s, p);
   if (boss) spawnBoss(s, 1, boss, CX, 6.2);
+  s.riftAt = RIFT.at[0] + rnd(s) * (RIFT.at[1] - RIFT.at[0]); s.wevSide = rnd(s) < 0.5 ? 1 : -1;
   s.ev = [];
   return s;
 }
@@ -117,6 +150,23 @@ export function check(s, cm) {
       if (P.eveil < 100 - 1e-6) return 'Jauge d’Éveil pas encore pleine.';
       if (!inIsland(cm.x, cm.y)) return 'Vise l’île.';
       return null;
+    case 'commander':
+      if (!P.cmdr) return 'Aucun Commandant.';
+      if (P.eveil < 100 - 1e-6) return 'Jauge d’Éveil pas encore pleine.';
+      if (cmdrOf(s, cm.p)) return 'Ton Commandant est déjà sur l’île.';
+      if (!(cm.x >= 0 && cm.x <= W && cm.y >= 0 && cm.y <= H) || !deployOk(cm.p, cm.x, cm.y)) return 'Pose ton Commandant sur ta moitié de l’île.';
+      return null;
+    case 'cmove': {
+      if (!cmdrOf(s, cm.p)) return 'Aucun Commandant sur l’île.';
+      if (!Number.isInteger(cm.dx) || !Number.isInteger(cm.dy) || Math.abs(cm.dx) > 8 || Math.abs(cm.dy) > 8) return 'Direction invalide.';
+      return null;
+    }
+    case 'csig': { const e = cmdrOf(s, cm.p); if (!e) return 'Aucun Commandant sur l’île.'; if (e.sigUsed) return 'Compétence déjà utilisée.'; return null; }
+    case 'order':
+      if (!ORDERS.includes(cm.o)) return 'Ordre inconnu.';
+      if (P.order === cm.o) return 'C’est déjà l’ordre en cours.';
+      if (P.orderCd > 1e-9) return 'Attends un instant avant de changer d’ordre.';
+      return null;
   }
   return 'Commande inconnue.';
 }
@@ -152,6 +202,19 @@ function apply(s, cm) {
   } else if (cm.t === 'deploy') {
     const h = P.bench[cm.slot]; P.bench[cm.slot] = null; P.deployed++;
     deployHero(s, cm.p, h, cm.x, cm.y);
+  } else if (cm.t === 'commander') {
+    P.eveil = 0; P.cmdrs++;
+    const e = spawn(s, cm.p, P.cmdr, cm.x, cm.y, CMDR.star, P.levels[P.cmdr] || 1, 0.6, true);
+    e.cmdr = true; e.cmdrT = CMDR.life; e.steerX = 0; e.steerY = 0; e.sigUsed = false; P.cmdrId = e.id;
+    s.ev.push({ type: 'cmdr', p: cm.p, id: e.id, card: P.cmdr, x: cm.x, y: cm.y });
+  } else if (cm.t === 'cmove') {
+    const e = cmdrOf(s, cm.p), L = Math.sqrt(cm.dx * cm.dx + cm.dy * cm.dy);
+    e.steerX = L ? cm.dx / L : 0; e.steerY = L ? cm.dy / L : 0;
+  } else if (cm.t === 'csig') {
+    signature(s, cmdrOf(s, cm.p));
+  } else if (cm.t === 'order') {
+    P.order = cm.o; P.orderCd = ORDER_CD; P.orders++;
+    s.ev.push({ type: 'order', p: cm.p, o: cm.o });
   } else if (cm.t === 'spell') {
     P.eveil = 0; P.spells++;
     const c = SPELL[P.spell];
@@ -162,8 +225,8 @@ function apply(s, cm) {
 }
 
 // ---------- Héros sur l'île ----------
-function mults(s, p, c) {
-  const t = s.players[p].syn[c.fac] || 0, r = tierOf(s, p, 'roles', c.role), R = k => has(s, p, k);
+function mults(s, p, c, noSyn) {
+  const t = noSyn ? 0 : s.players[p].syn[c.fac] || 0, r = noSyn ? 0 : tierOf(s, p, 'roles', c.role), R = k => has(s, p, k);
   return {
     hp: (R('vigueur') ? 1.15 : 1),
     shield: (c.fac === 'aube' ? [0, 0.12, 0.22][t] : 0) + (R('egide') ? 0.15 : 0),
@@ -182,12 +245,16 @@ function mults(s, p, c) {
 const heartK = (s, p) => [1, 1.3, 1.6][tierOf(s, p, 'syn', 'aube')];
 const eveilK = (s, p) => [1, 1.1, 1.2][tierOf(s, p, 'roles', 'mage')] * (has(s, p, 'sagesse') ? 1.4 : 1);
 
+const NOGEAR = { dmg: 0, atk: 0, hp: 0, spd: 0 };
 function applyStats(s, e) {
-  const c = HERO[e.card], m = mults(s, e.p, c), lv = levelMult(e.lvl), st = STAR_MULT[e.star];
-  e.maxHp = Math.round(c.hp * m.hp * lv * st * (e.bossHp ? 1 : s.players[e.p].bonus.hp));
+  const c = HERO[e.card], m = mults(s, e.p, c, e.cmdr), lv = levelMult(e.lvl), st = STAR_MULT[e.star];
+  const g = (s.players[e.p].gear || {})[e.card] || NOGEAR; // objets équipés (bonus déjà plafonnés)
+  const cp = e.cmdr ? CMDR.power : 1; // Commandant : projection un peu moins solide qu'un vrai ★2
+  e.maxHp = Math.round(c.hp * m.hp * lv * st * cp * (1 + g.hp) * (e.bossHp ? 1 : s.players[e.p].bonus.hp));
   if (e.bossHp) e.maxHp = e.bossHp;
-  e.dmg = e.bossDmg || Math.round(c.dmg * m.dmg * lv * st);
-  e.hit = c.hit / m.atk;
+  e.dmg = e.bossDmg || Math.round(c.dmg * m.dmg * lv * st * cp * (1 + g.dmg));
+  e.hit = c.hit / m.atk / (1 + g.atk);
+  if (!e.bossHp) e.spd = (c.spd || 0) * (1 + g.spd);
   e.regen = m.regen;
   e.slowOn = Math.max(c.slow || 0, m.slow);
   e.steal = (c.lifesteal || 0) + m.steal;
@@ -199,7 +266,7 @@ function applyStats(s, e) {
   if (e.s3 === 'bete') { e.hit /= 1.25; e.steal += 0.12; }
 }
 
-function spawn(s, p, id, x, y, star = 1, lvl = 1, deploy = DEPLOY_TIME) {
+function spawn(s, p, id, x, y, star = 1, lvl = 1, deploy = DEPLOY_TIME, cmdr = false) {
   const c = HERO[id];
   const e = {
     id: s.nextId++, p, kind: c.type === 'building' ? 'building' : 'unit', card: id, lvl, star,
@@ -207,7 +274,7 @@ function spawn(s, p, id, x, y, star = 1, lvl = 1, deploy = DEPLOY_TIME) {
     fly: !!c.fly, splash: c.splash || 0, proj: c.proj || null, shield: c.shield || 0, frozen: 0, slowT: 0,
     deploy, target: 0, retarget: 0, dead: false, life: c.life || 0, statKey: id, rootT: 0, curseT: 0, atkN: 0,
     sumT: c.summon ? c.summon.every : 0, novaT: c.nova ? c.nova.every : 0,
-    dashReady: !!c.dash, chargeReady: !!c.charge, moving: false, atkAnim: 0, faceX: 0, faceY: p === 0 ? -1 : 1,
+    dashReady: !!c.dash, chargeReady: !!c.charge, moving: false, atkAnim: 0, faceX: 0, faceY: p === 0 ? -1 : 1, cmdr,
   };
   applyStats(s, e);
   e.hp = e.maxHp;
@@ -247,6 +314,11 @@ function damage(s, t, amount, src) {
   if (src && src.bdmg > 1 && t.kind !== 'unit') amount *= src.bdmg; // rôle Siège
   if (t.armor) amount *= 1 - t.armor;                                  // rôle Gardien
   if (t.curseT > 0) amount *= 1 + (t.curseK || 0.4);                    // Malédiction des Ombres
+  // Faille de Fureur : +30 % de dégâts pour les héros qui frappent depuis la faille
+  if (src && src.kind === 'unit' && s.rift && s.rift.k === 'fureur' && dist(src, s.rift) <= s.rift.r) amount *= RIFT.fureur;
+  // effets des ordres tactiques
+  if (src && src.kind === 'unit' && t.kind !== 'unit' && orderOf(s, src) === 'assault') amount *= ORDER_FX.assaultSiege;
+  if (t.kind === 'unit' && orderOf(s, t) === 'defend' && (t.p === 0 ? t.y > CY : t.y < CY)) amount *= ORDER_FX.defendArmor;
   amount = Math.round(amount);
   if (t.shield > 0) {
     const a = Math.min(t.shield, amount);
@@ -299,16 +371,30 @@ function canTarget(e, t) {
 }
 const gap = (a, b) => dist(a, b) - a.r - b.r;
 
+// Ordre suivi par un héros (les bâtiments et les boss gardent leur comportement)
+function orderOf(s, e) { return e.kind === 'unit' && !e.boss ? s.players[e.p].order : 'assault'; }
+// Point de repli devant son Sanctuaire
+function defPoint(e) { return { x: CX, y: e.p === 0 ? SANCT.y[0] - DEF_BACK : SANCT.y[1] + DEF_BACK }; }
+// Point où se rend un héros sans ennemi en vue (Cœur ou repli), un peu écarté selon son numéro pour ne pas s'empiler
+function orderDest(s, e) {
+  const o = orderOf(s, e); if (o === 'assault') return null;
+  const ox = ((e.id * 37) % 7 - 3) * 0.42, oy = ((e.id * 53) % 5 - 2) * 0.32;
+  if (o === 'heart') return { x: HEART.x + ox, y: HEART.y + oy + (e.p === 0 ? 0.4 : -0.4) };
+  const d = defPoint(e); return { x: d.x + ox * 1.4, y: d.y + oy };
+}
 function acquire(s, e) {
   let best = null, bd = Infinity;
   const isStatic = e.kind !== 'unit';
   const sight = isStatic ? e.range : Math.max(SIGHT, e.range + 1);
+  const o = orderOf(s, e), dp = o === 'defend' ? defPoint(e) : null;
   for (const t of s.ents) {
     if (!canTarget(e, t)) continue;
     const d = gap(e, t);
+    // en défense : seulement les ennemis proches du point de repli (ou à portée immédiate)
+    if (dp && d > e.range && dist(t, dp) > DEF_R) continue;
     if (d <= sight && d < bd) { bd = d; best = t; }
   }
-  if (!best && !isStatic) {
+  if (!best && !isStatic && o === 'assault') {
     for (const t of s.ents) {
       if (t.dead || t.p === e.p || t.kind === 'unit') continue;
       const d = dist(e, t);
@@ -384,10 +470,12 @@ export function step(s, cmds = []) {
   }
   const dt = DT;
   updateHeart(s, dt);
+  fieldTick(s, dt);
   if (s.mode === 'survival') waveTick(s, dt);
   for (const [p, P] of s.players.entries()) {
     const bonus = s.heart.owner === p ? (has(s, p, 'coeur') ? 2 : 1.35) : 1;
     P.mana = Math.min(MANA_MAX, P.mana + (s.t >= DOUBLE_AT && s.mode !== 'survival' ? 2 : 1) * bonus * (s.mods.mana || 1) * (P.bonus.mana || 1) / MANA_REGEN * dt);
+    if (P.orderCd > 0) P.orderCd = Math.max(0, P.orderCd - dt);
     P.eveil = Math.min(100, P.eveil + 100 / EVEIL_TIME * (s.heart.owner === p ? 1.6 : 1) * (s.mods.eveil || 1) * P.bonus.eveil * eveilK(s, p) * dt);
   }
   for (const sp of s.pend) if (sp.at <= s.tick) castSpell(s, sp);
@@ -409,7 +497,23 @@ export function step(s, cmds = []) {
     if (e.frozen > 0) { e.frozen -= dt; continue; }
     if (e.slowT > 0) { e.slowT -= dt; if (e.slowT <= 0) e.slowK = 0; }
     if (e.deploy > 0) { e.deploy -= dt; if (e.deploy <= 0) onLand(s, e); continue; }
+    if (e.cmdr) {
+      e.cmdrT -= dt;
+      if (e.cmdrT <= 0) { e.dead = true; s.ev.push({ type: 'cmdrEnd', p: e.p, id: e.id, x: e.x, y: e.y }); continue; }
+      if (e.steerX || e.steerY) {
+        // dirigé par le joueur : il avance dans la direction donnée et frappe ce qui est à portée, sans poursuivre
+        const sp = e.spd * CMDR.steerSpd * (e.slowK ? 1 - e.slowK : 1) * dt;
+        e.x += e.steerX * sp; e.y += e.steerY * sp; clampIsland(e); e.moving = true; e.faceX = e.steerX; e.faceY = e.steerY;
+        if (e.cd > 0) e.cd -= dt;
+        let best = null, bd = Infinity;
+        for (const t of s.ents) { if (!canTarget(e, t)) continue; const g = gap(e, t); if (g <= e.range && g < bd) { bd = g; best = t; } }
+        if (best && e.cd <= 0) { attack(s, e, best); e.cd = e.hit; }
+        continue;
+      }
+    }
+    if (e.kind === 'sanct' && s.wev && s.wev.on && s.wev.k === 'eclipse') { if (e.cd > 0) e.cd -= dt; continue; } // Éclipse : les Sanctuaires ne tirent plus
     const c = e.card ? HERO[e.card] : null;
+    const hk = e.haste ? WEV.arcane.k2 : 1;
     if (e.regen && e.hp < e.maxHp) heal(s, e, e.maxHp * e.regen * dt);
     if (e.kind === 'building' && e.life) { e.hp -= e.maxHp / e.life * dt; if (e.hp <= 0) { kill(s, e); continue; } }
     if (c && c.aura) for (const o of s.ents) if (!o.dead && o.p === e.p && o.kind === 'unit' && o !== e && dist(o, e) <= c.aura.radius) heal(s, o, c.aura.heal * STAR_MULT[e.star] * dt, e);
@@ -440,8 +544,16 @@ export function step(s, cmds = []) {
     if (!t || t.dead || !canTarget(e, t) || e.retarget <= 0 || (e.kind !== 'unit' && gap(e, t) > e.range)) {
       t = acquire(s, e); e.retarget = 0.25; e.target = t ? t.id : 0;
     }
-    if (e.cd > 0) e.cd -= dt * (e.slowK ? 1 - e.slowK : 1);
-    if (!t) continue;
+    if (e.cd > 0) e.cd -= dt * (e.slowK ? 1 - e.slowK : 1) * hk;
+    if (!t) {
+      // aucun ennemi à combattre : rejoindre le point de l'ordre (Cœur ou repli)
+      const dst = e.kind === 'unit' ? orderDest(s, e) : null;
+      if (dst) {
+        const mx = dst.x - e.x, my = dst.y - e.y, md = Math.sqrt(mx * mx + my * my);
+        if (md > 0.35) { const stp = Math.min(md, e.spd * (e.slowK ? 1 - e.slowK : 1) * hk * dt); e.x += mx / md * stp; e.y += my / md * stp; e.moving = true; e.faceX = mx / md; e.faceY = my / md; }
+      }
+      continue;
+    }
     const dx = t.x - e.x, dy = t.y - e.y, dd = Math.sqrt(dx * dx + dy * dy) || 1;
     e.faceX = dx / dd; e.faceY = dy / dd;
     const g = gap(e, t);
@@ -455,7 +567,7 @@ export function step(s, cmds = []) {
         e.x += dx * k; e.y += dy * k; e.dashReady = false; e.bonus = true; e.cd = 0;
         continue;
       }
-      const sp = e.spd * (e.slowK ? 1 - e.slowK : 1) * (e.chargeReady && dd < 6 ? 1.8 : 1);
+      const sp = e.spd * (e.slowK ? 1 - e.slowK : 1) * hk * (e.chargeReady && dd < 6 ? 1.8 : 1);
       const stp = Math.min(dd, sp * dt);
       e.x += dx / dd * stp; e.y += dy / dd * stp; e.moving = true;
     }
@@ -487,6 +599,27 @@ function updateHeart(s, dt) {
   else if (H0.ctl <= -0.999) H0.owner = 1;
   else if ((H0.owner === 0 && H0.ctl <= 0) || (H0.owner === 1 && H0.ctl >= 0)) H0.owner = -1;
   if (H0.owner !== before) { s.ev.push({ type: 'heart', owner: H0.owner }); if (H0.owner >= 0) s.players[H0.owner].hearts++; }
+  // Décharge du Mythe : temps de contrôle cumulé
+  const active = H0.owner === 0 ? a > 0 && !b : H0.owner === 1 ? b > 0 && !a : false;
+  if (active && !s.over) {
+    const P = s.players[H0.owner];
+    P.myth += dt;
+    if (P.myth >= MYTH.need - 1e-9) { P.myth = 0; discharge(s, H0.owner); }
+  }
+}
+// Rayon du Mythe : part du Cœur, frappe le Sanctuaire adverse et les ennemis sur sa trajectoire
+function discharge(s, p) {
+  const tgt = sanctOf(s, 1 - p), x0 = HEART.x, y0 = HEART.y, x1 = tgt.x, y1 = tgt.y;
+  const vx = x1 - x0, vy = y1 - y0, L2 = vx * vx + vy * vy || 1;
+  s.players[p].discharges++;
+  s.ev.push({ type: 'discharge', p, x0, y0, x1, y1 });
+  for (const e of s.ents) {
+    if (e.dead || e.p === p || e.kind === 'sanct') continue;
+    const u = Math.max(0, Math.min(1, ((e.x - x0) * vx + (e.y - y0) * vy) / L2));
+    const dx = e.x - (x0 + vx * u), dy = e.y - (y0 + vy * u);
+    if (Math.sqrt(dx * dx + dy * dy) <= MYTH.width + e.r * 0.5) damage(s, e, MYTH.unitDmg, null);
+  }
+  if (!tgt.dead) damage(s, tgt, tgt.maxHp * MYTH.sanctPct, null);
 }
 
 function onLand(s, e) {
@@ -574,6 +707,7 @@ function checkTime(s) {
   if (s.t >= MATCH_TIME && !s.overtime) {
     if (Math.abs(a - b) >= 0.01) return finish(s, a > b ? 0 : 1, 'time');
     s.overtime = true; s.ev.push({ type: 'overtime' });
+    if (s.riftN < 2) s.riftAt = s.t + RIFT.otDelay; // 2e faille : au début de la prolongation
   }
   if (s.overtime && Math.abs(a - b) >= 0.01) return finish(s, a > b ? 0 : 1, 'overtime');
   if (s.t >= MATCH_TIME + OVERTIME) finish(s, -1, 'draw');
@@ -586,8 +720,111 @@ export function hashState(s) {
   const add = n => { h ^= Math.round(n * 1000) | 0; h = Math.imul(h, 16777619) >>> 0; };
   add(s.tick);
   for (const e of s.ents) { add(e.id); add(e.x); add(e.y); add(e.hp); }
-  for (const P of s.players) { add(P.mana); add(P.eveil); for (const b of P.bench) add(b ? b.star * 7 + b.id.length : 0); }
+  if (s.rift) { add(s.rift.x); add(s.rift.y); add(s.rift.end); } if (s.wev) { add(s.wev.at); add(s.wev.on ? 1 : 0); }
+  for (const P of s.players) { add(P.mana); add(P.eveil); add(P.myth); add(ORDERS.indexOf(P.order)); for (const b of P.bench) add(b ? b.star * 7 + b.id.length : 0); }
   return h.toString(16);
+}
+
+// ---------- Commandant (Lot 4) ----------
+export function cmdrOf(s, p) { const id = s.players[p].cmdrId; return id ? s.ents.find(e => e.id === id && !e.dead) || null : null; }
+function signature(s, e) {
+  e.sigUsed = true;
+  const k = sigKind(e.card), S = CMDR.sig;
+  s.ev.push({ type: 'csig', p: e.p, id: e.id, k, x: e.x, y: e.y });
+  if (k === 'heal') { for (const o of s.ents) if (!o.dead && o.p === e.p && o.kind === 'unit' && dist(o, e) <= S.heal.r) heal(s, o, o.maxHp * S.heal.pct, e); return; }
+  if (k === 'volley') {
+    const tg = s.ents.filter(o => canTarget(e, o) && o.kind !== 'sanct' && dist(o, e) <= S.volley.r).sort((a, b) => dist(a, e) - dist(b, e)).slice(0, S.volley.n);
+    for (const o of tg) s.proj.push({ x: e.x, y: e.y, tid: o.id, tx: o.x, ty: o.y, spd: 14, dmg: e.dmg * S.volley.dmg, splash: 0, p: e.p, kind: e.proj || 'arrow', src: e.id, fly: e.fly, id: s.nextId++ });
+    return;
+  }
+  for (const o of s.ents) {
+    if (o.dead || o.p === e.p || o.kind !== 'unit') continue;
+    const d = dist(o, e); if (d > S.wave.r + o.r * 0.5) continue;
+    damage(s, o, e.dmg * S.wave.dmg, e); if (o.dead || o.boss) continue;
+    o.frozen = Math.max(o.frozen, S.wave.stun);
+    const k2 = S.wave.push / (d || 1); o.x += (o.x - e.x) * k2; o.y += (o.y - e.y) * k2; clampIsland(o);
+  }
+}
+
+// ---------- Failles dynamiques et événements de monde (Lot 3) ----------
+// zone : { shape: 'circle', x, y, r } | { shape: 'band', y0, y1 } | { shape: 'side', side } | { shape: 'all' }
+export function inZone(z, x, y) {
+  if (!z) return false;
+  if (z.shape === 'circle') return sq(x - z.x) + sq(y - z.y) <= z.r * z.r;
+  if (z.shape === 'band') return y >= z.y0 && y <= z.y1;
+  if (z.shape === 'side') return z.side < 0 ? x < CX - RX * 0.55 : x > CX + RX * 0.55;
+  return z.shape === 'all';
+}
+// une zone touche-t-elle la faille ? (pour ne jamais les superposer : lisibilité)
+function overlapsRift(s, z) {
+  const R = s.rift; if (!R || !z) return false;
+  if (z.shape === 'circle') return dist(z, R) < z.r + R.r + 0.8;
+  if (z.shape === 'band') return R.y + R.r + 0.6 > z.y0 && R.y - R.r - 0.6 < z.y1;
+  if (z.shape === 'side') return z.side < 0 ? R.x - R.r < CX - RX * 0.55 + 0.6 : R.x + R.r > CX + RX * 0.55 - 0.6;
+  return false;
+}
+// zone dangereuse (l'IA évite d'y poser ses héros)
+export function hazardAt(s, x, y) {
+  if (s.rift && s.rift.k === 'tempete' && dist({ x, y }, s.rift) <= s.rift.r + 0.5) return true;
+  return !!(s.wev && s.wev.k === 'lave' && inZone(s.wev.zone, x, y));
+}
+function riftOpen(s) {
+  s.riftN++;
+  const k = RIFT.kinds[Math.floor(rnd(s) * RIFT.kinds.length)];
+  let x = CX, y = CY;
+  for (let tries = 0; tries < 12; tries++) {
+    x = CX + (rnd(s) - 0.5) * 8; y = CY + (rnd(s) - 0.5) * 6.4;
+    if (!inIsland(x, y, RIFT.r + 0.4)) continue;
+    const z = s.wev && s.wev.zone; // pas sur l'événement de monde en cours
+    if (z && (z.shape === 'circle' ? dist({ x, y }, z) < z.r + RIFT.r + 0.8 : z.shape === 'band' ? y + RIFT.r + 0.6 > z.y0 && y - RIFT.r - 0.6 < z.y1 : z.shape === 'side' ? inZone(z, x - RIFT.r, y) || inZone(z, x + RIFT.r, y) : false)) continue;
+    break;
+  }
+  s.rift = { k, x, y, r: RIFT.r, end: s.t + RIFT.dur, n: s.riftN };
+  s.ev.push({ type: 'rift', k, x, y, r: RIFT.r, dur: RIFT.dur, n: s.riftN });
+}
+function wevZone(s, def, side) {
+  const cyHalf = y => CY + side * y;
+  if (def.k === 'bourrasque') { for (let i = 0; i < 6; i++) { const yc = cyHalf(1.8 + rnd(s) * 3.4), z = { shape: 'band', y0: yc - def.h / 2, y1: yc + def.h / 2 }; if (!overlapsRift(s, z)) return z; } return { shape: 'band', y0: cyHalf(4.5) - def.h / 2, y1: cyHalf(4.5) + def.h / 2 }; }
+  if (def.k === 'lave') { let z = { shape: 'side', side }; if (overlapsRift(s, z)) z = { shape: 'side', side: -side }; return z; }
+  if (def.k === 'eclipse') return { shape: 'all' };
+  for (let i = 0; i < 8; i++) { const z = { shape: 'circle', x: CX + (rnd(s) - 0.5) * 7, y: cyHalf(2.2 + rnd(s) * 4.6), r: def.r }; if (inIsland(z.x, z.y, def.r * 0.6) && !overlapsRift(s, z)) return z; }
+  return { shape: 'circle', x: CX, y: cyHalf(4), r: def.r };
+}
+function fieldTick(s, dt) {
+  if (s.over) return;
+  // Failles
+  if (!s.rift && s.riftN < 2 && s.riftAt && s.t >= s.riftAt) { s.riftAt = 0; riftOpen(s); }
+  const R = s.rift;
+  if (R && s.t >= R.end) { s.rift = null; s.ev.push({ type: 'riftEnd', n: R.n }); }
+  else if (R) for (const e of s.ents) {
+    if (e.dead || e.kind !== 'unit' || e.deploy > 0) continue;
+    const d = dist(e, R); if (d > R.r) continue;
+    if (R.k === 'source') heal(s, e, e.maxHp * RIFT.source * dt);
+    else if (R.k === 'tempete' && !e.boss) { const k = RIFT.tempete * dt / (d || 1); e.x += (e.x - R.x) * k; e.y += (e.y - R.y) * k; if (!d) e.x += RIFT.tempete * dt; clampIsland(e); e.slowT = Math.max(e.slowT, 0.3); e.slowK = Math.max(e.slowK || 0, 0.3); }
+  }
+  // Événement de monde
+  const def = s.world && WEV[s.world];
+  for (const e of s.ents) e.haste = false;
+  if (!def) return;
+  let W = s.wev;
+  if (!W && s.t >= s.wevAt - WEV.warn) {
+    const side = s.wevN % 2 ? -s.wevSide : s.wevSide;
+    W = s.wev = { k: def.k, at: s.wevAt, end: s.wevAt + def.dur, on: false, zone: wevZone(s, def, side), n: ++s.wevN };
+    s.ev.push({ type: 'wevWarn', k: W.k, zone: W.zone, at: W.at, n: W.n });
+  }
+  if (!W) return;
+  if (!W.on && s.t >= W.at) { W.on = true; s.ev.push({ type: 'wev', k: W.k, zone: W.zone, dur: def.dur, n: W.n }); }
+  if (W.on && s.t >= W.end) { s.ev.push({ type: 'wevEnd', k: W.k, n: W.n }); s.wev = null; s.wevAt = W.at + WEV.every; return; }
+  if (!W.on) return;
+  W.tick = (W.tick || 0) + dt; const pulse = W.tick >= 0.5; if (pulse) W.tick -= 0.5;
+  for (const e of s.ents) {
+    if (e.dead || e.kind !== 'unit' || e.deploy > 0 || !inZone(W.zone, e.x, e.y)) continue;
+    if (W.k === 'bourrasque') { e.slowT = Math.max(e.slowT, 0.25); e.slowK = Math.max(e.slowK || 0, def.slow); }
+    else if (W.k === 'lave') { if (pulse) damage(s, e, e.maxHp * def.dps * 0.5, null); }
+    else if (W.k === 'spores') heal(s, e, e.maxHp * def.heal * dt);
+    else if (W.k === 'halo' && e.halo !== W.n) { e.halo = W.n; e.shield = Math.max(e.shield || 0, Math.round(e.maxHp * def.shield)); s.ev.push({ type: 'halo', id: e.id }); }
+    else if (W.k === 'hate') e.haste = true;
+  }
 }
 
 // ---------- Boss (campagne) ----------

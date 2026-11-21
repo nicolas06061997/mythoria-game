@@ -46,7 +46,7 @@ Replays (19/11) : `battle.js` enregistre `params` (graine, decks, niveaux, modes
 En ligne, seul le serveur fera avancer la simulation : modifier le jeu dans son navigateur ne donnera aucun avantage.
 
 ## Progression, Royaume, modes (14/11/2026)
-- `src/shared/economy.js` : niveaux des héros, coffres (cycle fixe), boutique du jour, missions, connexion, apparences.
+- `src/shared/economy.js` : niveaux des héros, Éclats de Faille (cycle fixe, purifiés à l’Autel du Royaume), jauge de conquête, boutique du jour, missions, connexion, apparences.
 - `src/shared/kingdom.js` : bâtiments, coûts, durées, production, bonus (jamais en Arène pour rester équitable).
 - `src/shared/campaign.js` : 6 chapitres × 5 étapes, 6 boss (compétences slam/summon/freeze/heal/fire, rage à 50 %), événements, tournoi, vagues de survie.
 - `src/shared/sim.js` : modes `duel`, `campaign` (boss), `survival` (vagues), `mods` (événements), `bonus` (Royaume).

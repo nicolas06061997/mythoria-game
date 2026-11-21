@@ -37,7 +37,7 @@ export const ROLES = {
 };
 export const ROLE_TIERS = [2, 4];
 
-// Mondes : débloqués avec les trophées. Chacun a son décor, son ambiance et ses adversaires.
+// Mondes : débloqués avec la Gloire (champ « trophies » gardé pour les sauvegardes). Chacun a son décor, son ambiance et ses adversaires.
 export const WORLDS = [
   { id: 0, key: 'aurore', name: "Royaume d'Aurore",     trophies: 0,    fac: 'aube',
     tag: 'Châteaux blancs, bannières d’or et prairies au lever du soleil.' },
@@ -66,7 +66,7 @@ export const HEROES = [
     lore: 'Fils de forgeron, Aldric a juré de protéger le Royaume d’Aurore avant même de savoir tenir une épée.',
     ability: ['Courage', 'Rien de spécial : solide, fiable et pas cher à fusionner.'] },
   { id: 'frere', role: 'gardien', name: 'Godric', title: 'Frère-Bouclier', fac: 'aube', rar: 'rare', type: 'unit',
-    hp: 1550, dmg: 115, hit: 1.3, spd: 0.9, range: 0.9, tgt: 'ground', count: 1, r: 0.6, shield: 400,
+    hp: 1450, dmg: 105, hit: 1.3, spd: 0.9, range: 0.9, tgt: 'ground', count: 1, r: 0.6, shield: 400,
     model: { glb: 'Knight', show: ['1H_Sword', 'Rectangle_Shield', 'Knight_Helmet', 'Knight_Cape'], scale: 1.12, tint: '#e4e8f2', atk: ['1H_Melee_Attack_Chop'] },
     lore: 'Le mur vivant de la Garde Blanche. On raconte qu’aucune flèche n’a jamais traversé son bouclier.',
     ability: ['Rempart', 'Son bouclier absorbe les 400 premiers dégâts.'] },
@@ -138,7 +138,7 @@ export const HEROES = [
     lore: 'Il a forgé sa hache dans la lave d’un volcan. Il dit que c’était « un peu chaud ».',
     ability: ['Tourbillon', 'Ses coups de hache touchent tous les ennemis autour de lui.'] },
   { id: 'dragonnet', role: 'bete', name: 'Pyrrhus', title: 'Dragonnet de Braise', fac: 'braise', rar: 'rare', type: 'unit',
-    hp: 660, dmg: 92, hit: 1.45, spd: 1.4, range: 3, tgt: 'any', count: 1, r: 0.55, fly: true, splash: 1.0, proj: 'fire',
+    hp: 660, dmg: 86, hit: 1.5, spd: 1.4, range: 3, tgt: 'any', count: 1, r: 0.55, fly: true, splash: 1.0, proj: 'fire',
     model: { proc: 'dragon', scale: 0.8, color: '#ff7a3d', belly: '#ffd27a' },
     lore: 'Le plus jeune des dragons des Pics. Il crache déjà le feu, mais pas encore très droit.',
     ability: ['Souffle ardent', 'Vole et crache des boules de feu de zone.'] },
@@ -183,7 +183,7 @@ export const HEROES = [
     lore: 'Ancien champion de l’Aube, trahi et revenu d’entre les morts pour se venger.',
     ability: ['Vengeance', 'Robuste ; vole la vie comme toute la Légion des Ombres en synergie.'] },
   { id: 'osseuse', role: 'tireur', name: 'Vesper', title: 'Archère d’Os', fac: 'ombre', rar: 'commun', type: 'unit',
-    hp: 430, dmg: 100, hit: 1.1, spd: 1.2, range: 5, tgt: 'any', count: 1, r: 0.42, proj: 'arrow',
+    hp: 420, dmg: 92, hit: 1.1, spd: 1.2, range: 5, tgt: 'any', count: 1, r: 0.42, proj: 'arrow',
     model: { glb: 'Skeleton_Rogue', add: [['Skeleton_Crossbow', 'handslot.r']], scale: 0.95, atk: ['1H_Ranged_Shoot'], spawn: 'Spawn_Ground_Skeletons' },
     lore: 'Elle tire avec un arc taillé dans ses propres côtes. Ne lui demandez pas comment.',
     ability: ['Tir funèbre', 'Tireuse à distance qui touche aussi les volants.'] },
@@ -201,7 +201,7 @@ export const HEROES = [
 
   // ----- Neutre -----
   { id: 'belier', role: 'siege', name: 'Fracas', title: 'Bélier de Siège', fac: 'neutre', rar: 'rare', type: 'unit',
-    hp: 1600, dmg: 265, hit: 1.8, spd: 1.8, range: 0.9, tgt: 'buildings', count: 1, r: 0.65,
+    hp: 1700, dmg: 270, hit: 1.8, spd: 1.8, range: 0.9, tgt: 'buildings', count: 1, r: 0.65,
     model: { proc: 'ram', scale: 1 },
     lore: 'Construit par les nains des Forges pour ouvrir n’importe quelle porte. Surtout celles des autres.',
     ability: ['Siège', 'Fonce droit sur le Sanctuaire ennemi et ignore les troupes.'] },
@@ -272,8 +272,8 @@ export const HEROES = [
 export const SPELLS = [
   { id: 'meteore', name: 'Météore Arcanique', fac: 'arcane', rar: 'epique', dmg: 620, radius: 2.4, sanctPct: 0.3, delay: 1.0, fx: 'meteor',
     desc: 'Un météore s’écrase après 1 seconde : énormes dégâts de zone.' },
-  { id: 'givre', name: 'Tempête de Givre', fac: 'givre', rar: 'epique', dmg: 120, freeze: 4, radius: 3.2, sanctPct: 0.3, fx: 'freeze',
-    desc: 'Gèle tous les ennemis de la zone pendant 4 secondes.' },
+  { id: 'givre', name: 'Tempête de Givre', fac: 'givre', rar: 'epique', dmg: 200, freeze: 4.5, radius: 3.4, sanctPct: 0.3, fx: 'freeze',
+    desc: 'Gèle tous les ennemis de la zone pendant 4,5 secondes.' },
   { id: 'benediction', name: "Bénédiction de l'Aube", fac: 'aube', rar: 'rare', heal: 600, shieldAdd: 300, radius: 3.4, fx: 'heal',
     desc: 'Soigne tes héros dans la zone et leur donne un bouclier.' },
   { id: 'foudre', name: 'Colère du Ciel', fac: 'arcane', rar: 'rare', dmg: 300, radius: 3.0, sanctPct: 0.3, strikes: 3, fx: 'storm',
@@ -283,7 +283,7 @@ export const SPELLS = [
     desc: 'Le sol s’ouvre : une zone de lave brûle les ennemis pendant 5 secondes.' },
   { id: 'racines', name: 'Racines Ancestrales', fac: 'sylve', rar: 'rare', dmg: 280, root: 5, radius: 3.3, sanctPct: 0.2, fx: 'roots',
     desc: 'Des racines immobilisent les ennemis au sol pendant 3,5 s (ils peuvent encore frapper).' },
-  { id: 'malediction', name: 'Malédiction des Ombres', fac: 'ombre', rar: 'epique', dmg: 170, curse: 6, curseK: 0.4, radius: 3.0, sanctPct: 0.3, fx: 'curse',
+  { id: 'malediction', name: 'Malédiction des Ombres', fac: 'ombre', rar: 'epique', dmg: 210, curse: 6, curseK: 0.4, radius: 3.0, sanctPct: 0.3, fx: 'curse',
     desc: 'Les ennemis maudits subissent +40 % de dégâts et ne peuvent plus être soignés pendant 6 s.' },
 ];
 // Résonance : un sort de la même faction que 3 héros (ou plus) du deck est 20 % plus puissant.
@@ -305,7 +305,7 @@ export const DECK_SIZE = 8;
 
 // Déblocage : chaque monde débloque les héros de sa faction (et le neutre au départ).
 // Progression par rareté : on commence avec des héros communs (+ 3 rares du deck de départ),
-// les épiques, légendaires et mythiques se gagnent en montant en trophées.
+// les épiques, légendaires et mythiques se gagnent en montant en Gloire.
 export const UNLOCKS = {
   0: ['ecuyer', 'archeres', 'loups', 'follets', 'jarl', 'squelettes', 'osseuse', 'frere', 'apprenti', 'brann'],
   1: ['belier', 'damne', 'tourelle', 'dragonnet', 'frimas', 'tortue', 'salamandre', 'hibou'],

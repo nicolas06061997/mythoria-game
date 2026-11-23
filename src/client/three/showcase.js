@@ -267,18 +267,26 @@ function portraitRig() {
 // (avant : redessinés au chargement à chaque nouvelle version du jeu, plusieurs fois par jour → chargement bien plus long).
 // ⚠️ Changer PORTRAIT_V à chaque modification visible des héros (modèles, couleurs, yeux, cheveux, apparences).
 export const PORTRAIT_V = '2026-11-16.8';
-export async function warmPortraits(ids, version, onProgress) {
+// first = héros à dessiner AVANT d'ouvrir le jeu (deck…) ; les autres portraits absents du cache sont dessinés
+// ensuite, un par un, en arrière-plan (D-20261122-1 : 36 portraits = ~16 s d'écran de chargement pour un nouveau joueur).
+export async function warmPortraits(ids, version, onProgress, first = null) {
   let cache = null, name = 'myt-portraits-' + PORTRAIT_V;
   try { cache = await caches.open(name); (await caches.keys()).filter(k => k.startsWith('myt-portraits-') && k !== name).forEach(k => caches.delete(k)); } catch (e) {}
+  const draw = async id => { const url = await portrait(id); if (cache && url) { const blob = await (await fetch(url)).blob(); await cache.put('portrait/' + id, new Response(blob, { headers: { 'Content-Type': 'image/png' } })); } };
+  const later = [];
   let n = 0;
   for (const id of ids) {
     try {
-      const key = 'portrait/' + id, hit = cache && await cache.match(key);
+      const hit = cache && await cache.match('portrait/' + id);
       if (hit) PORTRAITS.set(id, URL.createObjectURL(await hit.blob()));
-      else { const url = await portrait(id); if (cache && url) { const blob = await (await fetch(url)).blob(); await cache.put(key, new Response(blob, { headers: { 'Content-Type': 'image/png' } })); } }
+      else if (first && !first.includes(id)) later.push(id);
+      else await draw(id);
     } catch (e) {}
     onProgress && onProgress(++n / ids.length);
   }
+  if (later.length) setTimeout(async () => {
+    for (const id of later) { try { await draw(id); } catch (e) {} await new Promise(r => setTimeout(r, 250)); }
+  }, 2500);
 }
 export function portrait(id) {
   if (PORTRAITS.has(id)) return Promise.resolve(PORTRAITS.get(id));

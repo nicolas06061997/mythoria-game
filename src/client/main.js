@@ -25,7 +25,8 @@ async function load() {
   const T = THEMES[key] || THEMES.aurore, names = ['Temple_SecondAge_Level3', ...T.props.map(p => p[0])];
   let n = 0; await Promise.all(names.map(nm => prop(nm).catch(() => {}).then(() => L.set(84 + (++n / names.length) * 4))));
   L.set(88, 'Portraits des héros…');
-  await warmPortraits(PLAYABLE.map(c => c.id), APPV, k => L.set(88 + k * 7));
+  let first = ['vael']; try { first = [...(loadProfile().deck || []), 'vael']; } catch (e) {}
+  await warmPortraits(PLAYABLE.map(c => c.id), APPV, k => L.set(88 + k * 7), first);
 }
 
 initInstall();          // bouton « Installer le jeu » (comme les autres jeux)

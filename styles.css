@@ -368,7 +368,7 @@ body.in-battle #inst { display: none; }
 .fps { position: absolute; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top, 0px) + 86px); left: 8px; right: auto; transform: none; z-index: 30; pointer-events: none; font: 700 11px/1 system-ui, sans-serif; color: #9f9; background: rgba(0,0,0,.55); padding: 3px 7px; border-radius: 6px; }
 /* le bouton « Installer » ne cache plus rien : on peut faire défiler sous lui, il disparaît quand un panneau est ouvert */
 body:has(#inst.on) .screen { padding-bottom: 76px; }
-body:has(.sheet-back) #inst, body:has(.wsheet) #inst, body:has(.story) #inst { display: none; }
+body:has(.sheet-back) #inst, body:has(.wsheet) #inst, body:has(.story) #inst, body:has(.result) #inst { display: none; }
 .k-help { bottom: 52px; left: 12px; right: auto; max-width: 60%; }
 
 /* ---------- Menus plus vivants : fond aux couleurs du monde, étoiles, brume qui bouge ---------- */

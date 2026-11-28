@@ -1,0 +1,1036 @@
+{
+ "since": "2026-11-14T16:57:05.380Z",
+ "schema": 1,
+ "gameUrl": "https://nicolas06061997.github.io/mythoria-game/",
+ "dashboardUrl": "https://nicolas06061997.github.io/mythoria-guardian/",
+ "ntfyTopic": "mythoria-guardian-3c7943c185c1",
+ "repo": "nicolas06061997/mythoria-game",
+ "counters": {
+  "checks": 282,
+  "liveChecks": 215,
+  "trialChecks": 67,
+  "problemsDetected": 1,
+  "problemsResolved": 1,
+  "publications": 44,
+  "rollbacks": 2,
+  "blocked": 1,
+  "reports": 14
+ },
+ "agents": [
+  {
+   "id": "testeur",
+   "name": "Testeur",
+   "role": "Joue au jeu toutes les heures (téléphone + ordinateur) et relève les problèmes.",
+   "last": "2026-11-28T04:15:46.266Z",
+   "lastText": "47/48 étapes réussies"
+  },
+  {
+   "id": "gardien",
+   "name": "Publication protégée",
+   "role": "Ne publie une modification que si tout est vert, contrôle le site en ligne, revient en arrière si besoin.",
+   "last": "2026-11-24T03:00:38.944Z",
+   "lastText": "Version 2026-11-24.1 publiée et vérifiée"
+  },
+  {
+   "id": "rapporteur",
+   "name": "Rapporteur",
+   "role": "Écrit le rapport quotidien et envoie les notifications.",
+   "last": "2026-11-28T01:40:32.967Z",
+   "lastText": "Rapport du 2026-11-28"
+  },
+  {
+   "id": "chef",
+   "name": "Guardian (chef)",
+   "role": "Discute avec toi et répartit le travail.",
+   "soon": true,
+   "last": null,
+   "lastText": null
+  },
+  {
+   "id": "reparateur",
+   "name": "Réparateur",
+   "role": "Corrige les bugs détectés puis relance les tests.",
+   "soon": true,
+   "last": null,
+   "lastText": null
+  },
+  {
+   "id": "graphiste",
+   "name": "Graphiste",
+   "role": "Repère ce qui est visuellement faible et propose des améliorations avant/après.",
+   "soon": true,
+   "last": null,
+   "lastText": null
+  },
+  {
+   "id": "equilibreur",
+   "name": "Équilibreur",
+   "role": "Simule des centaines de combats IA contre IA à chaque contrôle complet ; alerte si un héros dépasse 75 % ou tombe sous 25 % de victoires.",
+   "last": "2026-11-28T04:15:46.266Z",
+   "lastText": "600 combats · aucun héros hors des seuils"
+  },
+  {
+   "id": "artiste",
+   "name": "Directeur Artistique",
+   "role": "Compare les couleurs des boutons, bordures et icônes des menus à la charte graphique.",
+   "last": "2026-11-28T04:15:46.266Z",
+   "lastText": "Couleurs conformes à la charte"
+  },
+  {
+   "id": "ux",
+   "name": "Inspecteur Lisibilité",
+   "role": "Cherche les textes coupés, hors de l’écran ou trop peu contrastés.",
+   "last": "2026-11-28T04:15:46.266Z",
+   "lastText": "Textes lisibles, rien ne dépasse"
+  },
+  {
+   "id": "perf",
+   "name": "Traqueur de Performances",
+   "role": "Mesure la fluidité, la mémoire et le poids des images.",
+   "last": "2026-11-28T04:15:46.266Z",
+   "lastText": "Rien d'anormal · mémoire 40 Mo"
+  },
+  {
+   "id": "triche",
+   "name": "Anti-Triche",
+   "role": "Tente des actions interdites et une sauvegarde trafiquée : le jeu doit les refuser.",
+   "last": "2026-11-28T04:15:46.266Z",
+   "lastText": "13/15 tentatives repoussées"
+  },
+  {
+   "id": "ecrans",
+   "name": "Testeur Multi-écrans",
+   "role": "Rejoue le parcours sur Galaxy Fold plié, très petit écran et téléphone couché.",
+   "last": "2026-11-28T04:15:46.266Z",
+   "lastText": "3 écrans extrêmes · 0 point(s) à surveiller"
+  }
+ ],
+ "updatedAt": "2026-11-28T04:15:46.266Z",
+ "openProblems": 2,
+ "status": "ok",
+ "lastCheck": {
+  "at": "2026-11-28T04:15:46.266Z",
+  "trigger": "contrôle horaire",
+  "branch": "main",
+  "sha": "2ef4664",
+  "live": true,
+  "ok": true,
+  "quick": false,
+  "version": "2026-11-24.1",
+  "durationS": 1241,
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/46105059752",
+  "problems": 0,
+  "warnings": 2,
+  "steps": [
+   47,
+   48
+  ],
+  "tests": [
+   9,
+   9
+  ],
+  "metrics": {
+   "telephone": {
+    "loadMs": 10089,
+    "gpu": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftSh",
+    "fps_battle": 12.5,
+    "fps_kingdom": 20.6,
+    "fps_combat": 3.2,
+    "battle": {
+     "frames": 261,
+     "avgMs": 34.2,
+     "maxMs": 2869.9,
+     "slow": 8
+    },
+    "battleMs": 128931,
+    "fps_heros": 2.7,
+    "heapMo": 40,
+    "downloadMo": 9.4,
+    "artHorsCharte": 0,
+    "ux_horsEcran": 0,
+    "ux_coupe": 0,
+    "ux_contraste": 0,
+    "ux_recouverts": 0
+   },
+   "ordinateur": {
+    "loadMs": 12862,
+    "gpu": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftSh",
+    "fps_battle": 6.1,
+    "fps_kingdom": 12.3,
+    "fps_combat": 2.2,
+    "battle": {
+     "frames": 255,
+     "avgMs": 44.1,
+     "maxMs": 3152.2,
+     "slow": 10
+    },
+    "battleMs": 142881,
+    "fps_heros": 2.2,
+    "heapMo": 40,
+    "downloadMo": 9.4,
+    "artHorsCharte": 0,
+    "ux_horsEcran": 0,
+    "ux_coupe": 0,
+    "ux_contraste": 0,
+    "ux_recouverts": 0
+   },
+   "fold": {
+    "loadMs": 7640,
+    "gpu": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftSh",
+    "fps_battle": 19.9,
+    "fps_kingdom": 34.7,
+    "heapMo": 36,
+    "downloadMo": 9.1,
+    "artHorsCharte": 0,
+    "ux_horsEcran": 0,
+    "ux_coupe": 0,
+    "ux_contraste": 0,
+    "ux_recouverts": 0
+   },
+   "mini": {
+    "loadMs": 7500,
+    "gpu": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftSh",
+    "fps_battle": 21.1,
+    "fps_kingdom": 34.5,
+    "heapMo": 40,
+    "downloadMo": 9.1,
+    "artHorsCharte": 0,
+    "ux_horsEcran": 0,
+    "ux_coupe": 0,
+    "ux_contraste": 0,
+    "ux_recouverts": 0
+   },
+   "paysage": {
+    "loadMs": 8966,
+    "gpu": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftSh",
+    "fps_battle": 14.4,
+    "fps_kingdom": 17.3,
+    "heapMo": 36,
+    "downloadMo": 9.1,
+    "artHorsCharte": 0,
+    "ux_horsEcran": 0,
+    "ux_coupe": 0,
+    "ux_contraste": 0,
+    "ux_recouverts": 0
+   },
+   "guardian": {},
+   "bots": {
+    "cheatTests": 15,
+    "cheatRefused": 13,
+    "balance": {
+     "matches": 600,
+     "seconds": 15,
+     "best": [
+      "Korvaal",
+      58.9
+     ],
+     "worst": [
+      "Os-Errants",
+      34.2
+     ]
+    }
+   }
+  },
+  "devices": [
+   {
+    "id": "telephone",
+    "label": "Téléphone (412×915)",
+    "metrics": {
+     "loadMs": 10089,
+     "gpu": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftSh",
+     "fps_battle": 12.5,
+     "fps_kingdom": 20.6,
+     "fps_combat": 3.2,
+     "battle": {
+      "frames": 261,
+      "avgMs": 34.2,
+      "maxMs": 2869.9,
+      "slow": 8
+     },
+     "battleMs": 128931,
+     "fps_heros": 2.7,
+     "heapMo": 40,
+     "downloadMo": 9.4,
+     "artHorsCharte": 0,
+     "ux_horsEcran": 0,
+     "ux_coupe": 0,
+     "ux_contraste": 0,
+     "ux_recouverts": 0
+    },
+    "steps": [
+     {
+      "name": "Chargement du jeu",
+      "ok": true,
+      "warn": null,
+      "ms": 10105,
+      "notes": [
+       "Jeu ouvert en 10.1 s (dont 3,6 s minimum d'écran de chargement voulu)."
+      ],
+      "shots": []
+     },
+     {
+      "name": "Premier lancement (nom + récompense)",
+      "ok": true,
+      "warn": null,
+      "ms": 45122,
+      "notes": [
+       "Cinématique d’ouverture lancée puis passée."
+      ],
+      "shots": [
+       "telephone-intro.jpg",
+       "telephone-bienvenue.jpg",
+       "telephone-recompense.jpg"
+      ]
+     },
+     {
+      "name": "Onglet Accueil",
+      "ok": true,
+      "warn": null,
+      "ms": 11104,
+      "notes": [
+       "Fluidité : 8.2 FPS (sans carte graphique).",
+       "Bots : 50 couleurs et 18 textes vérifiés."
+      ],
+      "shots": [
+       "telephone-battle.jpg"
+      ]
+     },
+     {
+      "name": "Onglet Héros",
+      "ok": true,
+      "warn": null,
+      "ms": 12697,
+      "notes": [
+       "Bots : 192 couleurs et 48 textes vérifiés."
+      ],
+      "shots": [
+       "telephone-heroes.jpg"
+      ]
+     },
+     {
+      "name": "Onglet Boutique",
+      "ok": true,
+      "warn": null,
+      "ms": 11585,
+      "notes": [
+       "Bots : 41 couleurs et 24 textes vérifiés."
+      ],
+      "shots": [
+       "telephone-shop.jpg"
+      ]
+     },
+     {
+      "name": "Onglet Royaume",
+      "ok": true,
+      "warn": null,
+      "ms": 17230,
+      "notes": [
+       "Histoire de Vael affichée et lue jusqu'au bout.",
+       "Fluidité : 20.6 FPS (sans carte graphique).",
+       "Bots : 49 couleurs et 15 textes vérifiés."
+      ],
+      "shots": [
+       "telephone-kingdom.jpg",
+       "telephone-kingdom-histoire.jpg"
+      ]
+     },
+     {
+      "name": "Onglet Clan",
+      "ok": true,
+      "warn": null,
+      "ms": 4234,
+      "notes": [
+       "Bots : 21 couleurs et 13 textes vérifiés."
+      ],
+      "shots": [
+       "telephone-clan.jpg"
+      ]
+     },
+     {
+      "name": "Onglet Retour accueil",
+      "ok": true,
+      "warn": null,
+      "ms": 5726,
+      "notes": [
+       "Fluidité : 12.5 FPS (sans carte graphique)."
+      ],
+      "shots": []
+     },
+     {
+      "name": "Combat complet (une IA joue pour toi)",
+      "ok": true,
+      "warn": null,
+      "ms": 196146,
+      "notes": [
+       "Fluidité en combat : 3.2 FPS (sans carte graphique).",
+       "Combat terminé (win) après 129 s.",
+       "Calcul par image : moyenne 34.2 ms, pire 2869.9 ms."
+      ],
+      "shots": [
+       "telephone-combat.jpg",
+       "telephone-resultat.jpg"
+      ]
+     },
+     {
+      "name": "Mode Héros (20 s)",
+      "ok": true,
+      "warn": null,
+      "ms": 60550,
+      "notes": [
+       "Fluidité : 2.7 FPS (sans carte graphique)."
+      ],
+      "shots": [
+       "telephone-heros.jpg"
+      ]
+     },
+     {
+      "name": "Anti-triche : sauvegarde trafiquée",
+      "ok": true,
+      "warn": null,
+      "ms": 10111,
+      "notes": [
+       "✓ Sauvegarde trafiquée : le jeu s’ouvre quand même : aucune erreur.",
+       "✓ Nom du joueur contenant du code : affiché comme du texte.",
+       "✓ Deck et sortilège inventés : remplacés par le deck de départ.",
+       "ℹ️ Or / trophées / niveau trafiqués : acceptés (or 1000000000000000, trophées 1000000000, niveau 999) : la sauvegarde est sur le téléphone du joueur, sans serveur pour la vérifier."
+      ],
+      "shots": []
+     }
+    ]
+   },
+   {
+    "id": "ordinateur",
+    "label": "Ordinateur (1366×768)",
+    "metrics": {
+     "loadMs": 12862,
+     "gpu": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftSh",
+     "fps_battle": 6.1,
+     "fps_kingdom": 12.3,
+     "fps_combat": 2.2,
+     "battle": {
+      "frames": 255,
+      "avgMs": 44.1,
+      "maxMs": 3152.2,
+      "slow": 10
+     },
+     "battleMs": 142881,
+     "fps_heros": 2.2,
+     "heapMo": 40,
+     "downloadMo": 9.4,
+     "artHorsCharte": 0,
+     "ux_horsEcran": 0,
+     "ux_coupe": 0,
+     "ux_contraste": 0,
+     "ux_recouverts": 0
+    },
+    "steps": [
+     {
+      "name": "Chargement du jeu",
+      "ok": true,
+      "warn": null,
+      "ms": 12879,
+      "notes": [
+       "Jeu ouvert en 12.9 s (dont 3,6 s minimum d'écran de chargement voulu)."
+      ],
+      "shots": []
+     },
+     {
+      "name": "Premier lancement (nom + récompense)",
+      "ok": true,
+      "warn": null,
+      "ms": 68642,
+      "notes": [
+       "Cinématique d’ouverture lancée puis passée."
+      ],
+      "shots": [
+       "ordinateur-intro.jpg",
+       "ordinateur-bienvenue.jpg",
+       "ordinateur-recompense.jpg"
+      ]
+     },
+     {
+      "name": "Onglet Accueil",
+      "ok": true,
+      "warn": null,
+      "ms": 13497,
+      "notes": [
+       "Fluidité : 6 FPS (sans carte graphique).",
+       "Bots : 49 couleurs et 18 textes vérifiés."
+      ],
+      "shots": [
+       "ordinateur-battle.jpg"
+      ]
+     },
+     {
+      "name": "Onglet Héros",
+      "ok": true,
+      "warn": null,
+      "ms": 20506,
+      "notes": [
+       "Bots : 192 couleurs et 34 textes vérifiés."
+      ],
+      "shots": [
+       "ordinateur-heroes.jpg"
+      ]
+     },
+     {
+      "name": "Onglet Boutique",
+      "ok": true,
+      "warn": null,
+      "ms": 38866,
+      "notes": [
+       "Bots : 41 couleurs et 22 textes vérifiés."
+      ],
+      "shots": [
+       "ordinateur-shop.jpg"
+      ]
+     },
+     {
+      "name": "Onglet Royaume",
+      "ok": true,
+      "warn": null,
+      "ms": 35370,
+      "notes": [
+       "Histoire de Vael affichée et lue jusqu'au bout.",
+       "Fluidité : 12.3 FPS (sans carte graphique).",
+       "Bots : 49 couleurs et 9 textes vérifiés."
+      ],
+      "shots": [
+       "ordinateur-kingdom.jpg",
+       "ordinateur-kingdom-histoire.jpg"
+      ]
+     },
+     {
+      "name": "Onglet Clan",
+      "ok": true,
+      "warn": null,
+      "ms": 9497,
+      "notes": [
+       "Bots : 21 couleurs et 13 textes vérifiés."
+      ],
+      "shots": [
+       "ordinateur-clan.jpg"
+      ]
+     },
+     {
+      "name": "Onglet Retour accueil",
+      "ok": true,
+      "warn": null,
+      "ms": 5967,
+      "notes": [
+       "Fluidité : 6.1 FPS (sans carte graphique)."
+      ],
+      "shots": []
+     },
+     {
+      "name": "Combat complet (une IA joue pour toi)",
+      "ok": true,
+      "warn": null,
+      "ms": 266159,
+      "notes": [
+       "Fluidité en combat : 2.2 FPS (sans carte graphique).",
+       "Combat terminé (win) après 143 s.",
+       "Calcul par image : moyenne 44.1 ms, pire 3152.2 ms."
+      ],
+      "shots": [
+       "ordinateur-combat.jpg",
+       "ordinateur-resultat.jpg"
+      ]
+     },
+     {
+      "name": "Mode Héros (20 s)",
+      "ok": true,
+      "warn": null,
+      "ms": 70651,
+      "notes": [
+       "Fluidité : 2.2 FPS (sans carte graphique)."
+      ],
+      "shots": [
+       "ordinateur-heros.jpg"
+      ]
+     }
+    ]
+   },
+   {
+    "id": "fold",
+    "label": "Galaxy Fold plié (280×653)",
+    "metrics": {
+     "loadMs": 7640,
+     "gpu": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftSh",
+     "fps_battle": 19.9,
+     "fps_kingdom": 34.7,
+     "heapMo": 36,
+     "downloadMo": 9.1,
+     "artHorsCharte": 0,
+     "ux_horsEcran": 0,
+     "ux_coupe": 0,
+     "ux_contraste": 0,
+     "ux_recouverts": 0
+    },
+    "steps": [
+     {
+      "name": "Chargement du jeu",
+      "ok": true,
+      "warn": null,
+      "ms": 7651,
+      "notes": [
+       "Jeu ouvert en 7.6 s (dont 3,6 s minimum d'écran de chargement voulu)."
+      ],
+      "shots": []
+     },
+     {
+      "name": "Premier lancement (nom + récompense)",
+      "ok": true,
+      "warn": null,
+      "ms": 34394,
+      "notes": [
+       "Cinématique d’ouverture lancée puis passée."
+      ],
+      "shots": [
+       "fold-intro.jpg",
+       "fold-bienvenue.jpg",
+       "fold-recompense.jpg"
+      ]
+     },
+     {
+      "name": "Onglet Accueil",
+      "ok": true,
+      "warn": null,
+      "ms": 9962,
+      "notes": [
+       "Fluidité : 14.8 FPS (sans carte graphique).",
+       "Bots : 48 couleurs et 18 textes vérifiés."
+      ],
+      "shots": [
+       "fold-battle.jpg"
+      ]
+     },
+     {
+      "name": "Onglet Héros",
+      "ok": true,
+      "warn": null,
+      "ms": 5984,
+      "notes": [
+       "Bots : 192 couleurs et 29 textes vérifiés."
+      ],
+      "shots": [
+       "fold-heroes.jpg"
+      ]
+     },
+     {
+      "name": "Onglet Boutique",
+      "ok": true,
+      "warn": null,
+      "ms": 2486,
+      "notes": [
+       "Bots : 41 couleurs et 18 textes vérifiés."
+      ],
+      "shots": [
+       "fold-shop.jpg"
+      ]
+     },
+     {
+      "name": "Onglet Royaume",
+      "ok": true,
+      "warn": null,
+      "ms": 11216,
+      "notes": [
+       "Histoire de Vael affichée et lue jusqu'au bout.",
+       "Fluidité : 34.7 FPS (sans carte graphique).",
+       "Bots : 49 couleurs et 15 textes vérifiés."
+      ],
+      "shots": [
+       "fold-kingdom.jpg",
+       "fold-kingdom-histoire.jpg"
+      ]
+     },
+     {
+      "name": "Onglet Clan",
+      "ok": true,
+      "warn": null,
+      "ms": 1967,
+      "notes": [
+       "Bots : 21 couleurs et 13 textes vérifiés."
+      ],
+      "shots": [
+       "fold-clan.jpg"
+      ]
+     },
+     {
+      "name": "Onglet Retour accueil",
+      "ok": true,
+      "warn": null,
+      "ms": 5731,
+      "notes": [
+       "Fluidité : 19.9 FPS (sans carte graphique)."
+      ],
+      "shots": []
+     }
+    ]
+   },
+   {
+    "id": "mini",
+    "label": "Très petit écran (320×480)",
+    "metrics": {
+     "loadMs": 7500,
+     "gpu": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftSh",
+     "fps_battle": 21.1,
+     "fps_kingdom": 34.5,
+     "heapMo": 40,
+     "downloadMo": 9.1,
+     "artHorsCharte": 0,
+     "ux_horsEcran": 0,
+     "ux_coupe": 0,
+     "ux_contraste": 0,
+     "ux_recouverts": 0
+    },
+    "steps": [
+     {
+      "name": "Chargement du jeu",
+      "ok": true,
+      "warn": null,
+      "ms": 7513,
+      "notes": [
+       "Jeu ouvert en 7.5 s (dont 3,6 s minimum d'écran de chargement voulu)."
+      ],
+      "shots": []
+     },
+     {
+      "name": "Premier lancement (nom + récompense)",
+      "ok": true,
+      "warn": null,
+      "ms": 31784,
+      "notes": [
+       "Cinématique d’ouverture lancée puis passée."
+      ],
+      "shots": [
+       "mini-intro.jpg",
+       "mini-bienvenue.jpg",
+       "mini-recompense.jpg"
+      ]
+     },
+     {
+      "name": "Onglet Accueil",
+      "ok": true,
+      "warn": null,
+      "ms": 10059,
+      "notes": [
+       "Fluidité : 13.5 FPS (sans carte graphique).",
+       "Bots : 49 couleurs et 12 textes vérifiés."
+      ],
+      "shots": [
+       "mini-battle.jpg"
+      ]
+     },
+     {
+      "name": "Onglet Héros",
+      "ok": true,
+      "warn": null,
+      "ms": 5723,
+      "notes": [
+       "Bots : 192 couleurs et 25 textes vérifiés."
+      ],
+      "shots": [
+       "mini-heroes.jpg"
+      ]
+     },
+     {
+      "name": "Onglet Boutique",
+      "ok": true,
+      "warn": null,
+      "ms": 1808,
+      "notes": [
+       "Bots : 41 couleurs et 12 textes vérifiés."
+      ],
+      "shots": [
+       "mini-shop.jpg"
+      ]
+     },
+     {
+      "name": "Onglet Royaume",
+      "ok": true,
+      "warn": null,
+      "ms": 11286,
+      "notes": [
+       "Histoire de Vael affichée et lue jusqu'au bout.",
+       "Fluidité : 34.5 FPS (sans carte graphique).",
+       "Bots : 49 couleurs et 8 textes vérifiés."
+      ],
+      "shots": [
+       "mini-kingdom.jpg",
+       "mini-kingdom-histoire.jpg"
+      ]
+     },
+     {
+      "name": "Onglet Clan",
+      "ok": true,
+      "warn": null,
+      "ms": 1622,
+      "notes": [
+       "Bots : 21 couleurs et 10 textes vérifiés."
+      ],
+      "shots": [
+       "mini-clan.jpg"
+      ]
+     },
+     {
+      "name": "Onglet Retour accueil",
+      "ok": true,
+      "warn": null,
+      "ms": 5684,
+      "notes": [
+       "Fluidité : 21.1 FPS (sans carte graphique)."
+      ],
+      "shots": []
+     }
+    ]
+   },
+   {
+    "id": "paysage",
+    "label": "Téléphone couché (915×412)",
+    "metrics": {
+     "loadMs": 8966,
+     "gpu": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftSh",
+     "fps_battle": 14.4,
+     "fps_kingdom": 17.3,
+     "heapMo": 36,
+     "downloadMo": 9.1,
+     "artHorsCharte": 0,
+     "ux_horsEcran": 0,
+     "ux_coupe": 0,
+     "ux_contraste": 0,
+     "ux_recouverts": 0
+    },
+    "steps": [
+     {
+      "name": "Chargement du jeu",
+      "ok": true,
+      "warn": null,
+      "ms": 8976,
+      "notes": [
+       "Jeu ouvert en 9.0 s (dont 3,6 s minimum d'écran de chargement voulu)."
+      ],
+      "shots": []
+     },
+     {
+      "name": "Premier lancement (nom + récompense)",
+      "ok": true,
+      "warn": null,
+      "ms": 44968,
+      "notes": [
+       "Cinématique d’ouverture lancée puis passée."
+      ],
+      "shots": [
+       "paysage-intro.jpg",
+       "paysage-bienvenue.jpg",
+       "paysage-recompense.jpg"
+      ]
+     },
+     {
+      "name": "Onglet Accueil",
+      "ok": true,
+      "warn": null,
+      "ms": 10240,
+      "notes": [
+       "Fluidité : 10.6 FPS (sans carte graphique).",
+       "Bots : 49 couleurs et 11 textes vérifiés."
+      ],
+      "shots": [
+       "paysage-battle.jpg"
+      ]
+     },
+     {
+      "name": "Onglet Héros",
+      "ok": true,
+      "warn": null,
+      "ms": 9364,
+      "notes": [
+       "Bots : 192 couleurs et 14 textes vérifiés."
+      ],
+      "shots": [
+       "paysage-heroes.jpg"
+      ]
+     },
+     {
+      "name": "Onglet Boutique",
+      "ok": true,
+      "warn": null,
+      "ms": 10811,
+      "notes": [
+       "Bots : 41 couleurs et 12 textes vérifiés."
+      ],
+      "shots": [
+       "paysage-shop.jpg"
+      ]
+     },
+     {
+      "name": "Onglet Royaume",
+      "ok": true,
+      "warn": null,
+      "ms": 17792,
+      "notes": [
+       "Histoire de Vael affichée et lue jusqu'au bout.",
+       "Fluidité : 17.3 FPS (sans carte graphique).",
+       "Bots : 49 couleurs et 7 textes vérifiés."
+      ],
+      "shots": [
+       "paysage-kingdom.jpg",
+       "paysage-kingdom-histoire.jpg"
+      ]
+     },
+     {
+      "name": "Onglet Clan",
+      "ok": true,
+      "warn": null,
+      "ms": 5052,
+      "notes": [
+       "Bots : 21 couleurs et 7 textes vérifiés."
+      ],
+      "shots": [
+       "paysage-clan.jpg"
+      ]
+     },
+     {
+      "name": "Onglet Retour accueil",
+      "ok": true,
+      "warn": null,
+      "ms": 5784,
+      "notes": [
+       "Fluidité : 14.4 FPS (sans carte graphique)."
+      ],
+      "shots": []
+     }
+    ]
+   },
+   {
+    "id": "guardian",
+    "label": "Appli Guardian (téléphone)",
+    "metrics": {},
+    "steps": [
+     {
+      "name": "Ouverture du tableau de bord",
+      "ok": false,
+      "warn": null,
+      "ms": 136,
+      "notes": [
+       "Échec : page introuvable (HTTP 404) · écran affiché : aucun écran · capture enregistrée."
+      ],
+      "shots": [
+       "guardian-erreur-1.jpg"
+      ]
+     }
+    ]
+   },
+   {
+    "id": "bots",
+    "label": "Bots sans écran",
+    "metrics": {
+     "cheatTests": 15,
+     "cheatRefused": 13,
+     "balance": {
+      "matches": 600,
+      "seconds": 15,
+      "best": [
+       "Korvaal",
+       58.9
+      ],
+      "worst": [
+       "Os-Errants",
+       34.2
+      ]
+     }
+    },
+    "steps": [
+     {
+      "name": "Anti-triche : règles du jeu",
+      "ok": true,
+      "warn": null,
+      "ms": 12,
+      "notes": [
+       "13/15 tentatives de triche repoussées.",
+       "ℹ️ Limite connue sans serveur — PV du Sanctuaire ennemi mis à 1 : accepté (aucun serveur ne garde la vraie valeur).",
+       "ℹ️ Limite connue sans serveur — Jouer à la place de l’adversaire : accepté (les règles ne savent pas qui envoie la commande : rôle du futur serveur)."
+      ],
+      "shots": []
+     },
+     {
+      "name": "Équilibreur : 600 combats IA contre IA",
+      "ok": true,
+      "warn": null,
+      "ms": 14680,
+      "notes": [
+       "600 combats en 15 s. Meilleur : Korvaal 58.9 % · plus faible : Os-Errants 34.2 % (seuils d'alerte : 25-75 %)."
+      ],
+      "shots": []
+     }
+    ]
+   }
+  ],
+  "static": [
+   {
+    "name": "version.json est valide",
+    "ok": true,
+    "detail": "",
+    "level": "bloquant"
+   },
+   {
+    "name": "Même version dans index.html et version.json",
+    "ok": true,
+    "detail": "",
+    "level": "bloquant"
+   },
+   {
+    "name": "Format de version AAAA-MM-JJ.n",
+    "ok": true,
+    "detail": "",
+    "level": "bloquant"
+   },
+   {
+    "name": "Tous les fichiers JS sont dans le mode hors ligne (sw.js)",
+    "ok": true,
+    "detail": "",
+    "level": "bloquant"
+   },
+   {
+    "name": "Tous les fichiers listés dans sw.js existent",
+    "ok": true,
+    "detail": "",
+    "level": "bloquant"
+   },
+   {
+    "name": "Aucune faute de syntaxe dans le code",
+    "ok": true,
+    "detail": "",
+    "level": "bloquant"
+   },
+   {
+    "name": "Aucune faute de syntaxe dans les scripts du Guardian",
+    "ok": true,
+    "detail": "",
+    "level": "bloquant"
+   },
+   {
+    "name": "Bibliothèque 3D (three.js) présente",
+    "ok": true,
+    "detail": "",
+    "level": "bloquant"
+   },
+   {
+    "name": "Manifeste d'installation valide et icônes présentes",
+    "ok": true,
+    "detail": "",
+    "level": "bloquant"
+   }
+  ]
+ },
+ "liveVersion": "2026-11-24.1",
+ "shotsAt": "2026-11-28T04:15:46.266Z",
+ "lastPublication": {
+  "at": "2026-11-24T03:00:38.944Z",
+  "version": "2026-11-24.1",
+  "sha": "2ef4664",
+  "prev": null,
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45313371542"
+ },
+ "lastReport": "2026-11-28"
+}

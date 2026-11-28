@@ -1,0 +1,23 @@
+{
+ "date": "2026-11-23",
+ "at": "2026-11-23T19:42:53.985Z",
+ "checks": 18,
+ "liveChecks": 17,
+ "liveOk": 17,
+ "trialChecks": 1,
+ "detected": [],
+ "resolved": [
+  "Ouverture du tableau de bord",
+  "Erreur JavaScript (Appli Guardian)"
+ ],
+ "publications": 1,
+ "rollbacks": 0,
+ "blocked": 0,
+ "open": [],
+ "loadPhoneS": 13.5,
+ "version": "2026-11-23.1",
+ "next": [
+  "Continuer la surveillance horaire.",
+  "Mise en service des agents Claude (Réparateur, Graphiste, Équilibreur) : étape 4 du plan."
+ ]
+}

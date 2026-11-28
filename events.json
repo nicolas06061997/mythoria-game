@@ -1,0 +1,2873 @@
+[
+ {
+  "at": "2026-11-28T04:15:46.266Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "47/48 étapes · contrôle horaire · version 2026-11-24.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/46105059752",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-28T01:40:32.967Z",
+  "type": "rapport",
+  "title": "Rapport quotidien",
+  "detail": "3 contrôles du jeu (3 réussis) · 0 problème(s) détecté(s) · 0 résolu(s) · 0 publication(s).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/46094286196"
+ },
+ {
+  "at": "2026-11-27T22:18:01.175Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "47/48 étapes · contrôle horaire · version 2026-11-24.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/46073694437",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-27T12:46:02.938Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "47/48 étapes · contrôle horaire · version 2026-11-24.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45998377340",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-27T03:08:30.240Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "47/48 étapes · contrôle horaire · version 2026-11-24.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45930833117",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-27T01:55:35.500Z",
+  "type": "rapport",
+  "title": "Rapport quotidien",
+  "detail": "2 contrôles du jeu (2 réussis) · 0 problème(s) détecté(s) · 0 résolu(s) · 0 publication(s).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45925323157"
+ },
+ {
+  "at": "2026-11-26T19:55:29.478Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "47/48 étapes · contrôle horaire · version 2026-11-24.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45885139945",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-26T09:48:25.481Z",
+  "type": "surveillance",
+  "title": "À surveiller : Erreur JavaScript (Appli Guardian)",
+  "detail": "Appli Guardian (téléphone) — Failed to load resource: the server responded with a status of 404 ()",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45792881419"
+ },
+ {
+  "at": "2026-11-26T09:48:25.481Z",
+  "type": "surveillance",
+  "title": "À surveiller : Ouverture du tableau de bord",
+  "detail": "Appli Guardian (téléphone) — Échec : page introuvable (HTTP 404) · écran affiché : aucun écran · capture enregistrée.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45792881419"
+ },
+ {
+  "at": "2026-11-26T00:43:16.481Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-24.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45728272507",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-25T19:37:48.028Z",
+  "type": "rapport",
+  "title": "Rapport quotidien",
+  "detail": "15 contrôles du jeu (15 réussis) · 0 problème(s) détecté(s) · 0 résolu(s) · 0 publication(s).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45687053360"
+ },
+ {
+  "at": "2026-11-25T15:36:42.264Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-24.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45644178683",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-25T13:58:02.310Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-24.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45626517830",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-25T12:32:52.469Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-24.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45612055526",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-25T11:27:25.393Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-24.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45601926547",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-25T09:48:13.112Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-24.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45585494060",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-25T07:59:55.978Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-24.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45569732508",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-25T06:28:14.281Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-24.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45558695785",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-25T04:43:46.263Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-24.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45546355675",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-25T03:27:07.010Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-24.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45538252134",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-25T01:43:31.496Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-24.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45526376132",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-25T00:12:35.989Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-24.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45514299971",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-24T23:25:53.585Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-24.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45507456276",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-24T22:30:31.689Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-24.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45498361136",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-24T21:27:37.313Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-24.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45488266072",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-24T20:27:50.596Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-24.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45478657566",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-24T19:43:44.541Z",
+  "type": "rapport",
+  "title": "Rapport quotidien",
+  "detail": "18 contrôles du jeu (18 réussis) · 0 problème(s) détecté(s) · 4 résolu(s) · 1 publication(s).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45473244026"
+ },
+ {
+  "at": "2026-11-24T19:34:52.568Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-24.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45467902228",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-24T18:21:55.355Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-24.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45455356403",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-24T16:50:38.308Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-24.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45437890089",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-24T15:29:52.418Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-24.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45423593913",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-24T13:49:57.056Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-24.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45404003161",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-24T12:25:17.376Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-24.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45391031726",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-24T11:28:24.430Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-24.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45380843272",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-24T09:43:12.438Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-24.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45364554050",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-24T07:56:16.366Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-24.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45349118564",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-24T05:43:20.721Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-24.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45332975953",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-24T04:37:55.528Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-24.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45324948477",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-24T03:18:42.093Z",
+  "type": "resolu",
+  "title": "Problème résolu : Ouverture du tableau de bord",
+  "detail": "Appli Guardian (téléphone) — n'apparaît plus au contrôle (contrôle horaire).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45316825395"
+ },
+ {
+  "at": "2026-11-24T03:18:42.093Z",
+  "type": "resolu",
+  "title": "Problème résolu : Erreur JavaScript (Appli Guardian)",
+  "detail": "Appli Guardian (téléphone) — n'apparaît plus au contrôle (contrôle horaire).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45316825395"
+ },
+ {
+  "at": "2026-11-24T03:00:38.944Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-24.1 (2ef4664).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45313371542"
+ },
+ {
+  "at": "2026-11-24T02:53:32.443Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche claude/guardian (2ef4664) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45313371542"
+ },
+ {
+  "at": "2026-11-24T01:47:32.759Z",
+  "type": "surveillance",
+  "title": "À surveiller : Erreur JavaScript (Appli Guardian)",
+  "detail": "Appli Guardian (téléphone) — Failed to load resource: net::ERR_FAILED",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45305138571"
+ },
+ {
+  "at": "2026-11-24T01:47:32.759Z",
+  "type": "surveillance",
+  "title": "À surveiller : Ouverture du tableau de bord",
+  "detail": "Appli Guardian (téléphone) — Affiche : « MYTHORIA va bien ». Les 4 onglets s’ouvrent.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45305138571"
+ },
+ {
+  "at": "2026-11-24T00:13:09.841Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-23.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45293464448",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-23T23:22:10.741Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-23.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45285611827",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-23T22:16:42.594Z",
+  "type": "resolu",
+  "title": "Problème résolu : Combat très saccadé",
+  "detail": "Ordinateur (1366×768) — n'apparaît plus au contrôle (contrôle horaire).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45275803489"
+ },
+ {
+  "at": "2026-11-23T22:16:42.594Z",
+  "type": "resolu",
+  "title": "Problème résolu : Jeu saccadé",
+  "detail": "Ordinateur (1366×768) — n'apparaît plus au contrôle (contrôle horaire).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45275803489"
+ },
+ {
+  "at": "2026-11-23T21:30:00.264Z",
+  "type": "surveillance",
+  "title": "À surveiller : Jeu saccadé",
+  "detail": "Ordinateur (1366×768) — Sous 2 FPS (sans carte graphique : effondrement) : Combat 1.8 FPS.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45266678300"
+ },
+ {
+  "at": "2026-11-23T21:30:00.264Z",
+  "type": "surveillance",
+  "title": "À surveiller : Combat très saccadé",
+  "detail": "Ordinateur (1366×768) — Fluidité en combat : 1.8 FPS (sans carte graphique). Combat terminé (win) après 150 s. Calcul par image : moyenne 39.7 ms, pire 3364.7 ms.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45266678300"
+ },
+ {
+  "at": "2026-11-23T20:31:57.691Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-23.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45257477495",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-23T19:42:53.985Z",
+  "type": "rapport",
+  "title": "Rapport quotidien",
+  "detail": "17 contrôles du jeu (17 réussis) · 0 problème(s) détecté(s) · 2 résolu(s) · 1 publication(s).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45251743085"
+ },
+ {
+  "at": "2026-11-23T19:40:01.119Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-23.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45247282867",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-23T18:27:24.964Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-23.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45236066436",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-23T17:36:10.265Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-23.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45225604836",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-23T15:37:08.718Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-23.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45204057980",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-23T13:55:29.408Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-23.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45185232210",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-23T12:28:57.366Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-23.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45171148888",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-23T10:49:03.140Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-23.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45155862589",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-23T09:00:44.816Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-23.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45141152814",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-23T06:34:13.322Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-23.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45123308296",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-23T04:42:07.145Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-23.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45111438716",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-23T03:27:47.597Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-23.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45104180827",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-23T02:52:17.152Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-23.1 (7c0a401).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45100301045"
+ },
+ {
+  "at": "2026-11-23T02:43:51.045Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche claude/guardian (7c0a401) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45100301045"
+ },
+ {
+  "at": "2026-11-23T01:53:30.651Z",
+  "type": "resolu",
+  "title": "Problème résolu : Ouverture du tableau de bord",
+  "detail": "Appli Guardian (téléphone) — n'apparaît plus au contrôle (contrôle horaire).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45094761387"
+ },
+ {
+  "at": "2026-11-23T01:53:30.651Z",
+  "type": "resolu",
+  "title": "Problème résolu : Erreur JavaScript (Appli Guardian)",
+  "detail": "Appli Guardian (téléphone) — n'apparaît plus au contrôle (contrôle horaire).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45094761387"
+ },
+ {
+  "at": "2026-11-23T00:17:16.591Z",
+  "type": "surveillance",
+  "title": "À surveiller : Erreur JavaScript (Appli Guardian)",
+  "detail": "Appli Guardian (téléphone) — Failed to load resource: net::ERR_FAILED",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45085648750"
+ },
+ {
+  "at": "2026-11-23T00:17:16.591Z",
+  "type": "surveillance",
+  "title": "À surveiller : Ouverture du tableau de bord",
+  "detail": "Appli Guardian (téléphone) — Affiche : « MYTHORIA va bien ». Les 4 onglets s’ouvrent.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45085648750"
+ },
+ {
+  "at": "2026-11-22T23:19:27.713Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-22.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45080416113",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-22T22:12:31.091Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-22.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45074752428",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-22T21:18:37.844Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-22.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45069168773",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-22T20:17:26.793Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-22.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45063698501",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-22T19:31:53.017Z",
+  "type": "rapport",
+  "title": "Rapport quotidien",
+  "detail": "22 contrôles du jeu (22 réussis) · 0 problème(s) détecté(s) · 5 résolu(s) · 1 publication(s).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45061254288"
+ },
+ {
+  "at": "2026-11-22T19:19:00.822Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-22.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45058374696",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-22T18:16:46.559Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-22.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45051851655",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-22T17:15:21.595Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-22.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45046712936",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-22T16:13:50.850Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-22.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45041017205",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-22T15:17:04.471Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-22.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45035710818",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-22T14:27:45.851Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-22.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45031162933",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-22T13:32:46.475Z",
+  "type": "resolu",
+  "title": "Problème résolu : Chargement long",
+  "detail": "Ordinateur (1366×768) — n'apparaît plus au contrôle (contrôle horaire).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45026012499"
+ },
+ {
+  "at": "2026-11-22T12:18:47.905Z",
+  "type": "surveillance",
+  "title": "À surveiller : Chargement long",
+  "detail": "Ordinateur (1366×768) — Jeu ouvert en 30.4 s (dont 3,6 s minimum d'écran de chargement voulu).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45019549881"
+ },
+ {
+  "at": "2026-11-22T11:14:31.674Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-22.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45014853148",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-22T10:15:37.105Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-22.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45010081525",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-22T09:23:02.539Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-22.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/45005280488",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-22T07:40:42.862Z",
+  "type": "resolu",
+  "title": "Problème résolu : Ouverture du tableau de bord",
+  "detail": "Appli Guardian (téléphone) — n'apparaît plus au contrôle (contrôle horaire).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44998192803"
+ },
+ {
+  "at": "2026-11-22T07:40:42.862Z",
+  "type": "resolu",
+  "title": "Problème résolu : Erreur JavaScript (Appli Guardian)",
+  "detail": "Appli Guardian (téléphone) — n'apparaît plus au contrôle (contrôle horaire).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44998192803"
+ },
+ {
+  "at": "2026-11-22T06:31:23.474Z",
+  "type": "surveillance",
+  "title": "À surveiller : Erreur JavaScript (Appli Guardian)",
+  "detail": "Appli Guardian (téléphone) — Failed to load resource: net::ERR_FAILED",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44992366748"
+ },
+ {
+  "at": "2026-11-22T06:31:23.474Z",
+  "type": "surveillance",
+  "title": "À surveiller : Ouverture du tableau de bord",
+  "detail": "Appli Guardian (téléphone) — Affiche : « MYTHORIA va bien ». Les 4 onglets s’ouvrent.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44992366748"
+ },
+ {
+  "at": "2026-11-22T05:24:06.321Z",
+  "type": "resolu",
+  "title": "Problème résolu : Ouverture du tableau de bord",
+  "detail": "Appli Guardian (téléphone) — n'apparaît plus au contrôle (contrôle horaire).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44988201408"
+ },
+ {
+  "at": "2026-11-22T05:24:06.321Z",
+  "type": "resolu",
+  "title": "Problème résolu : Erreur JavaScript (Appli Guardian)",
+  "detail": "Appli Guardian (téléphone) — n'apparaît plus au contrôle (contrôle horaire).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44988201408"
+ },
+ {
+  "at": "2026-11-22T04:30:12.766Z",
+  "type": "surveillance",
+  "title": "À surveiller : Erreur JavaScript (Appli Guardian)",
+  "detail": "Appli Guardian (téléphone) — Failed to load resource: net::ERR_FAILED",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44983522708"
+ },
+ {
+  "at": "2026-11-22T04:30:12.766Z",
+  "type": "surveillance",
+  "title": "À surveiller : Ouverture du tableau de bord",
+  "detail": "Appli Guardian (téléphone) — Affiche : « MYTHORIA va bien ». Les 4 onglets s’ouvrent.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44983522708"
+ },
+ {
+  "at": "2026-11-22T03:24:27.613Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-21.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44978575350",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-22T03:12:19.616Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-22.1 (e50cf83).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44977143521"
+ },
+ {
+  "at": "2026-11-22T03:03:03.718Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche claude/guardian (e50cf83) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44977143521"
+ },
+ {
+  "at": "2026-11-22T01:47:13.271Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-21.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44971225837",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-22T00:08:25.456Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-21.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44963680989",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-21T23:14:00.268Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-21.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44959043636",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-21T22:16:32.876Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-21.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44953829613",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-21T21:11:13.439Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-21.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44948668885",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-21T20:20:32.624Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-21.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44943562748",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-21T19:28:44.828Z",
+  "type": "rapport",
+  "title": "Rapport quotidien",
+  "detail": "23 contrôles du jeu (23 réussis) · 0 problème(s) détecté(s) · 1 résolu(s) · 3 publication(s).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44941125522"
+ },
+ {
+  "at": "2026-11-21T19:14:56.579Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-21.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44938511546",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-21T18:08:20.151Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-21.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44932582793",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-21T17:21:35.415Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-21.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44927407256",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-21T16:11:11.693Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-21.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44921847377",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-21T15:14:44.587Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-21.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44916804944",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-21T14:27:54.058Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-21.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44912574795",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-21T13:26:36.971Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-21.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44907633037",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-21T12:20:14.672Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-21.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44901409220",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-21T11:21:59.919Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-21.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44896809220",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-21T10:17:28.986Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-21.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44892095113",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-21T09:19:06.262Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-21.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44887359418",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-21T07:43:57.614Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-21.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44880085063",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-21T07:27:54.661Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-21.3 (536bc7a).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44877142276"
+ },
+ {
+  "at": "2026-11-21T07:16:59.886Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-be6d00ae-ckhj5p (536bc7a) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44877142276"
+ },
+ {
+  "at": "2026-11-21T06:51:55.605Z",
+  "type": "bloque",
+  "title": "Publication refusée",
+  "detail": "main a avancé entre-temps : la branche d'essai doit d'abord être mise à jour (rien n'est publié).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44875231602",
+  "branch": "ccr-be6d00ae-ckhj5p",
+  "sha": "b06d650"
+ },
+ {
+  "at": "2026-11-21T06:51:44.340Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-21.2 (95d72f6).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44875530978"
+ },
+ {
+  "at": "2026-11-21T06:46:56.782Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-be6d00ae-ckhj5p (b06d650) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44875231602"
+ },
+ {
+  "at": "2026-11-21T06:45:18.143Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-b609643e-cajl3y (95d72f6) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44875530978"
+ },
+ {
+  "at": "2026-11-21T06:29:26.472Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-21.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44873931660",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-21T05:24:07.103Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-21.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44869349880",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-21T04:23:14.632Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-21.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44864205226",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-21T03:17:32.503Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-21.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44858687523",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-21T02:57:14.943Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-21.1 (b8df9b2).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44855908037"
+ },
+ {
+  "at": "2026-11-21T02:48:05.529Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche claude/guardian (b8df9b2) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44855908037"
+ },
+ {
+  "at": "2026-11-21T01:50:07.488Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-20.7",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44850225563",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-21T00:21:04.985Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-20.7",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44840557568",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-20T23:22:08.642Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-20.7",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44833236102",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-20T22:22:21.043Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-20.7",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44825071895",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-20T21:24:15.010Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-20.7",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44817142231",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-20T20:31:06.613Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-20.7",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44809478334",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-20T19:41:00.859Z",
+  "type": "rapport",
+  "title": "Rapport quotidien",
+  "detail": "19 contrôles du jeu (19 réussis) · 0 problème(s) détecté(s) · 3 résolu(s) · 4 publication(s).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44804368356"
+ },
+ {
+  "at": "2026-11-20T19:34:29.623Z",
+  "type": "resolu",
+  "title": "Problème résolu : Chargement long",
+  "detail": "Ordinateur (1366×768) — n'apparaît plus au contrôle (contrôle horaire).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44800316161"
+ },
+ {
+  "at": "2026-11-20T18:34:37.347Z",
+  "type": "surveillance",
+  "title": "À surveiller : Chargement long",
+  "detail": "Ordinateur (1366×768) — Jeu ouvert en 31.2 s (dont 3,6 s minimum d'écran de chargement voulu).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44790009887"
+ },
+ {
+  "at": "2026-11-20T17:30:09.099Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-20.7",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44780749768",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-20T16:32:48.629Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-20.7",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44770381727",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-20T15:34:05.205Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-b609643e-cajl3y (4cf01e0) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44761732891"
+ },
+ {
+  "at": "2026-11-20T15:23:47.566Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-20.6",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44760240342",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-20T14:20:25.991Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-20.6 (d39c06d).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44748731262"
+ },
+ {
+  "at": "2026-11-20T14:11:38.724Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche claude/guardian (d39c06d) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44748731262"
+ },
+ {
+  "at": "2026-11-20T13:47:04.659Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-20.5",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44744521387",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-20T13:34:27.694Z",
+  "type": "retour",
+  "title": "Retour arrière automatique",
+  "detail": "La version 2026-11-20.5 était cassée une fois en ligne : la version précédente a été remise.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44740977774"
+ },
+ {
+  "at": "2026-11-20T13:18:23.092Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche claude/guardian (4f38264) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44740977774"
+ },
+ {
+  "at": "2026-11-20T12:28:16.423Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-20.4",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44733380559",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-20T10:36:34.001Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-20.4",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44718093004",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-20T09:53:55.823Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-20.4 (3eba93d).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44710346560"
+ },
+ {
+  "at": "2026-11-20T09:44:52.958Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-b609643e-cajl3y (3eba93d) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44710346560"
+ },
+ {
+  "at": "2026-11-20T08:57:08.007Z",
+  "type": "retour",
+  "title": "Retour arrière automatique",
+  "detail": "La version 2026-11-20.3 était cassée une fois en ligne : la version précédente a été remise.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44702593009"
+ },
+ {
+  "at": "2026-11-20T08:49:59.427Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-b609643e-cajl3y (e9acb4d) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44702593009"
+ },
+ {
+  "at": "2026-11-20T08:47:44.424Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-20.2",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44702773970",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-20T06:42:02.259Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-20.2",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44687103610",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-20T05:52:48.449Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-20.2 (4266876).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44679487898"
+ },
+ {
+  "at": "2026-11-20T05:46:54.586Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-b609643e-cajl3y (4266876) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44679487898"
+ },
+ {
+  "at": "2026-11-20T05:37:30.935Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-20.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44679682505",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-20T05:31:32.467Z",
+  "type": "bloque",
+  "title": "Publication refusée",
+  "detail": "main a avancé entre-temps : la branche d'essai doit d'abord être mise à jour (rien n'est publié).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44679380641",
+  "branch": "ccr-b609643e-cajl3y",
+  "sha": "8648b7c"
+ },
+ {
+  "at": "2026-11-20T05:31:16.601Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-b609643e-cajl3y (8648b7c) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44679380641"
+ },
+ {
+  "at": "2026-11-20T04:27:30.088Z",
+  "type": "resolu",
+  "title": "Problème résolu : Chargement long",
+  "detail": "Ordinateur (1366×768) — n'apparaît plus au contrôle (contrôle horaire).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44672169776"
+ },
+ {
+  "at": "2026-11-20T03:23:57.643Z",
+  "type": "surveillance",
+  "title": "À surveiller : Chargement long",
+  "detail": "Ordinateur (1366×768) — Jeu ouvert en 32.0 s (dont 3,6 s minimum d'écran de chargement voulu).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44664464245"
+ },
+ {
+  "at": "2026-11-20T02:48:32.770Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-20.1 (d114dc2).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44660783843"
+ },
+ {
+  "at": "2026-11-20T02:40:58.689Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche claude/guardian (d114dc2) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44660783843"
+ },
+ {
+  "at": "2026-11-20T01:41:23.899Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-19.10",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44653132229",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-20T00:18:18.105Z",
+  "type": "resolu",
+  "title": "Problème résolu : Chargement long",
+  "detail": "Ordinateur (1366×768) — n'apparaît plus au contrôle (contrôle horaire).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44641595703"
+ },
+ {
+  "at": "2026-11-19T23:25:02.922Z",
+  "type": "surveillance",
+  "title": "À surveiller : Chargement long",
+  "detail": "Ordinateur (1366×768) — Jeu ouvert en 31.2 s (dont 3,6 s minimum d'écran de chargement voulu).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44633552398"
+ },
+ {
+  "at": "2026-11-19T22:23:36.504Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-19.10",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44624390111",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-19T21:26:40.263Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-19.10",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44616019294",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-19T20:40:22.992Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-19.10",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44607017303",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-19T19:43:09.738Z",
+  "type": "rapport",
+  "title": "Rapport quotidien",
+  "detail": "18 contrôles du jeu (18 réussis) · 0 problème(s) détecté(s) · 7 résolu(s) · 10 publication(s).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44601193790"
+ },
+ {
+  "at": "2026-11-19T19:31:42.349Z",
+  "type": "resolu",
+  "title": "Problème résolu : Texte coupé",
+  "detail": "Très petit écran (320×480) — n'apparaît plus au contrôle (contrôle horaire).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44595976243"
+ },
+ {
+  "at": "2026-11-19T19:21:33.048Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-19.10 (ee5741d).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44592909895"
+ },
+ {
+  "at": "2026-11-19T19:13:31.102Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche claude/guardian (ee5741d) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44592909895"
+ },
+ {
+  "at": "2026-11-19T17:39:45.267Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-19.9",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44576229533",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-19T16:38:27.144Z",
+  "type": "surveillance",
+  "title": "À surveiller : Texte coupé",
+  "detail": "Très petit écran (320×480) — 1 cas (écrans : Accueil) : Accueil : « 0 / 120 Gloire → Sylve Enchantée » (small).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44563973547"
+ },
+ {
+  "at": "2026-11-19T16:17:50.645Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-19.9 (8a78c79).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44558419384"
+ },
+ {
+  "at": "2026-11-19T16:08:37.940Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche claude/guardian (8a78c79) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44558419384"
+ },
+ {
+  "at": "2026-11-19T15:32:33.647Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-19.8 (49557f9).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44551244942"
+ },
+ {
+  "at": "2026-11-19T15:26:24.798Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-b609643e-cajl3y (49557f9) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44551244942"
+ },
+ {
+  "at": "2026-11-19T15:24:22.292Z",
+  "type": "resolu",
+  "title": "Problème résolu : Texte coupé",
+  "detail": "Très petit écran (320×480) — n'apparaît plus au contrôle (contrôle horaire).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44551882973"
+ },
+ {
+  "at": "2026-11-19T13:49:10.679Z",
+  "type": "resolu",
+  "title": "Problème résolu : Couleurs hors charte",
+  "detail": "Téléphone (412×915) — n'apparaît plus au contrôle (contrôle horaire).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44534148045"
+ },
+ {
+  "at": "2026-11-19T13:49:10.679Z",
+  "type": "resolu",
+  "title": "Problème résolu : Couleurs hors charte",
+  "detail": "Ordinateur (1366×768) — n'apparaît plus au contrôle (contrôle horaire).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44534148045"
+ },
+ {
+  "at": "2026-11-19T13:49:10.679Z",
+  "type": "resolu",
+  "title": "Problème résolu : Couleurs hors charte",
+  "detail": "Galaxy Fold plié (280×653) — n'apparaît plus au contrôle (contrôle horaire).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44534148045"
+ },
+ {
+  "at": "2026-11-19T13:49:10.679Z",
+  "type": "resolu",
+  "title": "Problème résolu : Couleurs hors charte",
+  "detail": "Très petit écran (320×480) — n'apparaît plus au contrôle (contrôle horaire).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44534148045"
+ },
+ {
+  "at": "2026-11-19T13:49:10.679Z",
+  "type": "resolu",
+  "title": "Problème résolu : Couleurs hors charte",
+  "detail": "Téléphone couché (915×412) — n'apparaît plus au contrôle (contrôle horaire).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44534148045"
+ },
+ {
+  "at": "2026-11-19T13:49:10.679Z",
+  "type": "surveillance",
+  "title": "À surveiller : Texte coupé",
+  "detail": "Très petit écran (320×480) — 1 cas (écrans : Accueil) : Accueil : « 0 / 120 Gloire → Sylve Enchantée » (small).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44534148045"
+ },
+ {
+  "at": "2026-11-19T12:52:19.397Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-19.7 (ae04b43).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44524623946"
+ },
+ {
+  "at": "2026-11-19T12:45:30.755Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-b609643e-cajl3y (ae04b43) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44524623946"
+ },
+ {
+  "at": "2026-11-19T12:24:15.974Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-19.6",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44521471108",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-19T12:23:17.566Z",
+  "type": "erreur",
+  "title": "Le contrôleur n'a pas pu terminer",
+  "detail": "Contrôle (modification envoyée, branche ccr-b609643e-cajl3y) interrompu avant la fin.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44523349640"
+ },
+ {
+  "at": "2026-11-19T12:00:14.462Z",
+  "type": "bloque",
+  "title": "Publication refusée",
+  "detail": "main a avancé entre-temps : la branche d'essai doit d'abord être mise à jour (rien n'est publié).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44517303683",
+  "branch": "ccr-be6d00ae-ckhj5p",
+  "sha": "1dce271"
+ },
+ {
+  "at": "2026-11-19T11:59:59.727Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-19.6 (23cd033).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44514893121"
+ },
+ {
+  "at": "2026-11-19T11:58:27.850Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-be6d00ae-ckhj5p (1dce271) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44517303683"
+ },
+ {
+  "at": "2026-11-19T11:50:01.160Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-b04ce915-h3smth (23cd033) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44514893121"
+ },
+ {
+  "at": "2026-11-19T11:26:35.345Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-19.5",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44512653279",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-19T11:06:23.578Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-19.5 (59de442).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44507422041"
+ },
+ {
+  "at": "2026-11-19T10:57:02.115Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-b04ce915-h3smth (59de442) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44507422041"
+ },
+ {
+  "at": "2026-11-19T09:35:09.643Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-19.4",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44495439834",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-19T08:25:12.835Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-19.4 (a4b2726).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44483320085"
+ },
+ {
+  "at": "2026-11-19T08:14:41.747Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-b04ce915-h3smth (a4b2726) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44483320085"
+ },
+ {
+  "at": "2026-11-19T07:50:02.429Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-19.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44480306338",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-19T06:49:39.519Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-19.3 (9df20d1).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44470559810"
+ },
+ {
+  "at": "2026-11-19T06:36:36.786Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche claude/guardian (9df20d1) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44470559810"
+ },
+ {
+  "at": "2026-11-19T05:56:55.260Z",
+  "type": "bloque",
+  "title": "Publication refusée",
+  "detail": "main a avancé entre-temps : la branche d'essai doit d'abord être mise à jour (rien n'est publié).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44466079099",
+  "branch": "claude/guardian",
+  "sha": "b7681b6"
+ },
+ {
+  "at": "2026-11-19T05:56:43.570Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche claude/guardian (b7681b6) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44466079099"
+ },
+ {
+  "at": "2026-11-19T05:43:14.918Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-19.2 (8fef7ac).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44461231819"
+ },
+ {
+  "at": "2026-11-19T05:41:37.669Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-19.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44464335655",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-19T05:34:35.522Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-b04ce915-h3smth (8fef7ac) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44461231819"
+ },
+ {
+  "at": "2026-11-19T05:18:17.230Z",
+  "type": "bloque",
+  "title": "Publication refusée",
+  "detail": "main a avancé entre-temps : la branche d'essai doit d'abord être mise à jour (rien n'est publié).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44462373185",
+  "branch": "claude/guardian",
+  "sha": "26540de"
+ },
+ {
+  "at": "2026-11-19T05:18:05.008Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche claude/guardian (26540de) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44462373185"
+ },
+ {
+  "at": "2026-11-19T05:13:36.489Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-19.1 (62d5bf1).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44460165329"
+ },
+ {
+  "at": "2026-11-19T05:04:43.805Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-b04ce915-h3smth (62d5bf1) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44460165329"
+ },
+ {
+  "at": "2026-11-19T04:30:32.277Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-18.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44456489169",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-19T03:25:16.840Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-18.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44448565292",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-19T01:49:54.079Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-18.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44437011925",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-19T00:20:54.109Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-18.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44425269337",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-18T23:28:23.746Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-18.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44417147358",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-18T22:24:30.732Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-18.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44407436485",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-18T21:24:27.464Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-18.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44397856786",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-18T20:24:35.278Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-18.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44388264131",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-18T19:40:55.224Z",
+  "type": "rapport",
+  "title": "Rapport quotidien",
+  "detail": "18 contrôles du jeu (18 réussis) · 0 problème(s) détecté(s) · 0 résolu(s) · 3 publication(s).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44382768160"
+ },
+ {
+  "at": "2026-11-18T19:24:08.787Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-18.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44377612571",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-18T17:42:42.257Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-18.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44357518768",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-18T16:37:08.066Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-18.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44344888518",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-18T15:32:07.265Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-18.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44332485546",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-18T13:46:04.216Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-18.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44313951026",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-18T13:26:57.689Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-18.3 (de5be6c).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44309546574"
+ },
+ {
+  "at": "2026-11-18T13:19:15.740Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche claude/guardian (de5be6c) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44309546574"
+ },
+ {
+  "at": "2026-11-18T12:29:28.944Z",
+  "type": "surveillance",
+  "title": "À surveiller : Couleurs hors charte",
+  "detail": "Téléphone couché (915×412) — 2 couleur(s) qui ne sont pas dans la charte : #f7d774 (bordure de div.avatar, écran Accueil) ; #f7d774 (texte de button.gear, écran Accueil).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44301349990"
+ },
+ {
+  "at": "2026-11-18T12:29:28.944Z",
+  "type": "surveillance",
+  "title": "À surveiller : Couleurs hors charte",
+  "detail": "Très petit écran (320×480) — 2 couleur(s) qui ne sont pas dans la charte : #f7d774 (bordure de div.avatar, écran Accueil) ; #f7d774 (texte de button.gear, écran Accueil).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44301349990"
+ },
+ {
+  "at": "2026-11-18T12:29:28.944Z",
+  "type": "surveillance",
+  "title": "À surveiller : Couleurs hors charte",
+  "detail": "Galaxy Fold plié (280×653) — 2 couleur(s) qui ne sont pas dans la charte : #f7d774 (bordure de div.avatar, écran Accueil) ; #f7d774 (texte de button.gear, écran Accueil).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44301349990"
+ },
+ {
+  "at": "2026-11-18T12:29:28.944Z",
+  "type": "surveillance",
+  "title": "À surveiller : Couleurs hors charte",
+  "detail": "Ordinateur (1366×768) — 2 couleur(s) qui ne sont pas dans la charte : #f7d774 (bordure de div.avatar, écran Accueil) ; #f7d774 (texte de button.gear, écran Accueil).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44301349990"
+ },
+ {
+  "at": "2026-11-18T12:29:28.944Z",
+  "type": "surveillance",
+  "title": "À surveiller : Couleurs hors charte",
+  "detail": "Téléphone (412×915) — 2 couleur(s) qui ne sont pas dans la charte : #f7d774 (bordure de div.avatar, écran Accueil) ; #f7d774 (texte de button.gear, écran Accueil).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44301349990"
+ },
+ {
+  "at": "2026-11-18T10:40:40.750Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-18.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44284037777",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-18T10:34:48.801Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-18.2 (e0453a6).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44282104141"
+ },
+ {
+  "at": "2026-11-18T10:28:37.558Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-b04ce915-h3smth (e0453a6) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44282104141"
+ },
+ {
+  "at": "2026-11-18T08:49:13.823Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-18.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44267152085",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-18T06:41:54.255Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-18.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44250575931",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-18T05:32:31.435Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-18.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44242804338",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-18T04:22:33.964Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-18.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44235225488",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-18T03:20:25.550Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-18.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44227499553",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-18T02:49:26.894Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-18.1 (8074f47).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44222760793"
+ },
+ {
+  "at": "2026-11-18T02:41:13.585Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche claude/guardian (8074f47) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44222760793"
+ },
+ {
+  "at": "2026-11-18T01:52:25.105Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-17.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44216253741",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-18T00:21:07.922Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-17.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44203953475",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-17T23:26:07.908Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-17.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44195980675",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-17T22:22:39.655Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-17.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44186247148",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-17T21:21:08.774Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-17.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44175582960",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-17T19:43:35.320Z",
+  "type": "rapport",
+  "title": "Rapport quotidien",
+  "detail": "20 contrôles du jeu (20 réussis) · 0 problème(s) détecté(s) · 0 résolu(s) · 3 publication(s).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44161644840"
+ },
+ {
+  "at": "2026-11-17T19:41:40.384Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-17.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44157931049",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-17T18:31:20.985Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-17.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44145734411",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-17T17:35:23.639Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-17.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44135187079",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-17T16:31:16.440Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-17.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44122343557",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-17T15:23:33.830Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-17.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44110185309",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-17T13:40:01.544Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-17.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44092494202",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-17T12:22:27.761Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-17.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44078985191",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-17T10:48:37.275Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-17.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44064773394",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-17T09:39:02.189Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-17.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44054049311",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-17T07:53:56.778Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-17.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44039874312",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-17T06:34:41.653Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-17.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44029548769",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-17T05:33:54.383Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-17.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44022253634",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-17T04:28:24.221Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-17.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44014791320",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-17T03:44:21.121Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-17.3 (80bb033).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44009406029"
+ },
+ {
+  "at": "2026-11-17T03:38:05.675Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche claude/guardian (80bb033) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44009406029"
+ },
+ {
+  "at": "2026-11-17T03:19:14.449Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-17.2 (8645e6f).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44005663152"
+ },
+ {
+  "at": "2026-11-17T03:18:31.229Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-17.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44006928381",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-17T03:10:24.711Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche claude/guardian (8645e6f) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44005663152"
+ },
+ {
+  "at": "2026-11-17T02:44:36.042Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-17.1 (8ddcce6).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44002713520"
+ },
+ {
+  "at": "2026-11-17T02:38:04.101Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche claude/guardian (8ddcce6) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/44002713520"
+ },
+ {
+  "at": "2026-11-17T01:49:10.655Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-16.8",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43995592811",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-17T00:07:33.403Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-16.8",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43983094647",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-16T23:17:19.832Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-16.8",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43975035028",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-16T22:22:11.299Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-16.8",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43965499664",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-16T21:23:23.094Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-16.8",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43955533494",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-16T20:25:51.344Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-16.8",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43946394178",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-16T19:38:42.546Z",
+  "type": "rapport",
+  "title": "Rapport quotidien",
+  "detail": "14 contrôles du jeu (14 réussis) · 0 problème(s) détecté(s) · 0 résolu(s) · 9 publication(s).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43941470611"
+ },
+ {
+  "at": "2026-11-16T19:28:18.392Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-16.8",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43936427741",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-16T17:42:11.963Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-16.8",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43918143668",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-16T15:36:10.901Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-16.8",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43895130826",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-16T14:11:03.323Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-16.8 (cdee470).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43877845794"
+ },
+ {
+  "at": "2026-11-16T14:02:30.063Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche essai/heros-realistes-2 (cdee470) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43877845794"
+ },
+ {
+  "at": "2026-11-16T13:33:47.289Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-16.7 (8bb6274).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43872116054"
+ },
+ {
+  "at": "2026-11-16T13:24:49.909Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche claude/guardian (8bb6274) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43872116054"
+ },
+ {
+  "at": "2026-11-16T11:54:48.344Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-16.6",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43858867335",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-16T11:16:56.086Z",
+  "type": "bloque",
+  "title": "Modification bloquée : rien n'a été publié",
+  "detail": "Branche essai/heros-realistes (e95f305) · Combat complet (une IA joue pour toi) · Combat complet (une IA joue pour toi)",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43852132096"
+ },
+ {
+  "at": "2026-11-16T10:07:33.895Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-16.6",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43843389474",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-16T09:29:27.657Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-16.6 (6401d7e).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43835999935"
+ },
+ {
+  "at": "2026-11-16T09:22:03.731Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-4f2791f3-yldm0y (6401d7e) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43835999935"
+ },
+ {
+  "at": "2026-11-16T08:47:19.424Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-16.5 (2701c30).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43827813075"
+ },
+ {
+  "at": "2026-11-16T08:41:33.324Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-4f2791f3-yldm0y (2701c30) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43827813075"
+ },
+ {
+  "at": "2026-11-16T08:20:19.786Z",
+  "type": "bloque",
+  "title": "Publication refusée",
+  "detail": "main a avancé entre-temps : la branche d'essai doit d'abord être mise à jour (rien n'est publié).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43827871717",
+  "branch": "claude/guardian",
+  "sha": "5251eed"
+ },
+ {
+  "at": "2026-11-16T08:20:05.077Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-16.4 (d77a156).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43827510630"
+ },
+ {
+  "at": "2026-11-16T08:17:38.480Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche claude/guardian (5251eed) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43827871717"
+ },
+ {
+  "at": "2026-11-16T08:11:25.993Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-4f2791f3-yldm0y (d77a156) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43827510630"
+ },
+ {
+  "at": "2026-11-16T06:58:09.507Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-16.3",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43818017415",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-16T06:45:46.298Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-16.3 (68efab5).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43816339432"
+ },
+ {
+  "at": "2026-11-16T06:36:20.006Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche essai/accueil-peint (68efab5) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43816339432"
+ },
+ {
+  "at": "2026-11-16T04:57:11.404Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-16.2",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43805366179",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-16T03:55:47.536Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-16.2 (dd3767d).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43798943110"
+ },
+ {
+  "at": "2026-11-16T03:47:02.766Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-32d5a5c7-4uopfd (dd3767d) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43798943110"
+ },
+ {
+  "at": "2026-11-16T03:33:37.747Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-16.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43796551166",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-16T03:17:53.902Z",
+  "type": "bloque",
+  "title": "Publication refusée",
+  "detail": "Cette modification change les règles du Guardian : GitHub exige une publication manuelle (contrôle réussi).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43795082452",
+  "branch": "ccr-guardian-actions",
+  "sha": "1886d5c"
+ },
+ {
+  "at": "2026-11-16T03:17:31.334Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-guardian-actions (1886d5c) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43795082452"
+ },
+ {
+  "at": "2026-11-16T01:56:36.547Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-16.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43787336188",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-16T01:25:22.618Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-16.1 (ee6c667).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43784008071"
+ },
+ {
+  "at": "2026-11-16T01:17:16.405Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche claude/guardian (ee6c667) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43784008071"
+ },
+ {
+  "at": "2026-11-16T00:15:35.325Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-15.5",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43777328693",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-15T23:08:00.261Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-15.5",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43771507972",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-15T22:03:56.142Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-15.5",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43765908228",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-15T21:11:55.260Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-15.5",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43760333614",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-15T20:10:39.678Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "48/48 étapes · contrôle horaire · version 2026-11-15.5",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43754919296",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-15T19:54:09.670Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-15.5 (6711901).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43753000970"
+ },
+ {
+  "at": "2026-11-15T19:46:06.366Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-guardian-bots (6711901) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43753000970"
+ },
+ {
+  "at": "2026-11-15T19:30:41.499Z",
+  "type": "bloque",
+  "title": "Publication refusée",
+  "detail": "main a avancé entre-temps : la branche d'essai doit d'abord être mise à jour (rien n'est publié).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43750808760",
+  "branch": "ccr-guardian-bots",
+  "sha": "9ef2dd5"
+ },
+ {
+  "at": "2026-11-15T19:30:22.036Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-guardian-bots (9ef2dd5) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43750808760"
+ },
+ {
+  "at": "2026-11-15T19:27:20.138Z",
+  "type": "bloque",
+  "title": "Publication refusée",
+  "detail": "main a avancé entre-temps : la branche d'essai doit d'abord être mise à jour (rien n'est publié).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43750935646"
+ },
+ {
+  "at": "2026-11-15T19:27:09.373Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-15.5 (aa4e073).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43751028999"
+ },
+ {
+  "at": "2026-11-15T19:26:06.158Z",
+  "type": "rapport",
+  "title": "Rapport quotidien",
+  "detail": "22 contrôles du jeu (21 réussis) · 1 problème(s) détecté(s) · 1 résolu(s) · 7 publication(s).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43752385513"
+ },
+ {
+  "at": "2026-11-15T19:21:29.427Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche claude/guardian (d170925) · 21/21 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43750935646"
+ },
+ {
+  "at": "2026-11-15T19:20:20.388Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-32d5a5c7-4uopfd (aa4e073) · 21/21 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43751028999"
+ },
+ {
+  "at": "2026-11-15T19:20:04.287Z",
+  "type": "bloque",
+  "title": "Publication refusée",
+  "detail": "Cette modification change les règles du Guardian : GitHub exige une publication manuelle (contrôle réussi).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43750367898"
+ },
+ {
+  "at": "2026-11-15T19:19:52.672Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche claude/guardian-continu (a3a83d8) · 21/21 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43750367898"
+ },
+ {
+  "at": "2026-11-15T19:12:20.826Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "21/21 étapes · contrôle horaire · version 2026-11-15.4",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43749681570",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-15T18:00:24.218Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "21/21 étapes · contrôle horaire · version 2026-11-15.4",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43743130490",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-15T17:07:57.197Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "21/21 étapes · contrôle horaire · version 2026-11-15.4",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43737995470",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-15T16:04:17.291Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "21/21 étapes · contrôle horaire · version 2026-11-15.4",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43732232506",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-15T15:07:22.521Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "21/21 étapes · contrôle horaire · version 2026-11-15.4",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43726915462",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-15T14:50:59.642Z",
+  "type": "bloque",
+  "title": "Publication refusée",
+  "detail": "main a avancé entre-temps : la branche d'essai doit d'abord être mise à jour (rien n'est publié).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43723981385",
+  "branch": "ccr-guardian-bots",
+  "sha": "14cb726"
+ },
+ {
+  "at": "2026-11-15T14:50:47.774Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-guardian-bots (14cb726) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43723981385"
+ },
+ {
+  "at": "2026-11-15T14:50:22.467Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-15.4 (e121e85).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43724977678"
+ },
+ {
+  "at": "2026-11-15T14:42:11.732Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-34125e8b-l635xw (e121e85) · 21/21 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43724977678"
+ },
+ {
+  "at": "2026-11-15T14:31:59.064Z",
+  "type": "bloque",
+  "title": "Publication refusée",
+  "detail": "main a avancé entre-temps : la branche d'essai doit d'abord être mise à jour (rien n'est publié).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43722510968",
+  "branch": "ccr-guardian-bots",
+  "sha": "521b922"
+ },
+ {
+  "at": "2026-11-15T14:31:47.490Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-guardian-bots (521b922) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43722510968"
+ },
+ {
+  "at": "2026-11-15T14:27:57.234Z",
+  "type": "bloque",
+  "title": "Publication refusée",
+  "detail": "main a avancé entre-temps : la branche d'essai doit d'abord être mise à jour (rien n'est publié).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43723330060"
+ },
+ {
+  "at": "2026-11-15T14:27:45.929Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-34125e8b-l635xw (9b5aba2) · 21/21 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43723330060"
+ },
+ {
+  "at": "2026-11-15T14:25:26.137Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-15.3 (3eff0d9).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43722662713"
+ },
+ {
+  "at": "2026-11-15T14:19:40.999Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-32d5a5c7-4uopfd (3eff0d9) · 21/21 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43722662713"
+ },
+ {
+  "at": "2026-11-15T14:17:58.229Z",
+  "type": "bloque",
+  "title": "Publication refusée",
+  "detail": "main a avancé entre-temps : la branche d'essai doit d'abord être mise à jour (rien n'est publié).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43721983418",
+  "branch": "ccr-guardian-bots",
+  "sha": "c3b5bc3"
+ },
+ {
+  "at": "2026-11-15T14:17:47.749Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-guardian-bots (c3b5bc3) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43721983418"
+ },
+ {
+  "at": "2026-11-15T14:13:03.062Z",
+  "type": "bloque",
+  "title": "Publication refusée",
+  "detail": "main a avancé entre-temps : la branche d'essai doit d'abord être mise à jour (rien n'est publié).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43722018694"
+ },
+ {
+  "at": "2026-11-15T14:12:50.788Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche claude/guardian (4a2bcbf) · 21/21 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43722018694"
+ },
+ {
+  "at": "2026-11-15T14:11:53.673Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "21/21 étapes · contrôle horaire · version 2026-11-15.1",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43722094307",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-15T14:07:53.286Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-15.2 (babf829).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43720842007"
+ },
+ {
+  "at": "2026-11-15T14:02:59.217Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-32d5a5c7-4uopfd (babf829) · 21/21 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43720842007"
+ },
+ {
+  "at": "2026-11-15T13:52:01.301Z",
+  "type": "bloque",
+  "title": "Publication refusée",
+  "detail": "main a avancé entre-temps : la branche d'essai doit d'abord être mise à jour (rien n'est publié).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43720147510"
+ },
+ {
+  "at": "2026-11-15T13:51:47.707Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-guardian-bots (ec6b963) · 48/48 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43720147510"
+ },
+ {
+  "at": "2026-11-15T13:50:45.557Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-15.1 (130c1b2).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43719983874"
+ },
+ {
+  "at": "2026-11-15T13:45:29.417Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-32d5a5c7-4uopfd (130c1b2) · 21/21 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43719983874"
+ },
+ {
+  "at": "2026-11-15T13:15:53.933Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "21/21 étapes · contrôle horaire · version 2026-11-14.25",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43717248326",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-15T12:00:56.369Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "21/21 étapes · contrôle horaire · version 2026-11-14.25",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43711018219",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-15T11:05:01.775Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "21/21 étapes · contrôle horaire · version 2026-11-14.25",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43706399436",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-15T10:08:44.390Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "21/21 étapes · contrôle horaire · version 2026-11-14.25",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43701695099",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-15T09:18:45.195Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-14.25 (5848330).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43697031369"
+ },
+ {
+  "at": "2026-11-15T09:14:31.830Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-34125e8b-l635xw (5848330) · 21/21 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43697031369"
+ },
+ {
+  "at": "2026-11-15T09:09:58.091Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "21/21 étapes · contrôle horaire · version 2026-11-14.25",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43697005757",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-15T09:06:01.815Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-14.25 (424dbc4).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43695685652"
+ },
+ {
+  "at": "2026-11-15T09:00:46.826Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-34125e8b-l635xw (424dbc4) · 21/21 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43695685652"
+ },
+ {
+  "at": "2026-11-15T08:51:13.576Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-14.25 (5778d3a).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43695411021"
+ },
+ {
+  "at": "2026-11-15T08:45:18.529Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-34125e8b-l635xw (5778d3a) · 21/21 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43695411021"
+ },
+ {
+  "at": "2026-11-15T07:27:06.758Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "21/21 étapes · contrôle horaire · version 2026-11-14.25",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43689299071",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-15T06:13:19.510Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "21/21 étapes · contrôle horaire · version 2026-11-14.25",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43683564974",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-15T05:15:24.977Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "21/21 étapes · contrôle horaire · version 2026-11-14.25",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43679570866",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-15T04:13:28.538Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "21/21 étapes · contrôle horaire · version 2026-11-14.25",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43675090987",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-15T03:08:10.558Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "21/21 étapes · contrôle horaire · version 2026-11-14.25",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43670213201",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-15T01:31:14.051Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "21/21 étapes · contrôle horaire · version 2026-11-14.25",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43662664458",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-14T23:58:33.621Z",
+  "type": "resolu",
+  "title": "Problème résolu : Onglet Retour accueil",
+  "detail": "Ordinateur (1366×768) — n'apparaît plus au contrôle (contrôle horaire).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43654930211"
+ },
+ {
+  "at": "2026-11-14T22:59:49.980Z",
+  "type": "probleme",
+  "title": "Problème détecté : Onglet Retour accueil",
+  "detail": "Ordinateur (1366×768) — Échec : page.waitForSelector: Timeout 8000ms exceeded.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43650026154"
+ },
+ {
+  "at": "2026-11-14T21:56:38.716Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "21/21 étapes · contrôle horaire · version 2026-11-14.25",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43644746460",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-14T20:57:07.394Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "21/21 étapes · contrôle horaire · version 2026-11-14.25",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43639578203",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-14T19:59:49.145Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "21/21 étapes · contrôle horaire · version 2026-11-14.25",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43634445043",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-14T19:24:57.161Z",
+  "type": "rapport",
+  "title": "Rapport quotidien",
+  "detail": "4 contrôles du jeu (4 réussis) · 0 problème(s) détecté(s) · 0 résolu(s) · 1 publication(s).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43631956257"
+ },
+ {
+  "at": "2026-11-14T19:06:00.861Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "21/21 étapes · contrôle horaire · version 2026-11-14.25",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43629346972",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-14T17:57:55.472Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "21/21 étapes · contrôle horaire · version 2026-11-14.25",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43622974578",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-14T17:41:37.311Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "21/21 étapes · modification envoyée · version 2026-11-14.25",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43621681167",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-14T17:32:20.028Z",
+  "type": "bloque",
+  "title": "Publication refusée",
+  "detail": "Cette modification change les règles du Guardian : GitHub exige une publication manuelle (contrôle réussi).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43620779182"
+ },
+ {
+  "at": "2026-11-14T17:32:09.084Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-34125e8b-l635xw (6ff7a98) · 21/21 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43620779182"
+ },
+ {
+  "at": "2026-11-14T17:21:05.786Z",
+  "type": "publication",
+  "title": "Nouvelle version publiée et vérifiée en ligne",
+  "detail": "Version 2026-11-14.25 (13fc333).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43619377744"
+ },
+ {
+  "at": "2026-11-14T17:14:56.465Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-34125e8b-l635xw (13fc333) · 21/21 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43619377744"
+ },
+ {
+  "at": "2026-11-14T17:07:49.677Z",
+  "type": "controle",
+  "title": "Contrôle réussi",
+  "detail": "20/20 étapes · modification envoyée · version 2026-11-14.25",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43618500087",
+  "quiet": true
+ },
+ {
+  "at": "2026-11-14T16:57:17.169Z",
+  "type": "bloque",
+  "title": "Publication refusée",
+  "detail": "Cette modification change les règles du Guardian : GitHub exige une publication manuelle (contrôle réussi).",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43617519620"
+ },
+ {
+  "at": "2026-11-14T16:57:05.380Z",
+  "type": "essai",
+  "title": "Modification contrôlée : tout est vert",
+  "detail": "Branche ccr-34125e8b-l635xw (dc7118c) · 20/20 étapes · publication en cours.",
+  "url": "https://github.com/nicolas06061997/mythoria-game/actions/runs/43617519620"
+ }
+]

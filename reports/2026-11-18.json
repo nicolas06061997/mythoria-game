@@ -1,0 +1,51 @@
+{
+ "date": "2026-11-18",
+ "at": "2026-11-18T19:40:55.224Z",
+ "checks": 21,
+ "liveChecks": 18,
+ "liveOk": 18,
+ "trialChecks": 3,
+ "detected": [],
+ "resolved": [],
+ "publications": 3,
+ "rollbacks": 0,
+ "blocked": 0,
+ "open": [
+  {
+   "title": "Couleurs hors charte",
+   "where": "Téléphone couché (915×412)",
+   "level": "à surveiller",
+   "since": "2026-11-18T12:29:28.944Z"
+  },
+  {
+   "title": "Couleurs hors charte",
+   "where": "Très petit écran (320×480)",
+   "level": "à surveiller",
+   "since": "2026-11-18T12:29:28.944Z"
+  },
+  {
+   "title": "Couleurs hors charte",
+   "where": "Galaxy Fold plié (280×653)",
+   "level": "à surveiller",
+   "since": "2026-11-18T12:29:28.944Z"
+  },
+  {
+   "title": "Couleurs hors charte",
+   "where": "Ordinateur (1366×768)",
+   "level": "à surveiller",
+   "since": "2026-11-18T12:29:28.944Z"
+  },
+  {
+   "title": "Couleurs hors charte",
+   "where": "Téléphone (412×915)",
+   "level": "à surveiller",
+   "since": "2026-11-18T12:29:28.944Z"
+  }
+ ],
+ "loadPhoneS": 16.5,
+ "version": "2026-11-18.3",
+ "next": [
+  "Corriger les problèmes encore ouverts (5).",
+  "Mise en service des agents Claude (Réparateur, Graphiste, Équilibreur) : étape 4 du plan."
+ ]
+}

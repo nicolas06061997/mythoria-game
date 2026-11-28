@@ -1,0 +1,24 @@
+{
+ "date": "2026-11-20",
+ "at": "2026-11-20T19:41:00.859Z",
+ "checks": 27,
+ "liveChecks": 19,
+ "liveOk": 19,
+ "trialChecks": 8,
+ "detected": [],
+ "resolved": [
+  "Chargement long",
+  "Chargement long",
+  "Chargement long"
+ ],
+ "publications": 4,
+ "rollbacks": 2,
+ "blocked": 1,
+ "open": [],
+ "loadPhoneS": 19.6,
+ "version": "2026-11-20.7",
+ "next": [
+  "Continuer la surveillance horaire.",
+  "Mise en service des agents Claude (Réparateur, Graphiste, Équilibreur) : étape 4 du plan."
+ ]
+}

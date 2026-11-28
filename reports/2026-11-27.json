@@ -1,0 +1,33 @@
+{
+ "date": "2026-11-27",
+ "at": "2026-11-27T01:55:35.500Z",
+ "checks": 2,
+ "liveChecks": 2,
+ "liveOk": 2,
+ "trialChecks": 0,
+ "detected": [],
+ "resolved": [],
+ "publications": 0,
+ "rollbacks": 0,
+ "blocked": 0,
+ "open": [
+  {
+   "title": "Erreur JavaScript (Appli Guardian)",
+   "where": "Appli Guardian (téléphone)",
+   "level": "à surveiller",
+   "since": "2026-11-26T09:48:25.481Z"
+  },
+  {
+   "title": "Ouverture du tableau de bord",
+   "where": "Appli Guardian (téléphone)",
+   "level": "à surveiller",
+   "since": "2026-11-26T09:48:25.481Z"
+  }
+ ],
+ "loadPhoneS": 7.3,
+ "version": "2026-11-24.1",
+ "next": [
+  "Corriger les problèmes encore ouverts (2).",
+  "Mise en service des agents Claude (Réparateur, Graphiste, Équilibreur) : étape 4 du plan."
+ ]
+}
